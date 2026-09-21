@@ -2208,6 +2208,22 @@
     display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s ease, border-color .15s ease;
   }
   .promo-card:hover{box-shadow:0 4px 14px rgba(20,60,40,.08);border-color:var(--ag-gray-300);}
+  /* ---- Visibilitas Promo: pemilih Agent ---- */
+  .promo-agent-picker input[type="text"]{width:100%;}
+  .promo-agent-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 6px;font-size:12px;}
+  .promo-agent-count{color:var(--ag-gray-600);font-weight:600;}
+  .promo-agent-toolbar-btns{display:inline-flex;gap:12px;}
+  .promo-agent-link{background:none;border:0;padding:0;color:var(--ag-green);font-size:12px;font-weight:600;cursor:pointer;}
+  .promo-agent-link:hover{text-decoration:underline;}
+  .promo-agent-list{max-height:200px;overflow-y:auto;border:1px solid var(--ag-gray-300);border-radius:10px;background:#fff;}
+  .promo-agent-row{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--ag-gray-100);margin:0;font-weight:500;text-transform:none;letter-spacing:0;}
+  .promo-agent-row:last-child{border-bottom:0;}
+  .promo-agent-row:hover{background:var(--ag-green-soft);}
+  .promo-agent-row input[type="checkbox"]{width:16px;height:16px;flex:0 0 auto;margin:0;accent-color:var(--ag-green);}
+  .promo-agent-name{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .promo-agent-id{font-size:11px;color:var(--ag-gray-400);flex:0 0 auto;}
+  .promo-agent-empty{padding:16px;text-align:center;font-size:12.5px;color:var(--ag-gray-400);}
+
   .promo-card-top{display:flex;align-items:flex-start;gap:10px;}
   .promo-card-top .badge{flex-shrink:0;white-space:nowrap;margin-top:1px;}
   .promo-card-icon{
@@ -9184,6 +9200,10 @@
     };
     var emptyTitlePromo_ = rows.length ? 'Tidak ada promo yang cocok' : 'Belum ada promo';
     var emptySubPromo_ = rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Buat promo pertama untuk mulai menarik Agent.';
+    // Kolom Visibilitas hanya untuk staff (Agent hanya menerima promo yang memang untuknya).
+    if(STATE.user.role !== 'AGENT'){
+      cols.splice(3, 0, {label:'Visibilitas', render:function(r){ return promoVisibilityBadge_(r); }});
+    }
     var listHtml = renderTableOrCards_(cols, filtered, actions, emptyTitlePromo_, emptySubPromo_, ICONS.promo);
     return '<div class="card"><div class="list-header">' +
       '<span class="card-title">Promo</span>' +
@@ -9216,9 +9236,47 @@
     return null;
   }
 
+  // ---- Visibilitas Promo (siapa saja yang boleh melihat & memakai promo) ----
+  var PROMO_AGENTS_CACHE_ = null;   // daftar Agent APPROVED untuk pilihan visibilitas (Admin/Supervisor/Manager)
+  var PROMO_VIS_SELECTED_ = {};     // { AgentID: true } — Agent yang dicentang di form promo
+
+  function promoVisIds_(p){
+    return String((p && p.VisibleAgentIDs) || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  }
+  function promoIsSelected_(p){
+    return String((p && p.VisibilityType) || 'ALL').toUpperCase() === 'SELECTED';
+  }
+  function promoVisibilityBadge_(p){
+    if(!promoIsSelected_(p)) return '<span class="badge badge-green">Semua Agent</span>';
+    return '<span class="badge badge-blue">'+promoVisIds_(p).length+' Agent terpilih</span>';
+  }
+  function promoAgentLabel_(a){
+    return (a.FullName || a.AgentID) + (a.AgentStatus === 'INACTIVE' ? ' (nonaktif)' : '');
+  }
+  /** Ambil daftar Agent yang sudah APPROVED, lalu panggil cb(). Kalau gagal, cache diisi []
+      supaya pemanggil tidak looping — form tetap bisa dipakai dengan opsi "Semua Agent". */
+  function ensurePromoAgents_(cb, forceRefresh){
+    if(PROMO_AGENTS_CACHE_ && !forceRefresh){ cb(); return; }
+    google.script.run.withSuccessHandler(function(rows){
+      PROMO_AGENTS_CACHE_ = (rows || []).slice().sort(function(a,b){
+        return String(a.FullName||'').localeCompare(String(b.FullName||''));
+      });
+      cb();
+    }).withFailureHandler(function(e){
+      if(!PROMO_AGENTS_CACHE_) PROMO_AGENTS_CACHE_ = [];
+      handleBackendError(e); cb();
+    }).listAgents(STATE.token, 'APPROVED');
+  }
+
   function viewPromo(promoId){
     var p = findPromo_(promoId);
     if(!p){ showToast('Data tidak ditemukan.','error'); return; }
+    var isStaff = STATE.user.role !== 'AGENT';
+    // Nama Agent penerima butuh daftar Agent — ambil dulu kalau promo dibatasi & belum ada cache.
+    if(isStaff && promoIsSelected_(p) && !PROMO_AGENTS_CACHE_){
+      ensurePromoAgents_(function(){ viewPromo(promoId); });
+      return;
+    }
     var head =
       '<div class="product-summary-head">' +
         '<div class="order-summary-icon">'+ICONS.promo+'</div>' +
@@ -9228,6 +9286,21 @@
           '<div class="product-summary-badges">'+statusBadge(p.EffectiveStatus)+'</div>' +
         '</div>' +
       '</div>';
+    var visFields = '';
+    if(isStaff){
+      var agentText = '-';
+      if(promoIsSelected_(p)){
+        var byId = {}; (PROMO_AGENTS_CACHE_ || []).forEach(function(a){ byId[a.AgentID] = a; });
+        agentText = promoVisIds_(p).map(function(id){
+          return escapeHtml(byId[id] ? promoAgentLabel_(byId[id]) : id);
+        }).join(', ');
+      } else {
+        agentText = 'Semua Agent dapat melihat promo ini';
+      }
+      visFields =
+        detailField_('Visibilitas', promoVisibilityBadge_(p)) +
+        detailField_('Agent yang Dapat Melihat', agentText, true);
+    }
     var infoGrid =
       '<div class="agent-detail-section-title">Informasi Promo</div>' +
       '<div class="agent-detail-grid">' +
@@ -9235,6 +9308,7 @@
         detailField_('Promo Name', escapeHtml(p.PromoName)) +
         detailField_('Start Date', formatDateDMY_(p.StartDate)) +
         detailField_('End Date', formatDateDMY_(p.EndDate)) +
+        visFields +
         detailField_('Description', p.Description ? escapeHtml(p.Description) : '-', true) +
       '</div>';
     openViewModal('Detail Promo', head + infoGrid, '');
@@ -9249,23 +9323,120 @@
         '<option value="ACTIVE"'+(statusVal==='ACTIVE'?' selected':'')+'>ACTIVE</option>' +
         '<option value="INACTIVE"'+(statusVal==='INACTIVE'?' selected':'')+'>INACTIVE</option>' +
       '</select></div>';
+
+    var visType = promoIsSelected_(p) ? 'SELECTED' : 'ALL';
+    PROMO_VIS_SELECTED_ = {};
+    promoVisIds_(p).forEach(function(id){ PROMO_VIS_SELECTED_[id] = true; });
+    var visField =
+      '<div class="form-group"><label>Visibilitas Promo</label>' +
+        '<select id="promoVisType" onchange="onPromoVisTypeChange_()">' +
+          '<option value="ALL"'+(visType==='ALL'?' selected':'')+'>Semua Agent</option>' +
+          '<option value="SELECTED"'+(visType==='SELECTED'?' selected':'')+'>Agent Tertentu (pilih manual)</option>' +
+        '</select>' +
+        '<div class="form-hint">Contoh: pilih &quot;Semua Agent&quot; untuk promo umum, atau &quot;Agent Tertentu&quot; untuk promo khusus 1 atau beberapa Agent.</div>' +
+      '</div>' +
+      '<div class="form-group promo-agent-picker" id="promoAgentPicker" style="'+(visType==='SELECTED'?'':'display:none;')+'">' +
+        '<label>Pilih Agent yang Dapat Melihat Promo</label>' +
+        '<input type="text" id="promoAgentSearch" placeholder="Cari Agent, contoh: Budi atau AGT-000001" oninput="paintPromoAgentList_()">' +
+        '<div class="promo-agent-toolbar">' +
+          '<span id="promoAgentCount" class="promo-agent-count">0 Agent dipilih</span>' +
+          '<span class="promo-agent-toolbar-btns">' +
+            '<button type="button" class="promo-agent-link" onclick="promoAgentSelectAll_(true)">Pilih Semua</button>' +
+            '<button type="button" class="promo-agent-link" onclick="promoAgentSelectAll_(false)">Kosongkan</button>' +
+          '</span>' +
+        '</div>' +
+        '<div class="promo-agent-list" id="promoAgentList"><div class="promo-agent-empty">Memuat daftar Agent...</div></div>' +
+      '</div>';
+
     var body =
-      formField_('promoCode','Promo Code',p.PromoCode,'text','',true,ICONS.promo) + formField_('promoName','Promo Name',p.PromoName,'text','',true,ICONS.fileDoc) +
-      formField_('promoDesc','Description',p.Description,'text','',false,ICONS.edit) + formField_('promoStart','Start Date',p.StartDate,'date','',true) +
-      formField_('promoEnd','End Date',p.EndDate,'date','',true) + statusField;
+      formField_('promoCode','Promo Code',p.PromoCode,'text','Contoh: PROMO-OKT26',true,ICONS.promo) +
+      formField_('promoName','Promo Name',p.PromoName,'text','Contoh: Diskon Grand Opening Oktober',true,ICONS.fileDoc) +
+      formField_('promoDesc','Description',p.Description,'text','Contoh: Diskon 5% untuk pembelian minimal 10 box',false,ICONS.edit) +
+      formField_('promoStart','Start Date',p.StartDate,'date','',true,null,'Contoh: 01-10-2026') +
+      formField_('promoEnd','End Date',p.EndDate,'date','',true,null,'Contoh: 31-10-2026') +
+      visField + statusField;
     openFormModal(promoId ? 'Edit Promo' : 'Tambah Promo', body, function(){ savePromoForm(promoId); });
+    // Daftar Agent dimuat setelah modal tampil (tidak menahan form); kalau sudah ada cache,
+    // langsung digambar lalu disegarkan diam-diam di belakang.
+    if(PROMO_AGENTS_CACHE_) paintPromoAgentList_();
+    ensurePromoAgents_(paintPromoAgentList_, true);
+  }
+
+  function onPromoVisTypeChange_(){
+    var picker = document.getElementById('promoAgentPicker');
+    if(!picker) return;
+    picker.style.display = (val_('promoVisType') === 'SELECTED') ? '' : 'none';
+    paintPromoAgentList_();
+  }
+
+  function paintPromoAgentList_(){
+    var listEl = document.getElementById('promoAgentList');
+    if(!listEl) return;
+    var q = (val_('promoAgentSearch') || '').trim().toLowerCase();
+    var agents = PROMO_AGENTS_CACHE_;
+    if(!agents){ listEl.innerHTML = '<div class="promo-agent-empty">Memuat daftar Agent...</div>'; updatePromoAgentCount_(); return; }
+    var filtered = agents.filter(function(a){
+      return !q || String(a.FullName||'').toLowerCase().indexOf(q) !== -1 || String(a.AgentID||'').toLowerCase().indexOf(q) !== -1;
+    });
+    if(!filtered.length){
+      listEl.innerHTML = '<div class="promo-agent-empty">'+(agents.length ? 'Agent tidak ditemukan.' : 'Belum ada Agent yang sudah disetujui.')+'</div>';
+    } else {
+      listEl.innerHTML = filtered.map(function(a){
+        var checked = PROMO_VIS_SELECTED_[a.AgentID] ? ' checked' : '';
+        return '<label class="promo-agent-row">' +
+          '<input type="checkbox" data-id="'+escapeHtml(a.AgentID)+'"'+checked+' onchange="togglePromoAgent_(this.getAttribute(\'data-id\'), this.checked)">' +
+          '<span class="promo-agent-name">'+escapeHtml(promoAgentLabel_(a))+'</span>' +
+          '<span class="promo-agent-id">'+escapeHtml(a.AgentID)+'</span>' +
+        '</label>';
+      }).join('');
+    }
+    updatePromoAgentCount_();
+  }
+
+  function updatePromoAgentCount_(){
+    var el = document.getElementById('promoAgentCount');
+    if(el) el.textContent = Object.keys(PROMO_VIS_SELECTED_).length + ' Agent dipilih';
+  }
+
+  function togglePromoAgent_(agentId, checked){
+    if(checked) PROMO_VIS_SELECTED_[agentId] = true; else delete PROMO_VIS_SELECTED_[agentId];
+    updatePromoAgentCount_();
+  }
+
+  /** "Pilih Semua"/"Kosongkan" hanya berlaku untuk Agent yang sedang tampil (sesuai kotak cari). */
+  function promoAgentSelectAll_(on){
+    var q = (val_('promoAgentSearch') || '').trim().toLowerCase();
+    (PROMO_AGENTS_CACHE_ || []).forEach(function(a){
+      var match = !q || String(a.FullName||'').toLowerCase().indexOf(q) !== -1 || String(a.AgentID||'').toLowerCase().indexOf(q) !== -1;
+      if(!match) return;
+      if(on) PROMO_VIS_SELECTED_[a.AgentID] = true; else delete PROMO_VIS_SELECTED_[a.AgentID];
+    });
+    paintPromoAgentList_();
   }
 
   function savePromoForm(promoId){
+    var visType = val_('promoVisType') === 'SELECTED' ? 'SELECTED' : 'ALL';
     var payload = {
       PromoID: promoId || null,
       PromoCode: val_('promoCode'), PromoName: val_('promoName'), Description: val_('promoDesc'),
-      StartDate: val_('promoStart'), EndDate: val_('promoEnd'), Status: val_('promoStatus') || 'ACTIVE'
+      StartDate: val_('promoStart'), EndDate: val_('promoEnd'), Status: val_('promoStatus') || 'ACTIVE',
+      VisibilityType: visType,
+      VisibleAgentIDs: visType === 'SELECTED' ? Object.keys(PROMO_VIS_SELECTED_).join(',') : ''
     };
     if(!payload.PromoName){ showToast('Promo Name wajib diisi.','error'); return; }
+    if(visType === 'SELECTED' && !payload.VisibleAgentIDs){
+      showToast('Pilih minimal 1 Agent, atau ubah Visibilitas menjadi "Semua Agent".','error');
+      var b = document.getElementById('modalSaveBtn');
+      if(b){ b.disabled = false; b.innerHTML = '<span class="btn-save-label">Simpan</span>'; }
+      return;
+    }
     google.script.run.withSuccessHandler(function(res){
       if(res.success){ closeModal(); showToast('Promo disimpan.','success'); renderPromos(); }
-      else showToast(res.message||'Gagal menyimpan.','error');
+      else {
+        showToast(res.message||'Gagal menyimpan.','error');
+        var b2 = document.getElementById('modalSaveBtn');
+        if(b2){ b2.disabled = false; b2.innerHTML = '<span class="btn-save-label">Simpan</span>'; }
+      }
     }).withFailureHandler(function(e){ handleBackendError(e); }).savePromo(STATE.token, payload);
   }
 
@@ -10041,7 +10212,9 @@
       if(!document.getElementById('poProductGrid') || !NEWPO_PRODUCTS_CACHE_){
         renderNewPOForm_(got.products, got.promos);
       } else {
+        pruneUnavailableFromNewPOCart_(got.products);
         renderNewPOProductGrid_();
+        renderNewPOCart_();
       }
       applyNewPOPreselect_();
     }
@@ -10070,7 +10243,29 @@
     renderNewPOProductGrid_();
   }
 
+  /** Buang dari keranjang produk yang sudah INACTIVE / tidak ada lagi (mis. keranjang lama dari
+      Dashboard, cache browser, atau PO REJECTED yang diajukan ulang) supaya tidak ikut terkirim
+      jadi PO. Tidak berlaku untuk mode "Edit PO Approved" (Staff mengedit PO yang sudah ada). */
+  function pruneUnavailableFromNewPOCart_(products){
+    if(NEWPO_EDIT_APPROVED_ID_) return;
+    var map = {};
+    (products || []).forEach(function(p){ map[p.ProductID] = p; });
+    var removed = [];
+    Object.keys(NEWPO_CART_ || {}).forEach(function(pid){
+      var p = map[pid];
+      if(!p || String(p.Status||'').toUpperCase() === 'INACTIVE'){
+        removed.push(p ? p.ProductName : pid);
+        delete NEWPO_CART_[pid];
+      }
+    });
+    if(removed.length){
+      syncNewPOCartToDashCart_();
+      showToast('Produk nonaktif dihapus dari keranjang: '+removed.join(', '),'error');
+    }
+  }
+
   function renderNewPOForm_(products, promos, isApprovedEdit){
+      if(!isApprovedEdit) pruneUnavailableFromNewPOCart_(products);
       var discOptions = '';
       for(var d=0; d<=10; d++){ discOptions += '<option value="'+d+'"'+(d===0?' selected':'')+'>'+(d===0?'0% (Full Price)':d+'%')+'</option>'; }
       var promoOptions = '<option value="">Tanpa Promo</option>' + (promos||[]).map(function(p){
@@ -10255,6 +10450,12 @@
   }
 
   function addToNewPOCart_(productId){
+    // Produk INACTIVE tidak boleh masuk keranjang (backend juga menolak di createPO/resubmitPO).
+    var pAdd = findNewPOProduct_(productId);
+    if(pAdd && String(pAdd.Status||'').toUpperCase() === 'INACTIVE'){
+      showToast('Produk ini sedang nonaktif dan tidak dapat dipesan.','error');
+      return;
+    }
     NEWPO_CART_[productId] = (NEWPO_CART_[productId] || 0) + 1;
     syncNewPOCartToDashCart_();
     renderNewPOProductGrid_();
@@ -13058,7 +13259,7 @@
   // =============================================================
   // SMALL FORM HELPERS
   // =============================================================
-  function formField_(id, label, value, type, placeholder, required, icon){
+  function formField_(id, label, value, type, placeholder, required, icon, dateGhost){
     value = value == null ? '' : value;
     type = type || 'text';
     var ph = placeholder ? ' placeholder="'+escapeHtml(placeholder)+'"' : '';
@@ -13073,7 +13274,7 @@
       var dateInputEl = '<input type="date" id="'+id+'" value="'+escapeHtml(String(value))+'"'+reqAttrs+dateInputAttrs+'>';
       var ghostStyle = value ? ' style="display:none"' : '';
       input = '<div class="date-field-wrap has-placeholder-ghost'+(value?' has-value':'')+'">'+ICONS.calendar+dateInputEl+
-        '<span class="date-field-ghost"'+ghostStyle+'>dd-mm-yyyy</span></div>';
+        '<span class="date-field-ghost"'+ghostStyle+'>'+escapeHtml(dateGhost || 'dd-mm-yyyy')+'</span></div>';
     } else if(icon){
       input = '<div class="text-field-wrap">'+icon+input+'</div>';
     }
@@ -13342,8 +13543,14 @@
     var name = (STATE.user && STATE.user.name) ? STATE.user.name : '';
     var banners = cfg.banners || [];
     var categories = cfg.categories || [];
-    var featured = cfg.featuredProducts || [];
-    var trending = cfg.trendingProducts || [];
+    // Produk INACTIVE tidak ditampilkan di Dashboard Agent. Server sudah memfilternya; filter
+    // ini menjaga kalau config tersimpan di cache/tab lama sementara Admin baru menonaktifkannya.
+    var inactiveIds_ = {};
+    [CATALOG_PRODUCTS_CACHE_, NEWPO_PRODUCTS_CACHE_, PRODUCTS_CACHE].forEach(function(arr){
+      (arr || []).forEach(function(pp){ if(String(pp.Status||'').toUpperCase() === 'INACTIVE') inactiveIds_[pp.ProductID] = true; });
+    });
+    var featured = (cfg.featuredProducts || []).filter(function(pp){ return !inactiveIds_[pp.productId]; });
+    var trending = (cfg.trendingProducts || []).filter(function(pp){ return !inactiveIds_[pp.productId]; });
     // MOU belum SIGNED = Agent belum boleh transaksi sama sekali (backend sudah menolak
     // PO kalau ini terjadi — lihat createPO/submitPO). Dashboard mengunci Katalog/Troli
     // LEBIH AWAL di sisi tampilan supaya Agent tidak perlu klik-klik dulu baru tahu ditolak.
