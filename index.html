@@ -2949,6 +2949,17 @@
      tanpa feedback sama sekali. */
   .agent-shortcut-item.is-locked{ opacity:.5; }
   .agent-shortcut-item.is-locked .agent-shortcut-icon{ background:var(--ag-gray-100); color:var(--ag-gray-500); }
+  /* Sama seperti .agent-shortcut-item.is-locked di atas — dipakai juga di card Kategori
+     Produk, "Sedang Banyak Dipesan", & "Produk Unggulan" kalau MOU Agent belum SIGNED,
+     supaya tampilannya jujur (keliatan non-aktif) SEBELUM diklik, bukan cuma toast
+     penolakan setelah diklik. Lihat agentDashBannerClick_/changeAgentDashCartQty_. */
+  .agent-category-item.is-locked,
+  .agent-trend-card.is-locked,
+  .agent-product-card.is-locked{ opacity:.5; }
+  .agent-category-item.is-locked .agent-category-thumb{ background:var(--ag-gray-100); }
+  .agent-trend-card.is-locked .agent-product-add-btn,
+  .agent-product-card.is-locked .agent-product-add-btn{ background:var(--ag-gray-300); }
+  .agent-banner-card.is-locked{ opacity:.5; cursor:not-allowed; }
 
   /* Banner kunci MOU di atas Dashboard Agent — merah/oranye lembut supaya jelas ini
      status yang butuh perhatian, tanpa terasa seperti pesan error yang menakutkan. */
@@ -3931,6 +3942,7 @@
   }
 
 </style>
+
 </head>
 <body>
 
@@ -6879,6 +6891,11 @@
       }
       html += '<button class="action-btn view" title="Lihat" onclick="viewAgent(\''+r.AgentID+'\')">'+ICONS.view+'</button>';
       if(canManage) html += '<button class="action-btn edit" title="Edit" onclick="editAgent(\''+r.AgentID+'\')">'+ICONS.edit+'</button>';
+      if(canManage && r.RegistrationStatus === 'APPROVED'){
+        // Kirim ulang username & password sementara — untuk kasus email pertama
+        // (dibuat otomatis saat approve) tidak masuk / hilang / kena spam.
+        html += '<button class="action-btn doc" title="Kirim Ulang Kredensial" onclick="resendAgentCredentialsPrompt(\''+r.AgentID+'\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\')">'+ICONS.mail+'</button>';
+      }
       if(canManage && (r.MOUStatus === 'WAITING_SIGNATURE' || r.MOUStatus === 'SIGNED')){
         html += '<button class="action-btn doc" title="Generate Ulang MOU (format terbaru)" onclick="regenerateMOUPrompt(\''+r.AgentID+'\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\',\''+r.MOUStatus+'\')">'+ICONS.fileDoc+'</button>';
       }
@@ -8308,7 +8325,16 @@
     google.script.run.withSuccessHandler(function(res){
       setPageLoading_(false);
       if(res.success){
-        showToast(decision === 'APPROVED' ? 'Agent disetujui. MOU dibuat & email login terkirim.' : 'Agent ditolak.', 'success');
+        if(res.warning){
+          // reviewAgent() balikin success:true TAPI dengan warning kalau MOU/akun login
+          // gagal dibuat otomatis (mis. Drive API transient error) — status Agent tetap
+          // ter-APPROVED (tidak bisa di-undo), jadi Admin WAJIB lihat ini, bukan cuma
+          // toast sukses generik yang menutupi kegagalan diam-diam seperti sebelumnya.
+          openViewModal('Agent Disetujui, Tapi Ada yang Perlu Ditindaklanjuti',
+            '<p style="font-size:13.5px;color:var(--ag-amber,#b45309);margin:0 0 4px;">'+escapeHtml(res.warning)+'</p>', '');
+        } else {
+          showToast(decision === 'APPROVED' ? 'Agent disetujui. MOU dibuat & email login terkirim.' : 'Agent ditolak.', 'success');
+        }
         renderAgents();
       } else showToast(res.message,'error');
     }).withFailureHandler(function(e){ setPageLoading_(false); handleBackendError(e); }).reviewAgent(STATE.token, agentId, decision, note);
@@ -11851,6 +11877,41 @@
     });
   }
 
+  function resendAgentCredentialsPrompt(agentId, agentName){
+    openConfirmModal({
+      title: 'Kirim Ulang Kredensial?',
+      message: 'Username & password sementara baru akan dibuat untuk agent "'+agentName+'" dan dikirim ke email yang terdaftar. Password lama akan tidak berlaku lagi.',
+      confirmLabel: 'Kirim Email',
+      confirmIcon: ICONS.mail,
+      danger: false,
+      icon: ICONS.mail,
+      iconStyle: 'info',
+      onConfirm: function(){
+        setPageLoading_(true, 'Membuat password baru & mengirim email');
+        google.script.run.withSuccessHandler(function(res){
+          setPageLoading_(false);
+          if(res.success){
+            openViewModal('Kredensial Agent Dikirim Ulang',
+              detailRow('Email', escapeHtml(res.email)) +
+              detailRow('Password Sementara', '<code style="font-weight:700;">'+escapeHtml(res.tempPassword)+'</code>'),
+              '<p style="font-size:12.5px;color:var(--ag-gray-600);margin-bottom:14px;">'+
+              (res.emailSent ? 'Email juga sudah dikirim otomatis ke alamat di atas (jika kuota email tersedia).' : 'Notifikasi email untuk event ini sedang dimatikan di Pengaturan — password hanya ditampilkan di sini.')+
+              ' Anda bisa langsung memberi tahu kredensial ini secara manual bila perlu.</p>'
+            );
+          } else showToast(res.message||'Gagal.','error');
+        }).withFailureHandler(function(e){ setPageLoading_(false); handleBackendError(e); }).resendAgentCredentials(STATE.token, agentId);
+      }
+    });
+  }
+
+  /** Satu tombol per baris Agent: memeriksa apakah agent ini sudah punya akun login —
+   *  kalau belum, LANGSUNG dibuatkan (bukan cuma reset password kosong); kalau sudah ada,
+   *  password-nya direset & dikirim ulang. Sengaja scoped PER AGENT (bukan tombol global
+   *  yang mindai+kirim ke semua sekaligus) supaya Admin selalu tahu persis siapa yang baru
+   *  saja dikirimi email, dan tidak ada risiko ke-klik lalu email nyebar ke banyak agent
+   *  tanpa sengaja. resendAgentCredentials() di backend sudah menangani dua kasus ini
+   *  (create-jika-belum-ada / reset-jika-sudah-ada) dalam satu fungsi yang sama. */
+
   function deleteUserConfirm(userId, userName){
     openConfirmModal({
       title: 'Hapus User?',
@@ -13186,7 +13247,7 @@
       var loopBanners = banners.length > 1;
       var slideList = loopBanners ? [banners[banners.length-1]].concat(banners, [banners[0]]) : banners;
       var bannerCardHtml_ = function(b){
-        return '<div class="agent-banner-card" '
+        return '<div class="agent-banner-card'+(mouLocked?' is-locked':'')+'" '
           + (b.linkAction ? 'onclick="agentDashBannerClick_(\''+escapeHtml(b.linkAction)+'\')"' : '') + '>'
           + (b.imageUrl ? '<img src="'+escapeHtml(b.imageUrl)+'" alt="">' : '')
           + '<div class="agent-banner-overlay">'
@@ -13254,7 +13315,10 @@
       html += '<div class="agent-section-head"><span>Kategori Produk</span></div>';
       html += '<div class="agent-category-row-wrap" id="agentCategoryRowWrap"><div class="agent-category-row" id="agentCategoryRow" onscroll="onAgentCategoryRowScroll_()">';
       categories.forEach(function(c){
-        html += '<div class="agent-category-item" '
+        // mouLocked: card tetap kelihatan (redup, lihat CSS is-locked) tapi klik cuma toast
+        // pengingat MOU via agentDashBannerClick_ (sudah dicek di sana), BUKAN langsung buka
+        // modal Buat PO — konsisten dgn shortcut Katalog/Troli di atas section ini.
+        html += '<div class="agent-category-item'+(mouLocked?' is-locked':'')+'" '
           + (c.linkAction ? 'onclick="agentDashBannerClick_(\''+escapeHtml(c.linkAction)+'\')"' : '') + '>'
           + '<div class="agent-category-thumb">'+(c.imageUrl ? '<img src="'+escapeHtml(c.imageUrl)+'" alt="">' : '')+'</div>'
           + '<div class="agent-category-label">'+escapeHtml(c.title)+'</div>'
@@ -13282,19 +13346,25 @@
       html += '<div class="agent-trend-row-wrap" id="agentTrendRowWrap"><div class="agent-trend-row" id="agentTrendRow" onscroll="onAgentTrendRowScroll_()">';
       trending.forEach(function(p){
         var qty = AGENT_DASH_CART_[p.productId] || 0;
-        html += '<div class="agent-trend-card">'
+        // mouLocked: qty stepper/tombol "+" tetap tampil (biar Agent tetap bisa lihat harga
+        // & produknya) tapi diredupkan & onclick-nya diarahkan ke pengingat MOU, bukan
+        // langsung ubah troli — changeAgentDashCartQty_ sendiri sudah menolak kalau
+        // dipanggil manual, ini murni supaya tampilannya juga jujur (tidak kelihatan aktif).
+        var addBtnOnclick = mouLocked ? 'agentShortcutLockedClick_()' : ('changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)');
+        var minusBtnOnclick = mouLocked ? 'agentShortcutLockedClick_()' : ('changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',-1)');
+        html += '<div class="agent-trend-card'+(mouLocked?' is-locked':'')+'">'
           + (p.badge ? '<div class="agent-product-badge">'+escapeHtml(p.badge)+'</div>' : '')
           + '<div class="agent-trend-img">'+(p.imageUrl ? '<img src="'+escapeHtml(p.imageUrl)+'" alt="">' : '')+'</div>'
           + '<div class="agent-product-name">'+escapeHtml(p.name)+'</div>'
           + '<div class="agent-product-price-row">'
           + '<span class="agent-product-price">'+formatRupiah(p.price)+'</span>'
-          + (qty > 0
+          + (qty > 0 && !mouLocked
               ? '<div class="agent-product-qty-stepper">'
-                + '<button onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',-1)">&minus;</button>'
+                + '<button onclick="'+minusBtnOnclick+'">&minus;</button>'
                 + '<span>'+qty+'</span>'
-                + '<button onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)">+</button>'
+                + '<button onclick="'+addBtnOnclick+'">+</button>'
                 + '</div>'
-              : '<button class="agent-product-add-btn" title="Tambah ke Troli" onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)">+</button>')
+              : '<button class="agent-product-add-btn" title="Tambah ke Troli" onclick="'+addBtnOnclick+'">+</button>')
           + '</div></div>';
       });
       html += '</div></div>';
@@ -13309,19 +13379,22 @@
       html += '<div class="agent-product-grid">';
       featured.forEach(function(p){
         var qty = AGENT_DASH_CART_[p.productId] || 0;
-        html += '<div class="agent-product-card">'
+        // mouLocked: sama seperti row "Sedang Banyak Dipesan" di atas — lihat catatan di sana.
+        var addBtnOnclick = mouLocked ? 'agentShortcutLockedClick_()' : ('changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)');
+        var minusBtnOnclick = mouLocked ? 'agentShortcutLockedClick_()' : ('changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',-1)');
+        html += '<div class="agent-product-card'+(mouLocked?' is-locked':'')+'">'
           + (p.badge ? '<div class="agent-product-badge">'+escapeHtml(p.badge)+'</div>' : '')
           + '<div class="agent-product-img">'+(p.imageUrl ? '<img src="'+escapeHtml(p.imageUrl)+'" alt="">' : '')+'</div>'
           + '<div class="agent-product-name">'+escapeHtml(p.name)+'</div>'
           + '<div class="agent-product-price-row">'
           + '<span class="agent-product-price">'+formatRupiah(p.price)+'</span>'
-          + (qty > 0
+          + (qty > 0 && !mouLocked
               ? '<div class="agent-product-qty-stepper">'
-                + '<button onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',-1)">&minus;</button>'
+                + '<button onclick="'+minusBtnOnclick+'">&minus;</button>'
                 + '<span>'+qty+'</span>'
-                + '<button onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)">+</button>'
+                + '<button onclick="'+addBtnOnclick+'">+</button>'
                 + '</div>'
-              : '<button class="agent-product-add-btn" title="Tambah ke Troli" onclick="changeAgentDashCartQty_(\''+escapeHtml(p.productId)+'\',1)">+</button>')
+              : '<button class="agent-product-add-btn" title="Tambah ke Troli" onclick="'+addBtnOnclick+'">+</button>')
           + '</div></div>';
       });
       html += '</div>';
@@ -13583,6 +13656,23 @@
   // melakukan apa-apa (aman, tidak error).
   function agentDashBannerClick_(linkAction){
     if(!linkAction) return;
+    // FIX BUG NYATA: dulu klik Kategori Produk/Banner di Dashboard langsung membuka modal
+    // "Buat PO" (newPOForm) — atau navigasi ke halaman lain lewat showPage() — tanpa cek MOU
+    // sama sekali, beda dgn shortcut grid di atasnya (Katalog/Troli) yang sudah di-lock via
+    // mouLocked. LAPORAN AGENT: banner atas ("The Core Collection" dst) masih bisa diklik
+    // walau status masih "Katalog & Order Terkunci" — sebabnya fungsi ini sebelumnya HANYA
+    // mengunci linkAction berawalan "category:"/"product:" (buka modal Buat PO langsung),
+    // padahal banner top bisa juga linkAction-nya 'transactions'/'katalog'/dst (lewat cabang
+    // showPage(known) di bawah) yang ujung-ujungnya tetap mengarah ke alur order. Sekarang
+    // dikunci di SATU tempat paling awal untuk SEMUA jenis linkAction sekaligus — bukan cuma
+    // 2 jenis tertentu — supaya menutup celah ini dan celah sejenis di masa depan (linkAction
+    // baru yang mungkin ditambahkan Admin lewat Dashboard Settings tanpa perlu diingat untuk
+    // didaftarkan satu-satu ke pengecualian ini).
+    var mouLocked = !!(AGENT_DASH_CFG_CACHE_ && AGENT_DASH_CFG_CACHE_.mouStatus && AGENT_DASH_CFG_CACHE_.mouStatus !== 'SIGNED');
+    if(mouLocked){
+      agentShortcutLockedClick_();
+      return;
+    }
     if(linkAction.indexOf('category:') === 0){
       // Sekarang bisa berisi lebih dari 1 kategori dipisah koma (mis. dari checklist multi-
       // kategori di Dashboard Settings) — pecah jadi array, newPOForm/NEWPO_CATEGORY_FILTER_
@@ -13811,6 +13901,14 @@
   // baru saja "dituang ulang". Fix-nya sama seperti row horizontal: simpan dulu scrollTop
   // .main-area SEBELUM re-render, kembalikan lagi setelahnya.
   function changeAgentDashCartQty_(productId, delta){
+    // Sama seperti agentDashBannerClick_: tombol "+"/stepper qty di row "Sedang Banyak
+    // Dipesan" & "Produk Unggulan" dulu tidak ikut dicek mouLocked — Agent yang MOU-nya
+    // belum SIGNED tetap bisa mengisi Troli dari sini walau ujungnya (Buat PO) memang
+    // sudah pasti ditolak backend. Kunci di titik masuk yang sama supaya konsisten dgn
+    // shortcut Katalog/Troli di atasnya, dan Agent langsung diarahkan ke MOU, bukan
+    // dibiarkan mengisi troli yang tidak akan pernah bisa di-checkout.
+    var mouLocked = !!(AGENT_DASH_CFG_CACHE_ && AGENT_DASH_CFG_CACHE_.mouStatus && AGENT_DASH_CFG_CACHE_.mouStatus !== 'SIGNED');
+    if(mouLocked){ agentShortcutLockedClick_(); return; }
     var mainArea = document.querySelector('.main-area');
     var savedMainScrollTop = mainArea ? mainArea.scrollTop : null;
 
@@ -18377,7 +18475,6 @@
   }
 
 </script>
-
   <!-- Service Worker (PWA): cache app shell supaya index.html (+ api-bridge.js) tidak diunduh ulang
        tiap buka. Strategi stale-while-revalidate: tampil instan dari cache, lalu cek versi terbaru
        di background; kalau ada versi baru, user dikasih tahu lewat toast. Lihat sw.js. -->
