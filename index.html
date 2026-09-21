@@ -1574,8 +1574,12 @@
   /* ---------- Row actions "⋯" kebab dropdown (aksi baris yang jarang dipakai, disembunyikan
      dari deretan ikon utama supaya kolom Aksi tidak sesak) ---------- */
   .row-menu-wrap{position:relative;display:inline-flex;flex-shrink:0;}
+  /* position:fixed (bukan absolute) supaya dropdown lolos dari overflow-x:auto milik
+     .table-scroll (parent scroll container) — posisi top/left dihitung & di-set lewat JS
+     (toggleRowMenu_) berdasarkan getBoundingClientRect tombol saat dibuka, jadi dropdown
+     selalu muncul persis di bawah tombolnya sendiri walau tabelnya scroll ke samping. */
   .row-menu-dropdown{
-    display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:60;
+    display:none;position:fixed;top:0;left:0;z-index:900;
     background:var(--ag-surface);border:1px solid var(--ag-gray-200);border-radius:var(--radius-sm);
     box-shadow:0 10px 28px rgba(6,30,22,.14), 0 2px 8px rgba(6,30,22,.06);
     min-width:210px;padding:6px;animation:modal-in .14s cubic-bezier(.2,.9,.3,1.1);
@@ -6633,7 +6637,33 @@
     if(!wrap) return;
     var wasOpen = wrap.classList.contains('open');
     closeRowMenus_();
-    if(!wasOpen) wrap.classList.add('open');
+    if(!wasOpen){
+      wrap.classList.add('open');
+      positionRowMenuDropdown_(wrap);
+    }
+  }
+  /** Dropdown-nya position:fixed (lihat CSS) supaya tidak ke-clip oleh
+      .table-scroll{overflow-x:auto} — makanya posisinya HARUS dihitung manual di sini
+      dari posisi tombol kebab (bukan cuma andalkan CSS top/right relatif ke wrap),
+      lalu di-clamp ke batas viewport supaya tidak kepotong di kanan/bawah layar. */
+  function positionRowMenuDropdown_(wrap){
+    var btn = wrap.querySelector('.action-btn.more');
+    var dd = wrap.querySelector('.row-menu-dropdown');
+    if(!btn || !dd) return;
+    var r = btn.getBoundingClientRect();
+    var ddWidth = dd.offsetWidth || 210;
+    var ddHeight = dd.offsetHeight || 160;
+    var gap = 6;
+    var left = r.right - ddWidth;
+    if(left < 8) left = Math.max(8, r.left);
+    if(left + ddWidth > window.innerWidth - 8) left = window.innerWidth - ddWidth - 8;
+    var top = r.bottom + gap;
+    if(top + ddHeight > window.innerHeight - 8){
+      top = r.top - ddHeight - gap;
+      if(top < 8) top = 8;
+    }
+    dd.style.left = left + 'px';
+    dd.style.top = top + 'px';
   }
   function closeRowMenus_(){
     document.querySelectorAll('.row-menu-wrap.open').forEach(function(el){ el.classList.remove('open'); });
@@ -6642,6 +6672,8 @@
     if(e.target.closest && e.target.closest('.row-menu-wrap')) return;
     closeRowMenus_();
   });
+  window.addEventListener('scroll', function(){ closeRowMenus_(); }, true);
+  window.addEventListener('resize', function(){ closeRowMenus_(); });
 
   // ---------- Date field: klik di mana saja pada wrapper langsung buka kalender ----------
   // KHUSUS DESKTOP (window.innerWidth > 720, senada breakpoint mobile lain di CSS) — di
@@ -12585,12 +12617,16 @@
     }
 
     var btn = document.getElementById('chatSettingsSaveBtn');
-    btn.disabled = true;
+    var chatSettingsOriginalLabel_ = btn ? btn.innerHTML : '';
+    if(btn){ btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Menyimpan...'; }
     google.script.run.withSuccessHandler(function(){
-      btn.disabled = false;
+      if(btn){ btn.disabled = false; btn.innerHTML = chatSettingsOriginalLabel_; }
       showToast('Pengaturan Live Chat disimpan.', 'success');
       closeModal();
-    }).withFailureHandler(function(e){ btn.disabled = false; handleBackendError(e); })
+    }).withFailureHandler(function(e){
+      if(btn){ btn.disabled = false; btn.innerHTML = chatSettingsOriginalLabel_; }
+      handleBackendError(e);
+    })
       .saveChatSettings(STATE.token, {
         autoReplyEnabled: enabled,
         autoReplyText: text,
