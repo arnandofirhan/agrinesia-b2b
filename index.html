@@ -2225,6 +2225,17 @@
   .promo-agent-id{font-size:11.5px;color:var(--ag-gray-400);letter-spacing:.2px;}
   .promo-agent-tag{flex:0 0 auto;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--ag-gray-100);color:var(--ag-gray-600);}
   .promo-agent-empty{padding:18px;text-align:center;font-size:12.5px;color:var(--ag-gray-400);}
+  /* ---- Ringkasan sebaran Agent per Area (chip filter) ---- */
+  .area-chip-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px 14px;border:1px solid var(--ag-gray-200,#e5e7eb);border-radius:12px;background:var(--ag-gray-50,#f9fafb);}
+  .area-chip-title{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ag-gray-500,#6b7280);}
+  .area-chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 0;scrollbar-width:thin;}
+  .area-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:999px;border:1px solid var(--ag-gray-300);background:#fff;color:var(--ag-gray-700,#374151);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .area-chip:hover{border-color:var(--ag-green);background:var(--ag-green-soft);}
+  .area-chip-count{min-width:22px;padding:2px 7px;border-radius:999px;background:var(--ag-gray-100);color:var(--ag-gray-600);font-size:11.5px;font-weight:700;text-align:center;}
+  .area-chip.active{background:var(--ag-green);border-color:var(--ag-green);color:#fff;}
+  .area-chip.active .area-chip-count{background:rgba(255,255,255,.22);color:#fff;}
+  @media (max-width:640px){ .area-chip-bar{flex-direction:column;align-items:flex-start;gap:8px;} .area-chip-scroll{max-width:100%;} }
+
 
   .promo-card-top{display:flex;align-items:flex-start;gap:10px;}
   .promo-card-top .badge{flex-shrink:0;white-space:nowrap;margin-top:1px;}
@@ -6959,16 +6970,52 @@
   // MODULE: AGENTS
   // =============================================================
   var AGENTS_CACHE = [];
-  var FILTER_STATE_AGENTS_ = { q:'', registrationStatus:'__ALL__', mouStatus:'__ALL__', agentStatus:'__ALL__' };
+  var FILTER_STATE_AGENTS_ = { q:'', registrationStatus:'__ALL__', mouStatus:'__ALL__', agentStatus:'__ALL__', registrationArea:'__ALL__' };
   // Cache ringan daftar Area Pendaftaran (dipakai dropdown koreksi area di form Edit Agent
   // & di modul Area Pendaftaran sendiri) — di-refresh tiap kali modul Area Pendaftaran
   // dibuka/disimpan, jadi cukup akurat tanpa perlu tembak backend tiap buka form Edit Agent.
   var AGENT_AREAS_CACHE_ = null;
 
   function onFilterChangeAgents_(key, val){
-    if(key === '__RESET__'){ FILTER_STATE_AGENTS_ = { q:'', registrationStatus:'__ALL__', mouStatus:'__ALL__', agentStatus:'__ALL__' }; }
+    if(key === '__RESET__'){ FILTER_STATE_AGENTS_ = { q:'', registrationStatus:'__ALL__', mouStatus:'__ALL__', agentStatus:'__ALL__', registrationArea:'__ALL__' }; }
     else { FILTER_STATE_AGENTS_[key] = val; }
     paintPage_('agents', agentsPageHtml_());
+  }
+
+  /** Hitung jumlah Agent per Area Pendaftaran: { counts:{Area:n}, none:n, names:[urut terbanyak] }. */
+  function agentAreaStats_(rows){
+    var counts = {}, none = 0;
+    (rows || []).forEach(function(r){
+      var a = String(r.RegistrationArea||'').trim();
+      if(a) counts[a] = (counts[a]||0) + 1; else none++;
+    });
+    var names = Object.keys(counts).sort(function(x,y){ return (counts[y]-counts[x]) || x.localeCompare(y); });
+    return { counts:counts, none:none, names:names };
+  }
+
+  /** Opsi dropdown filter Area Daftar, lengkap dengan jumlah Agent: "Yogyakarta (3)". */
+  function agentAreaOptions_(rows){
+    var st = agentAreaStats_(rows);
+    var opts = st.names.map(function(n){ return {value:n, label:n+' ('+st.counts[n]+')'}; });
+    if(st.none) opts.push({value:'__NONE__', label:'Belum ada area ('+st.none+')'});
+    return opts;
+  }
+
+  /** Baris "chip" ringkasan sebaran Agent per area — klik chip untuk memfilter tabel. */
+  function agentAreaChipsHtml_(rows){
+    var st = agentAreaStats_(rows);
+    if(!st.names.length) return '';
+    var cur = FILTER_STATE_AGENTS_.registrationArea || '__ALL__';
+    function chip(value, label, count){
+      return '<button type="button" class="area-chip'+(cur===value?' active':'')+'" data-area="'+escapeHtml(value)+'" ' +
+        'onclick="onFilterChangeAgents_(\'registrationArea\', this.getAttribute(\'data-area\'))">' +
+        '<span class="area-chip-label">'+escapeHtml(label)+'</span><span class="area-chip-count">'+count+'</span></button>';
+    }
+    var html = '<div class="area-chip-bar"><span class="area-chip-title">Sebaran Area</span><div class="area-chip-scroll">' +
+      chip('__ALL__', 'Semua Area', (rows||[]).length);
+    st.names.forEach(function(n){ html += chip(n, n, st.counts[n]); });
+    if(st.none) html += chip('__NONE__', 'Belum ada area', st.none);
+    return html + '</div></div>';
   }
 
   function agentsPageHtml_(){
@@ -6976,9 +7023,13 @@
     var fieldConfigs = [
       {key:'registrationStatus', label:'Registrasi', options:uniqueOptions_(rows,'RegistrationStatus'), match:function(r,v){return r.RegistrationStatus===v;}},
       {key:'mouStatus', label:'MOU', options:uniqueOptions_(rows,'MOUStatus'), match:function(r,v){return r.MOUStatus===v;}},
-      {key:'agentStatus', label:'Status Agent', options:uniqueOptions_(rows,'AgentStatus'), match:function(r,v){return r.AgentStatus===v;}}
+      {key:'agentStatus', label:'Status Agent', options:uniqueOptions_(rows,'AgentStatus'), match:function(r,v){return r.AgentStatus===v;}},
+      {key:'registrationArea', label:'Area Daftar', options:agentAreaOptions_(rows), match:function(r,v){
+        var a = String(r.RegistrationArea||'').trim();
+        return v === '__NONE__' ? !a : a === v;
+      }}
     ];
-    var filtered = applyListFilters_(rows, FILTER_STATE_AGENTS_, ['FullName','Email','Phone','AgentID','KTPNumber'], fieldConfigs);
+    var filtered = applyListFilters_(rows, FILTER_STATE_AGENTS_, ['FullName','Email','Phone','AgentID','KTPNumber','RegistrationArea'], fieldConfigs);
     var filterHtml = filterBarHtml_('onFilterChangeAgents_', 'Cari nama, email, telepon, atau Agent ID...', fieldConfigs, FILTER_STATE_AGENTS_, filtered.length, rows.length);
     var canManage = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
     var canDelete = STATE.user.role === 'ADMIN';
@@ -7047,7 +7098,7 @@
       return html;
     };
     return '<div class="card"><div class="card-header"><span class="card-title">Daftar Agent</span></div>' +
-      filterHtml +
+      filterHtml + agentAreaChipsHtml_(rows) +
       renderTableOrCards_(cols, filtered, actions, rows.length ? 'Tidak ada agent yang cocok' : 'Belum ada agent', rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Agent yang mendaftar akan muncul di sini untuk direview.', ICONS.agent) + '</div>';
   }
 
@@ -10779,16 +10830,22 @@
       ? detailRow('Rencana Pengambilan', formatDateDMY_(po.PickupDate)) : '';
     var requestedDiscHtml = (po && po.RequestedDiscount != null)
       ? detailRow('Diskon Diminta Agent', po.RequestedDiscount+'%') : '';
+    // Promo yang dipilih Agent — info penting untuk Supervisor saat menentukan Approved Discount.
+    var promoHtml = po
+      ? detailRow('Promo', po.PromoName
+          ? '<span class="badge badge-green">'+escapeHtml(po.PromoName)+'</span>'
+          : '<span class="badge badge-neutral">Tanpa Promo</span>')
+      : '';
 
     var body =
       '<div class="po-cart-section" style="margin-bottom:16px;">' +
         '<div class="po-cart-title">Item PO</div>' +
         itemRows + subtotalRow +
       '</div>' +
-      (descHtml || pickupHtml || requestedDiscHtml
+      (promoHtml || descHtml || pickupHtml || requestedDiscHtml
         ? '<div class="po-cart-section" style="margin-bottom:16px;">' +
             '<div class="po-cart-title">Detail Pengajuan</div>' +
-            requestedDiscHtml+descHtml+pickupHtml +
+            promoHtml+requestedDiscHtml+descHtml+pickupHtml +
           '</div>'
         : '') +
       '<div class="form-group"><label>Approved Discount</label><select id="apDiscount">'+discOptions+'</select></div>' +
