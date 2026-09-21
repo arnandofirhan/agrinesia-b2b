@@ -4964,6 +4964,9 @@
     // berikutnya login & memulihkan troli miliknya sendiri lewat restoreAgentDashCart_()).
     AGENT_DASH_CART_ = {};
     DASH_DATA_CACHE_ = null;
+    EB_DASH_DATA_CACHE_ = null;          // FIX: jangan warisi angka dashboard EB akun sebelumnya
+    EB_DASH_ADMIN_OVERVIEW_CACHE_ = {};
+    EB_DASH_INFLIGHT_ = false;
     DETAIL_MODAL_CACHE_ = {};
     MY_SIGNATURE_STATUS_CACHE_ = null;
     NOTIF_STATE_.items = [];
@@ -6519,6 +6522,8 @@
       since those all move numbers the Dashboard shows (Total PO, PO status breakdown, trend). */
   function invalidateDashboardCache_(){
     DASH_DATA_CACHE_ = null;
+    EB_DASH_DATA_CACHE_ = null;
+    EB_DASH_ADMIN_OVERVIEW_CACHE_ = {};
   }
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
@@ -14785,7 +14790,23 @@
   function switchDashboardTab_(tab){
     if(STATE.dashboardTab === tab) return;
     STATE.dashboardTab = tab;
+    // FIX ("klik tab Employee Benefit harus nunggu loading selesai"): dulu tab hanya
+    // ganti STATE lalu menunggu server. Sekarang: (1) lepas kunci klik #content SEKARANG,
+    // (2) lukis kerangka tab yang dituju SEKETIKA (data cache kalau ada, skeleton kalau
+    // belum), baru (3) refresh data diam-diam di background. Klik tak pernah mati.
+    unlockContentNow_();
     renderDashboard();
+  }
+
+  /** Lepas `content-loading-lock` (pointer-events:none) di #content SEKARANG JUGA.
+      showPage() memasang lock ini untuk mencegah race-klik saat halaman baru belum siap,
+      tapi lock itu baru dilepas oleh paintPage_() — yang untuk dashboard EB dulu baru
+      terpanggil setelah server menjawab. Akibatnya kartu/tab tak bisa diklik selama
+      loading. Karena kita SUDAH melukis kerangka (skeleton) sendiri, aman dilepas. */
+  function unlockContentNow_(){
+    var c = document.getElementById('content');
+    if(c) c.classList.remove('content-loading-lock');
+    clearTimeout(CONTENT_LOCK_SAFETY_TIMER_);
   }
 
   // =============================================================
@@ -14801,27 +14822,94 @@
   var EB_DASH_ADMIN_YM_ = null;
   var EB_DASH_ADMIN_OVERVIEW_CACHE_ = {}; // keyed by yearMonth, supaya ganti2 bulan tidak selalu round-trip ke server
 
+  var EB_DASH_INFLIGHT_ = false; // cegah request dobel kalau tab diklik bolak-balik cepat
+
   function renderEbAdminDashboard(){
     if(!EB_DASH_ADMIN_YM_) EB_DASH_ADMIN_YM_ = ebMonthOptions_()[0].value; // default: bulan berjalan
+
+    // FIX UTAMA ("harus nunggu loading selesai baru bisa masuk dashboard EB"):
+    // 1) SELALU lukis sesuatu SEKETIKA — data cache kalau ada, kerangka skeleton kalau belum.
+    //    Dulu kalau cache kosong, TIDAK ADA yang dilukis sampai server menjawab.
+    // 2) Lepas kunci klik segera, jadi tab & kartu langsung bisa diklik.
     if(EB_DASH_DATA_CACHE_){
-      // Instant paint dari cache tab ini — sama semangatnya dengan DASH_DATA_CACHE_ punya B2B.
       paintEbDashboardKpis_(EB_DASH_DATA_CACHE_);
-      startDashboardClock_();
+    } else {
+      paintEbDashboardSkeleton_();
     }
+    startDashboardClock_();
+    unlockContentNow_();
+
+    if(EB_DASH_INFLIGHT_) return;
+    EB_DASH_INFLIGHT_ = true;
+
+    // SATU request saja (dulu 2: ebGetAdminDashboard + ebGetAdminOverview). Panel "Ringkasan
+    // Bulan Ini" untuk bulan berjalan kini ikut dibawa oleh ebGetAdminDashboard (field
+    // `currentMonth`), jadi tidak ada round-trip kedua yang memperlambat/berebut slot server.
+    var ymAtRequest = EB_DASH_ADMIN_YM_;
     google.script.run
       .withSuccessHandler(function(data){
+        EB_DASH_INFLIGHT_ = false;
         EB_DASH_DATA_CACHE_ = data;
+        if(data && data.currentMonth && data.currentMonth.yearMonth){
+          EB_DASH_ADMIN_OVERVIEW_CACHE_[data.currentMonth.yearMonth] = data.currentMonth;
+        }
         if(STATE.currentPage === 'dashboard' && STATE.dashboardTab === 'EB'){
           paintEbDashboardKpis_(data);
+          // Kalau user memilih bulan LAIN dari bulan berjalan selagi menunggu, ambil bulan itu.
+          if(EB_DASH_ADMIN_YM_ && !EB_DASH_ADMIN_OVERVIEW_CACHE_[EB_DASH_ADMIN_YM_]){
+            ebLoadDashMonthOverview_(EB_DASH_ADMIN_YM_);
+          }
         }
       })
       .withFailureHandler(function(err){
+        EB_DASH_INFLIGHT_ = false;
         if(!EB_DASH_DATA_CACHE_){
-          handleBackendError(err, PAGE_HTML_CACHE['dashboard'] ? null : document.getElementById('content'));
+          // Belum ada data sama sekali -> tampilkan error rapi (skeleton diganti pesan gagal).
+          if(STATE.currentPage === 'dashboard' && STATE.dashboardTab === 'EB'){
+            handleBackendError(err, document.getElementById('content'));
+          }
         }
+        // Kalau sudah tampil dari cache: gagal refresh cukup diam, data lama masih relevan.
       })
-      .ebGetAdminDashboard(STATE.token);
-    ebLoadDashMonthOverview_(EB_DASH_ADMIN_YM_);
+      .ebGetAdminDashboard(STATE.token, ymAtRequest);
+  }
+
+  /** Kerangka dashboard EB yang dilukis SEKETIKA (tanpa menunggu server): banner sapaan +
+      tab (yang sudah bisa diklik) + kartu KPI/panel berbentuk skeleton shimmer. Memakai
+      class skeleton yang sudah ada di Stylesheet (.kpi-skeleton, .skeleton-line). */
+  function paintEbDashboardSkeleton_(){
+    if(STATE.currentPage !== 'dashboard' || STATE.dashboardTab !== 'EB') return;
+    function kpiSk_(){
+      return '<div class="kpi-card kpi-skeleton"><div class="skeleton-line" style="width:55%;height:11px;"></div>' +
+             '<div class="skeleton-line" style="width:38%;height:22px;margin-top:10px;"></div>' +
+             '<div class="skeleton-line" style="width:70%;height:10px;margin-top:10px;"></div></div>';
+    }
+    function panelSk_(title, h){
+      return '<div class="dash-panel" style="margin-bottom:16px;">' +
+        '<div class="dash-panel-head"><span class="dash-section-title" style="margin:0;">'+title+'</span></div>' +
+        '<div class="skeleton-line" style="width:100%;height:'+h+'px;border-radius:10px;"></div></div>';
+    }
+    var html =
+      '<div class="welcome-banner">' +
+        '<span class="welcome-banner-icon" id="dashGreetIcon"></span>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="welcome-banner-title" id="dashGreetTitle"></div>' +
+          '<div class="welcome-banner-sub">Ringkasan aktivitas Employee Benefit terbaru</div>' +
+        '</div>' +
+        '<div class="welcome-banner-clock"><div class="welcome-banner-clock-time" id="dashClockTime"></div></div>' +
+      '</div>' +
+      dashboardTabsHtml_() +
+      '<div class="kpi-grid">' + kpiSk_() + kpiSk_() + kpiSk_() + '</div>' +
+      panelSk_('Ringkasan Bulan Ini', 96) +
+      panelSk_('Tren Transaksi 7 Hari Terakhir', 130) +
+      '<div class="dash-grid-2">' +
+        panelSk_('Ringkasan Status Registrasi', 90) +
+        panelSk_('Transaksi Terbaru', 90) +
+      '</div>';
+    // Sengaja TIDAK lewat paintPage_() supaya kerangka skeleton tidak tersimpan ke
+    // PAGE_HTML_CACHE (nanti ke-restore sebagai halaman "kosong" saat reload).
+    var c = document.getElementById('content');
+    if(c){ c.innerHTML = html; LAST_PAINTED_PAGE_ = 'dashboard'; }
   }
 
   /** Diklik dari card KPI "Transaksi Bulan Ini" / "Nilai Transaksi Bulan Ini" di panel
