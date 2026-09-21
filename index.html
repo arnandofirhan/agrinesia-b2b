@@ -13551,9 +13551,16 @@
     // Produk INACTIVE tidak ditampilkan di Dashboard Agent. Server sudah memfilternya; filter
     // ini menjaga kalau config tersimpan di cache/tab lama sementara Admin baru menonaktifkannya.
     var inactiveIds_ = {};
+    (cfg.inactiveProductIds || []).forEach(function(id){ inactiveIds_[id] = true; });
     [CATALOG_PRODUCTS_CACHE_, NEWPO_PRODUCTS_CACHE_, PRODUCTS_CACHE].forEach(function(arr){
-      (arr || []).forEach(function(pp){ if(String(pp.Status||'').toUpperCase() === 'INACTIVE') inactiveIds_[pp.ProductID] = true; });
+      (arr || []).forEach(function(pp){ if(String(pp.Status||'').trim().toUpperCase() === 'INACTIVE') inactiveIds_[pp.ProductID] = true; });
     });
+    // Buang juga dari troli Dashboard (tersimpan di browser) kalau produknya sudah dinonaktifkan.
+    var cartPruned_ = false;
+    Object.keys(AGENT_DASH_CART_ || {}).forEach(function(pid){
+      if(inactiveIds_[pid]){ delete AGENT_DASH_CART_[pid]; cartPruned_ = true; }
+    });
+    if(cartPruned_){ persistAgentDashCart_(); }
     var featured = (cfg.featuredProducts || []).filter(function(pp){ return !inactiveIds_[pp.productId]; });
     var trending = (cfg.trendingProducts || []).filter(function(pp){ return !inactiveIds_[pp.productId]; });
     // MOU belum SIGNED = Agent belum boleh transaksi sama sekali (backend sudah menolak
@@ -14241,6 +14248,12 @@
     // dibiarkan mengisi troli yang tidak akan pernah bisa di-checkout.
     var mouLocked = !!(AGENT_DASH_CFG_CACHE_ && AGENT_DASH_CFG_CACHE_.mouStatus && AGENT_DASH_CFG_CACHE_.mouStatus !== 'SIGNED');
     if(mouLocked){ agentShortcutLockedClick_(); return; }
+    // Produk INACTIVE tidak boleh masuk troli (mis. kartu lama dari cache halaman).
+    if(delta > 0 && AGENT_DASH_CFG_CACHE_ && (AGENT_DASH_CFG_CACHE_.inactiveProductIds || []).indexOf(productId) !== -1){
+      showToast('Produk ini sedang nonaktif dan tidak dapat dipesan.','error');
+      if(AGENT_DASH_CFG_CACHE_) paintAgentDashboard_(AGENT_DASH_CFG_CACHE_);
+      return;
+    }
     var mainArea = document.querySelector('.main-area');
     var savedMainScrollTop = mainArea ? mainArea.scrollTop : null;
 
