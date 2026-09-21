@@ -18625,7 +18625,48 @@
     '</div><div class="form-hint">'+hint+'</div></div>';
   }
 
+  /** Dropdown Nama Store: hanya store berstatus ACTIVE dari master Store Management yang
+   *  ditawarkan (store non-aktif tidak boleh dipasangi akun kasir baru). Store yang SUDAH
+   *  dipakai akun kasir lain juga disembunyikan dari pilihan (1 store = 1 akun kasir),
+   *  KECUALI store yang sedang dipakai oleh user yang lagi diedit (currentStoreId) —
+   *  itu tetap harus muncul & ter-pilih supaya form Edit tidak kosong-kan pilihannya sendiri. */
+  function ebStoreOptionsHtml_(selectedStoreId, currentStoreId){
+    var usedStoreIds = {};
+    EB_STORE_USERS_CACHE_.forEach(function(u){
+      if(u.StoreID && u.StoreID !== currentStoreId) usedStoreIds[u.StoreID] = true;
+    });
+    var available = STORES_CACHE.filter(function(st){
+      return st.Status === 'ACTIVE' && !usedStoreIds[st.StoreID];
+    });
+    if(!available.length && !selectedStoreId){
+      return '<option value="">-- Semua store sudah punya akun kasir --</option>';
+    }
+    var html = '<option value="">-- Pilih Nama Store --</option>';
+    available.forEach(function(st){
+      html += '<option value="'+st.StoreID+'"'+(st.StoreID===selectedStoreId?' selected':'')+'>'+escapeHtml(st.StoreName)+'</option>';
+    });
+    // Safety net: kalau store yang sedang ter-pilih (mis. saat Edit) entah kenapa tidak
+    // masuk daftar available (mis. sudah dihapus/non-aktif), tetap tampilkan supaya form
+    // tidak diam-diam ganti pilihan admin — biar admin sadar & bisa ganti manual.
+    if(selectedStoreId && available.every(function(st){ return st.StoreID !== selectedStoreId; })){
+      var fallback = findStore_(selectedStoreId);
+      html += '<option value="'+selectedStoreId+'" selected>'+escapeHtml(fallback ? fallback.StoreName : selectedStoreId)+' (non-aktif/tidak tersedia)</option>';
+    }
+    return html;
+  }
+
+  /** Nama Store harus dipilih dari master Store Management (STORES_CACHE) — tapi cache itu
+   *  cuma otomatis terisi kalau admin sebelumnya sudah pernah membuka menu Store Management.
+   *  Supaya dropdown ini selalu benar walau itu belum pernah dibuka di sesi ini, muat ulang
+   *  listStores() dulu (silent, tanpa ganti halaman aktif) sebelum modal ditampilkan. */
   function editEbStoreUser_(userId){
+    if(!STORES_CACHE.length){
+      google.script.run.withSuccessHandler(function(rows){
+        STORES_CACHE = rows || [];
+        editEbStoreUser_(userId);
+      }).withFailureHandler(function(e){ handleBackendError(e); }).listStores(STATE.token);
+      return;
+    }
     var s = userId ? findEbStoreUser_(userId) : {};
     s = s || {};
     var statusVal = s.Status || 'ACTIVE';
@@ -18634,8 +18675,17 @@
         '<option value="ACTIVE"'+(statusVal==='ACTIVE'?' selected':'')+'>ACTIVE</option>' +
         '<option value="INACTIVE"'+(statusVal==='INACTIVE'?' selected':'')+'>INACTIVE</option>' +
       '</select></div>';
+    // Nama Store WAJIB dipilih dari dropdown (data master Store Management) — bukan lagi
+    // diketik manual — supaya nama store akun kasir selalu sinkron 1:1 dengan menu Store
+    // Management dan tidak mungkin typo/berbeda ejaan.
+    var storeField =
+      '<div class="form-group"><label>Nama Store<span class="required-mark">*</span></label>' +
+      '<div class="text-field-wrap">'+ICONS.stores+
+      '<select id="ebStoreUserStoreId" class="req-field" onchange="updateModalSaveState_()">'+
+        ebStoreOptionsHtml_(s.StoreID || '', s.StoreID || '')+
+      '</select></div></div>';
     var body =
-      formField_('ebStoreUserName','Nama Store', s.StoreName, 'text', 'Contoh: Store Gondomanan', true, ICONS.stores) +
+      storeField +
       formField_('ebStoreUserEmail','Email', s.Email, 'email', 'Contoh: store.gondomanan@agrinesia.co.id', true, ICONS.mail) +
       ebStoreUserPasswordField_(!!userId) +
       statusField;
@@ -18647,12 +18697,12 @@
     if(password && password.length < 6){ showToast('Password minimal 6 karakter.','error'); return; }
     var payload = {
       userId: userId || undefined,
-      storeName: val_('ebStoreUserName'),
+      storeId: val_('ebStoreUserStoreId'),
       email: val_('ebStoreUserEmail'),
       status: val_('ebStoreUserStatus') || 'ACTIVE',
       password: password || undefined
     };
-    if(!payload.storeName){ showToast('Nama store wajib diisi.','error'); return; }
+    if(!payload.storeId){ showToast('Nama store wajib dipilih.','error'); return; }
     if(!payload.email){ showToast('Email wajib diisi.','error'); return; }
     google.script.run
       .withSuccessHandler(function(res){
