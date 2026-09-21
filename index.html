@@ -965,15 +965,72 @@
 
   @media (max-width:860px){
     .login-visual{display:none;}
-    .login-form-side{padding:20px;}
-    /* Panel hijau .login-visual di atas disembunyikan di lebar ini, tapi sebelumnya
-       .login-screen di baliknya cuma polos krem (#F6F4EC) — jadi di HP kartu login
-       "mengambang" di atas background kosong, gak ada nuansa hijau brand sama sekali
-       (lihat screenshot: mobile beda jauh dari versi desktop yang ada panel hijaunya).
-       Fix: pakai gradasi hijau yang SAMA persis dengan .login-visual di atas sebagai
-       background .login-screen KHUSUS di breakpoint mobile ini saja — desktop tidak
-       kesentuh sama sekali karena override ini di dalam media query max-width:860px. */
-    .login-screen{background:linear-gradient(175deg,#0B3D2E 0%,#155940 55%,#1E7A4C 100%);}
+    /* ===== REDESIGN LOGIN MOBILE (2026) =====
+       Sebelumnya: panel hijau .login-visual disembunyikan total, dan yang tersisa cuma
+       kartu putih polos "mengambang" di tengah layar dengan badge B2B kecil di dalam
+       kartu — dari screenshot user, hasilnya terasa generik/kurang terlihat sebagai
+       halaman login sebuah aplikasi B2B (badge nyaris tak kebaca, tidak ada identitas
+       brand yang kuat di viewport pertama).
+       Redesign ini menyusun ulang .login-screen jadi 1 kolom vertikal yang didesain
+       KHUSUS untuk mobile (bukan cuma versi ciut dari desktop):
+         1) Zona hijau brand di atas berisi identitas app besar & jelas (logo + nama
+            "B2B Agent Management" dalam badge pill yang jauh lebih besar & kontras),
+            plus 1 baris tagline singkat — supaya begitu app dibuka, user LANGSUNG
+            paham ini halaman login aplikasi B2B, bukan app konsumen biasa.
+         2) Kartu form "diangkat" ke atas, overlap ke zona hijau (efek "sheet" modern
+            yang umum dipakai app B2B/fintech modern), dengan sudut membulat besar &
+            shadow lembut — bukan sekadar kartu kotak mengambang.
+         3) Input & tombol diperbesar (tinggi ~50px) supaya nyaman disentuh di HP. */
+    .login-screen{
+      display:block;min-height:100vh;height:auto;overflow-y:auto;overflow-x:hidden;
+      background:linear-gradient(175deg,#0B3D2E 0%,#124D3A 45%,#1E7A4C 100%);
+    }
+    .login-form-side{
+      display:block;padding:0;position:relative;z-index:1;
+    }
+    .login-card{
+      max-width:460px;margin:0 auto;border-radius:28px 28px 0 0;
+      padding:120px 26px 36px;box-shadow:none;border:none;
+      min-height:calc(100vh - 0px);
+      position:relative;
+    }
+    /* Badge identitas B2B — dipindah ke luar alur normal kartu, "menempel" di zona hijau
+       persis di atas kartu, jauh lebih besar & kontras daripada versi lama di dalam kartu.
+       Dibangun dari elemen yang SUDAH ADA di markup (.login-logo), jadi tidak perlu ubah
+       index.html / JavaScript.html sama sekali. */
+    .login-logo{
+      position:absolute;top:34px;left:0;right:0;margin:0;padding:0 26px;
+      align-items:center;text-align:center;
+    }
+    .login-logo .logo-mark{
+      width:64px;height:64px;border-radius:18px;margin:0 auto 14px;
+      box-shadow:0 10px 24px rgba(0,0,0,.18);
+      background:#fff;
+    }
+    .login-logo .logo-mark .brand-mark-img{padding:12px;}
+    .login-logo-appname{
+      display:inline-block;font-size:13px;font-weight:800;letter-spacing:.06em;
+      color:#fff;margin:0 0 8px;padding:6px 16px;border-radius:999px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+      backdrop-filter:blur(6px);
+    }
+    /* Tagline singkat 1 baris di bawah badge, menegaskan konteks "aplikasi B2B" tanpa
+       perlu menyalin ulang seluruh copy panel desktop (.login-visual-desc) yang memang
+       sengaja disembunyikan di mobile supaya layar tidak penuh. */
+    .login-logo::after{
+      content:'Kelola pesanan, agent & komisi dalam satu aplikasi';
+      display:block;font-size:12px;color:rgba(255,255,255,.8);margin-top:2px;
+      max-width:280px;margin-left:auto;margin-right:auto;line-height:1.5;
+    }
+    .login-heading{font-size:22px;text-align:left;}
+    .login-subheading{text-align:left;}
+    /* Input & tombol diperbesar khusus mobile supaya nyaman disentuh (target tap ~50px),
+       tanpa mengubah ukuran versi desktop di luar media query ini. */
+    .input-with-icon input, .input-with-icon select{
+      padding-top:13px;padding-bottom:13px;font-size:15px;border-radius:13px;
+    }
+    .btn-block.login-submit-btn{padding:14px 18px;font-size:15px;border-radius:13px;}
+    .login-form-side .login-card > p:last-child{padding-bottom:6px;}
     /* Dashboard Settings (Banner/Kategori/Produk Unggulan Agent) — rapikan tiap baris item
        di layar sempit: baris 1 tetap thumbnail+judul/subjudul berdampingan, baris 2 (Urutan,
        toggle aktif, edit/hapus) dilepas jadi barisnya sendiri, rata kiri-kanan & full-width,
@@ -990,11 +1047,13 @@
     .table-toolbar .btn-sm{ padding:6px 12px; font-size:12.5px; }
   }
   @media (max-width:420px){
-    .login-form-side{padding:16px;}
-    .login-card{padding:30px 22px;max-width:100%;}
-    .login-heading{font-size:20px;}
+    .login-card{padding:112px 20px 30px;border-radius:24px 24px 0 0;}
+    .login-heading{font-size:19px;}
     .login-subheading{font-size:12.5px;margin-bottom:22px;}
-    .login-logo-appname{font-size:10.5px;letter-spacing:.02em;}
+    .login-logo{top:28px;padding:0 20px;}
+    .login-logo .logo-mark{width:56px;height:56px;border-radius:16px;}
+    .login-logo-appname{font-size:12px;letter-spacing:.04em;}
+    .login-logo::after{font-size:11.5px;max-width:250px;}
     .form-group label{font-size:11px;}
   }
 
