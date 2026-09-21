@@ -3778,6 +3778,45 @@
   }
   .eb-receipt-fallback svg{width:22px;height:22px;opacity:.5;}
 
+  /* ---- Export Transaksi Employee Benefit (dropdown di header kartu) ---- */
+  .card-header .eb-export{margin-left:auto;position:relative;}
+  .eb-export-btn{display:inline-flex;align-items:center;gap:7px;}
+  .eb-export-btn svg{width:15px;height:15px;flex:none;}
+  .eb-export-btn svg:last-child{width:13px;height:13px;transition:transform .18s ease;}
+  .eb-export-btn[aria-expanded="true"] svg:last-child{transform:rotate(180deg);}
+  .eb-export-menu{
+    display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:60;
+    min-width:280px;max-width:min(320px,86vw);padding:8px;
+    background:var(--ag-white);border:1px solid var(--ag-gray-200);border-radius:14px;
+    box-shadow:0 18px 44px rgba(16,24,32,.18);
+  }
+  .eb-export-menu.open{display:block;animation:ebExportPop .14s ease-out;}
+  @keyframes ebExportPop{from{opacity:0;transform:translateY(-4px) scale(.98);}to{opacity:1;transform:none;}}
+  .eb-export-item{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    padding:10px 12px;border:0;background:transparent;border-radius:10px;cursor:pointer;
+    color:var(--ag-gray-800);font:inherit;transition:background .12s ease;
+  }
+  .eb-export-item:hover:not(:disabled),.eb-export-item:focus-visible{background:var(--ag-green-soft);outline:none;}
+  .eb-export-item:disabled{opacity:.45;cursor:not-allowed;}
+  .eb-export-item-ic{
+    flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:var(--ag-green-soft);color:var(--ag-green);
+  }
+  .eb-export-item-ic svg{width:17px;height:17px;}
+  .eb-export-item-tx{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .eb-export-item-tx b{font-size:13.5px;font-weight:700;}
+  .eb-export-item-tx small{font-size:11.5px;color:var(--ag-gray-500);line-height:1.35;}
+  .eb-export-hint{
+    margin:6px 4px 2px;padding:9px 10px;font-size:11.5px;line-height:1.45;color:var(--ag-gray-500);
+    background:var(--ag-gray-50);border-radius:9px;
+  }
+  .eb-export-hint b{color:var(--ag-gray-700);}
+  @media (max-width:640px){
+    .card-header{flex-wrap:wrap;gap:10px;}
+    .eb-export-menu{right:0;left:auto;min-width:250px;}
+  }
+
   /* ---- QR Code page ---- */
   .eb-qr-page{display:flex;flex-direction:column;align-items:center;gap:16px;padding:12px 0 24px;}
   .eb-qr-card{
@@ -3794,8 +3833,21 @@
     background:#fff;padding:14px;border-radius:16px;border:1px solid var(--ag-gray-100);
     display:flex;align-items:center;justify-content:center;min-height:220px;min-width:220px;
   }
-  .eb-qr-name{font-size:16px;font-weight:800;color:var(--ag-gray-900,#1a1a1a);margin-top:16px;text-align:center;}
-  .eb-qr-sub{font-size:12.5px;color:var(--ag-gray-500,#666);margin-top:2px;text-align:center;}
+  .eb-qr-name{font-size:16px;font-weight:800;color:var(--ag-gray-900,#1a1a1a);margin-top:16px;text-align:center;word-break:break-word;}
+  .eb-qr-sub{font-size:12.5px;color:var(--ag-gray-600,#555);margin-top:2px;text-align:center;font-weight:500;}
+  /* Dark mode: kartu ikut gelap (dulu tetap putih -> teks nama/perusahaan yang berubah jadi
+     terang menjadi TIDAK TERBACA). Kotak QR (.eb-qr-box) SENGAJA dibiarkan putih karena kamera
+     scanner butuh kontras gelap-di-atas-terang; tanpa itu QR gagal terbaca di kasir. */
+  html[data-theme="dark"] .eb-qr-card{
+    background:linear-gradient(160deg,#1F2B24 0%,#18221D 100%);
+    border-color:var(--ag-gray-200);
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+  }
+  html[data-theme="dark"] .eb-qr-name{color:#F1F6F3;}
+  html[data-theme="dark"] .eb-qr-sub{color:#B4C2BA;}
+  html[data-theme="dark"] .eb-qr-box{border-color:transparent;box-shadow:0 0 0 4px rgba(255,255,255,.06);}
+  html[data-theme="dark"] .eb-qr-idcard{background:rgba(63,190,131,.18);color:#6BE0A6;}
+  html[data-theme="dark"] .eb-qr-hint{color:var(--ag-gray-500);}
   .eb-qr-idcard{
     margin-top:10px;font-size:11.5px;font-weight:700;color:var(--ag-green);background:var(--ag-green-soft);
     padding:5px 14px;border-radius:999px;letter-spacing:.02em;
@@ -17987,6 +18039,10 @@
       {key:'tanggal', label:'Tanggal', type:'daterange', dateField:'createdAt'}
     ];
     var filtered = applyListFilters_(rows, FILTER_STATE_EB_TRANSACTIONS_ADMIN_, ['employeeName','trxNumber','idCardNumber','storeName','trxId'], fieldConfigs);
+    // Simpan hasil filter & konfigurasinya: dipakai export "Sesuai Filter" supaya isinya
+    // PERSIS sama dengan yang tampil di tabel (bukan hitung ulang dengan aturan lain).
+    EB_TRX_ADMIN_FILTERED_ = filtered;
+    EB_TRX_ADMIN_FIELD_CONFIGS_ = fieldConfigs;
     var filterHtml = filterBarHtml_('onFilterChangeEbTransactionsAdmin_', 'Cari nama karyawan, No. Transaksi, No. ID Card, atau store...', fieldConfigs, FILTER_STATE_EB_TRANSACTIONS_ADMIN_, filtered.length, rows.length);
     var cols = [
       {label:'No.', render:function(r,i){ return String(i+1); }},
@@ -18007,18 +18063,166 @@
     var actions = function(r){
       var html = '<div class="row-actions">';
       html += '<button class="action-btn view" title="Lihat Detail" onclick="viewEbTransactionDetail_(\''+escapeHtml(r.trxId)+'\')">'+ICONS.view+'</button>';
+      html += '<button class="action-btn download" title="Export transaksi ini (Excel)" data-eb-export-one="'+escapeHtml(r.trxId)+'" onclick="exportEbTransactionOne_(\''+escapeHtml(r.trxId)+'\')">'+ICONS.download+'</button>';
       if(canDeleteEbTrx){
         html += '<button class="action-btn delete" title="Hapus" onclick="deleteEbTransactionConfirm_(\''+escapeHtml(r.trxId)+'\')">'+ICONS.trash+'</button>';
       }
       html += '</div>';
       return html;
     };
-    return '<div class="card"><div class="card-header"><span class="card-title">Transaksi Employee Benefit</span></div>' +
+    return '<div class="card"><div class="card-header"><span class="card-title">Transaksi Employee Benefit</span>' +
+        ebTrxExportMenuHtml_(filtered.length, rows.length) + '</div>' +
       filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada transaksi yang cocok' : 'Belum ada transaksi',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Transaksi hasil scan QR di store akan muncul di sini.',
         ICONS.cart) + '</div>';
+  }
+
+  // -------------------------------------------------------------
+  // EXPORT TRANSAKSI EMPLOYEE BENEFIT (Excel .xlsx)
+  //   1) Export Sesuai Filter -> persis baris yang sedang tampil di tabel
+  //   2) Export Semua         -> seluruh transaksi (abaikan filter)
+  //   3) Export 1 Transaksi   -> tombol download di tiap baris (lembar "Bukti Transaksi")
+  // Data (rows) dikirim dari layar ke backend ebExportTransactions() untuk dirender jadi
+  // .xlsx berformat rapi — tanpa baca sheet ulang, jadi cepat & selalu sinkron dengan layar.
+  // -------------------------------------------------------------
+  var EB_TRX_ADMIN_FILTERED_ = [];
+  var EB_TRX_ADMIN_FIELD_CONFIGS_ = [];
+  var EB_TRX_EXPORT_BUSY_ = false;
+
+  /** Dropdown "Export" di header kartu. Menu dibuka/tutup lewat class (tanpa library),
+   *  ditutup otomatis saat klik di luar atau tekan Esc (lihat ebTrxExportBindClose_). */
+  function ebTrxExportMenuHtml_(filteredCount, totalCount){
+    var isFiltered = filteredCount !== totalCount;
+    var disabled = totalCount === 0 ? ' disabled' : '';
+    return '<div class="eb-export" id="ebExportWrap">' +
+      '<button type="button" class="btn btn-primary btn-sm eb-export-btn" id="ebExportBtn"'+disabled+' aria-haspopup="true" aria-expanded="false" onclick="toggleEbTrxExportMenu_(event)">' +
+        ICONS.download + '<span>Export</span>' + ICONS.chevronDown +
+      '</button>' +
+      '<div class="eb-export-menu" id="ebExportMenu" role="menu">' +
+        '<button type="button" class="eb-export-item" role="menuitem"'+(filteredCount?'':' disabled')+' onclick="exportEbTransactionsList_(\'filtered\')">' +
+          '<span class="eb-export-item-ic">'+ICONS.view+'</span>' +
+          '<span class="eb-export-item-tx"><b>Sesuai Filter</b><small>'+filteredCount+' transaksi yang sedang tampil'+(isFiltered?'':' (belum ada filter)')+'</small></span>' +
+        '</button>' +
+        '<button type="button" class="eb-export-item" role="menuitem" onclick="exportEbTransactionsList_(\'all\')">' +
+          '<span class="eb-export-item-ic">'+ICONS.transactions+'</span>' +
+          '<span class="eb-export-item-tx"><b>Semua Transaksi</b><small>'+totalCount+' transaksi, abaikan filter</small></span>' +
+        '</button>' +
+        '<div class="eb-export-hint">Ingin 1 transaksi saja? Klik ikon <b>unduh</b> di baris transaksinya.</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function toggleEbTrxExportMenu_(ev){
+    if(ev){ ev.stopPropagation(); }
+    var menu = document.getElementById('ebExportMenu');
+    var btn = document.getElementById('ebExportBtn');
+    if(!menu || !btn) return;
+    var open = !menu.classList.contains('open');
+    menu.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(open) ebTrxExportBindClose_();
+  }
+  function closeEbTrxExportMenu_(){
+    var menu = document.getElementById('ebExportMenu');
+    var btn = document.getElementById('ebExportBtn');
+    if(menu) menu.classList.remove('open');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  var EB_TRX_EXPORT_CLOSE_BOUND_ = false;
+  function ebTrxExportBindClose_(){
+    if(EB_TRX_EXPORT_CLOSE_BOUND_) return;
+    EB_TRX_EXPORT_CLOSE_BOUND_ = true;
+    document.addEventListener('click', function(e){
+      var wrap = document.getElementById('ebExportWrap');
+      if(wrap && !wrap.contains(e.target)) closeEbTrxExportMenu_();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') closeEbTrxExportMenu_();
+    });
+  }
+
+  /** Rangkum filter yang aktif jadi 1 baris teks untuk kepala file export, mis.
+   *  "Perusahaan: PT Semen Gresik · Bulan: September 2026 · Tanggal: 2026-09-01 s/d 2026-09-21 · Cari: "budi"". */
+  function ebTrxActiveFilterSummary_(){
+    var st = FILTER_STATE_EB_TRANSACTIONS_ADMIN_ || {};
+    var parts = [];
+    (EB_TRX_ADMIN_FIELD_CONFIGS_ || []).forEach(function(f){
+      if(f.type === 'daterange'){
+        var a = st[f.key+'From'], b = st[f.key+'To'];
+        if(a || b) parts.push(f.label + ': ' + (a || '...') + ' s/d ' + (b || '...'));
+        return;
+      }
+      var cur = st[f.key];
+      if(cur && cur !== '__ALL__'){
+        var opt = (f.options || []).filter(function(o){ return o.value === cur; })[0];
+        parts.push(f.label + ': ' + (opt ? opt.label : cur));
+      }
+    });
+    if(st.q && String(st.q).trim()) parts.push('Cari: "' + String(st.q).trim() + '"');
+    return parts.join(' · ');
+  }
+
+  /** Decode base64 -> Blob -> klik <a download>. Dipisah supaya dipakai dua jalur export. */
+  function ebTrxDownloadXlsx_(result){
+    if(!result || !result.base64){ showToast('Gagal membuat file Excel.', 'error'); return false; }
+    var byteChars = atob(result.base64);
+    var byteNumbers = new Array(byteChars.length);
+    for(var i=0;i<byteChars.length;i++){ byteNumbers[i] = byteChars.charCodeAt(i); }
+    var blob = new Blob([new Uint8Array(byteNumbers)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = result.fileName || 'Transaksi Employee Benefit.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    return true;
+  }
+
+  /** Kirim ke backend. `btn` (opsional) dikunci + diberi spinner selama proses supaya tidak
+   *  ter-klik dua kali; EB_TRX_EXPORT_BUSY_ menahan export lain berjalan bersamaan. */
+  function ebTrxRunExport_(mode, rows, meta, btn, busyHtml, successMsg){
+    if(EB_TRX_EXPORT_BUSY_){ showToast('Export sebelumnya masih diproses, mohon tunggu sebentar.', 'info'); return; }
+    EB_TRX_EXPORT_BUSY_ = true;
+    var orig = btn ? btn.innerHTML : null;
+    if(btn){ btn.disabled = true; btn.innerHTML = busyHtml; }
+    var done = function(){
+      EB_TRX_EXPORT_BUSY_ = false;
+      if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+    };
+    google.script.run
+      .withSuccessHandler(function(result){
+        done();
+        if(ebTrxDownloadXlsx_(result)) showToast(successMsg(result), 'success');
+      })
+      .withFailureHandler(function(e){ done(); handleBackendError(e); })
+      .ebExportTransactions(STATE.token, mode, rows, meta);
+  }
+
+  /** scope: 'filtered' (baris yang tampil) | 'all' (seluruh cache, abaikan filter). */
+  function exportEbTransactionsList_(scope){
+    closeEbTrxExportMenu_();
+    var rows = scope === 'filtered' ? EB_TRX_ADMIN_FILTERED_ : EB_TRANSACTIONS_ADMIN_CACHE_;
+    if(!rows || !rows.length){ showToast('Tidak ada transaksi untuk diexport.', 'error'); return; }
+    var btn = document.getElementById('ebExportBtn');
+    ebTrxRunExport_('list', rows, {
+      scope: scope,
+      filterSummary: scope === 'filtered' ? ebTrxActiveFilterSummary_() : '',
+      total: EB_TRANSACTIONS_ADMIN_CACHE_.length
+    }, btn, '<span class="btn-spinner"></span><span>Menyiapkan...</span>', function(res){
+      return (res && res.count ? res.count : rows.length) + ' transaksi berhasil diexport.';
+    });
+  }
+
+  function exportEbTransactionOne_(trxId){
+    var r = findEbTransactionAdmin_(trxId);
+    if(!r){ showToast('Data tidak ditemukan.', 'error'); return; }
+    // Tombol baris bisa ada 2x (tabel + kartu mobile) — ambil yang diklik paling relevan.
+    var btns = document.querySelectorAll('[data-eb-export-one="'+trxId+'"]');
+    var btn = btns.length ? btns[0] : null;
+    ebTrxRunExport_('single', [r], { scope: 'single' }, btn, '<span class="btn-spinner"></span>', function(){
+      return 'Bukti transaksi ' + (r.trxNumber || r.trxId) + ' berhasil diexport.';
+    });
   }
 
   /** Popup Detail Transaksi Employee Benefit — mirror pola viewPODetail(): ringkasan di
