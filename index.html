@@ -2225,16 +2225,6 @@
   .promo-agent-id{font-size:11.5px;color:var(--ag-gray-400);letter-spacing:.2px;}
   .promo-agent-tag{flex:0 0 auto;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--ag-gray-100);color:var(--ag-gray-600);}
   .promo-agent-empty{padding:18px;text-align:center;font-size:12.5px;color:var(--ag-gray-400);}
-  /* ---- Ringkasan sebaran Agent per Area (chip filter) ---- */
-  .area-chip-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px 14px;border:1px solid var(--ag-gray-200,#e5e7eb);border-radius:12px;background:var(--ag-gray-50,#f9fafb);}
-  .area-chip-title{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ag-gray-500,#6b7280);}
-  .area-chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 0;scrollbar-width:thin;}
-  .area-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:999px;border:1px solid var(--ag-gray-300);background:#fff;color:var(--ag-gray-700,#374151);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
-  .area-chip:hover{border-color:var(--ag-green);background:var(--ag-green-soft);}
-  .area-chip-count{min-width:22px;padding:2px 7px;border-radius:999px;background:var(--ag-gray-100);color:var(--ag-gray-600);font-size:11.5px;font-weight:700;text-align:center;}
-  .area-chip.active{background:var(--ag-green);border-color:var(--ag-green);color:#fff;}
-  .area-chip.active .area-chip-count{background:rgba(255,255,255,.22);color:#fff;}
-  @media (max-width:640px){ .area-chip-bar{flex-direction:column;align-items:flex-start;gap:8px;} .area-chip-scroll{max-width:100%;} }
 
 
   .promo-card-top{display:flex;align-items:flex-start;gap:10px;}
@@ -7001,23 +6991,6 @@
     return opts;
   }
 
-  /** Baris "chip" ringkasan sebaran Agent per area — klik chip untuk memfilter tabel. */
-  function agentAreaChipsHtml_(rows){
-    var st = agentAreaStats_(rows);
-    if(!st.names.length) return '';
-    var cur = FILTER_STATE_AGENTS_.registrationArea || '__ALL__';
-    function chip(value, label, count){
-      return '<button type="button" class="area-chip'+(cur===value?' active':'')+'" data-area="'+escapeHtml(value)+'" ' +
-        'onclick="onFilterChangeAgents_(\'registrationArea\', this.getAttribute(\'data-area\'))">' +
-        '<span class="area-chip-label">'+escapeHtml(label)+'</span><span class="area-chip-count">'+count+'</span></button>';
-    }
-    var html = '<div class="area-chip-bar"><span class="area-chip-title">Sebaran Area</span><div class="area-chip-scroll">' +
-      chip('__ALL__', 'Semua Area', (rows||[]).length);
-    st.names.forEach(function(n){ html += chip(n, n, st.counts[n]); });
-    if(st.none) html += chip('__NONE__', 'Belum ada area', st.none);
-    return html + '</div></div>';
-  }
-
   function agentsPageHtml_(){
     var rows = AGENTS_CACHE;
     var fieldConfigs = [
@@ -7098,7 +7071,7 @@
       return html;
     };
     return '<div class="card"><div class="card-header"><span class="card-title">Daftar Agent</span></div>' +
-      filterHtml + agentAreaChipsHtml_(rows) +
+      filterHtml +
       renderTableOrCards_(cols, filtered, actions, rows.length ? 'Tidak ada agent yang cocok' : 'Belum ada agent', rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Agent yang mendaftar akan muncul di sini untuk direview.', ICONS.agent) + '</div>';
   }
 
@@ -16036,7 +16009,14 @@
       recomputeNavBadgeCounts_();
       renderSidebar();
       renderBottomNav();
-    }).withFailureHandler(function(){ /* silent */ }).getNotifications(STATE.token);
+    }).withFailureHandler(function(err){
+      // Gagal biasa (jaringan dsb) tetap diam-diam. Tapi kalau sesi sudah habis (token
+      // kedaluwarsa, mis. tab dibiarkan terbuka lama), keluar dengan rapi supaya tidak terus
+      // menembak server tiap 2 menit dengan token mati (yang tercatat sebagai error di log).
+      if(myGen !== SESSION_GEN_ || !STATE.user) return;
+      var m = err && err.message ? err.message : String(err);
+      if(m.indexOf('SESSION_EXPIRED') !== -1) handleBackendError(err);
+    }).getNotifications(STATE.token);
     window.__BG_LOW_PRIORITY__ = false;
   }
 
