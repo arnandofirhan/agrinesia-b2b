@@ -11851,6 +11851,7 @@
     var filterHtml = filterBarHtml_('onFilterChangeUsers_', 'Cari nama atau email...', fieldConfigs, FILTER_STATE_USERS_, filtered.length, rows.length);
     var cols = [
       {label:'Nama', titleCol:true, field:'Name'}, {label:'Email', field:'Email', fullWidth:true}, {label:'Role', field:'Role'},
+      {label:'Jabatan', render:function(r){ return r.Jabatan ? escapeHtml(r.Jabatan) : '<span style="color:var(--ag-gray-400)">-</span>'; }},
       {label:'Status', render:function(r){return statusBadge(r.Status);}}
     ];
     var actions = function(r){
@@ -11886,6 +11887,7 @@
       detailRow('Nama', escapeHtml(u.Name)) +
       detailRow('Email', escapeHtml(u.Email)) +
       detailRow('Role', escapeHtml(u.Role)) +
+      detailRow('Jabatan', u.Jabatan ? escapeHtml(u.Jabatan) : '-') +
       detailRow('Status', statusBadge(u.Status)) +
       detailRow('Dibuat', u.CreatedAt ? new Date(u.CreatedAt).toLocaleString('id-ID') : '-');
     openViewModal('Detail User', rows);
@@ -11911,6 +11913,10 @@
     var body =
       formField_('uName','Nama',user.Name,'text','',true,ICONS.agent) + formField_('uEmail','Email',user.Email,'text','',true,ICONS.mail) +
       '<div class="form-group"><label>Role</label><select id="uRole">'+roleOptions+'</select></div>' +
+      // Jabatan: teks bebas, opsional, TERPISAH dari Role sistem — dipakai murni sebagai
+      // label yang tercetak di bawah Nama pada blok tanda tangan Surat Penawaran (lihat
+      // generateSuratPenawaran di Code.gs), mis. "Manager Operasional" atau "Admin Finance".
+      formField_('uJabatan','Jabatan (opsional)',user.Jabatan,'text','Contoh: Manager Operasional',false,ICONS.agent) +
       statusField +
       // Password cuma wajib (tanda * merah + blokir Simpan) pas TAMBAH user baru — pas Edit,
       // password sengaja tidak wajib karena tidak selalu diganti (kosongkan = tetap password lama).
@@ -11920,7 +11926,7 @@
 
   function saveUserForm(userId){
     var statusEl = document.getElementById('uStatus');
-    var payload = { UserID: userId || null, Name: val_('uName'), Email: val_('uEmail'), Role: val_('uRole'), Status: statusEl ? statusEl.value : 'ACTIVE', newPassword: val_('uPassword') };
+    var payload = { UserID: userId || null, Name: val_('uName'), Email: val_('uEmail'), Role: val_('uRole'), Jabatan: val_('uJabatan'), Status: statusEl ? statusEl.value : 'ACTIVE', newPassword: val_('uPassword') };
     if(!payload.Name || !payload.Email){ showToast('Nama dan Email wajib diisi.','error'); return; }
     google.script.run.withSuccessHandler(function(res){
       if(res.success){ closeModal(); showToast('User disimpan.','success'); renderUsers(); }
