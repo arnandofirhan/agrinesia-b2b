@@ -398,6 +398,14 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;pointer-events:auto;}
   .btn:disabled:hover{transform:none;box-shadow:none;}
   .btn-primary:disabled{background:var(--ag-gray-300);color:var(--ag-gray-600);box-shadow:none;}
+  /* FIX: tombol primary yang sedang disabled (mis. state "Memproses..." saat submit form/
+     login) sempat balik jadi hijau tua saat di-hover, karena .btn-primary:hover di bawah
+     ini punya spesifisitas selector yang SAMA dengan .btn-primary:disabled di atas — CSS
+     cascade jadinya menang ke aturan yang urutannya lebih belakang (hover), bukan disabled,
+     begitu kursor diarahkan ke tombol yang sedang disabled. Aturan eksplisit
+     :disabled:hover ini spesifisitasnya lebih tinggi sehingga selalu menang & tombol
+     tetap abu-abu sesuai state disabled-nya, tidak peduli posisi kursor. */
+  .btn-primary:disabled:hover{background:var(--ag-gray-300);color:var(--ag-gray-600);box-shadow:none;transform:none;}
   .btn-primary{background:var(--ag-green);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06);}
   .btn-primary:hover{background:var(--ag-dark-green);box-shadow:0 4px 10px rgba(20,120,70,.22);transform:translateY(-1px);}
   .btn-secondary{background:var(--ag-white);color:var(--ag-green);border-color:var(--ag-green);}
@@ -2160,6 +2168,20 @@
   .text-field-wrap:focus-within{border-color:var(--ag-green);box-shadow:0 0 0 3px var(--ag-green-soft);}
   .text-field-wrap svg{width:15px;height:15px;flex-shrink:0;margin-left:11px;color:var(--ag-green);pointer-events:none;}
   .text-field-wrap input{border:none!important;background:transparent!important;box-shadow:none!important;flex:1;min-width:0;}
+  /* Varian <select> dalam text-field-wrap (mis. dropdown Nama Store di form Store User) —
+     tanpa aturan ini select tetap pakai border/appearance bawaan browser (kotak persegi +
+     garis pemisah vertikal di kiri sebelum teks), yang terlihat pecah dari ikon di sebelahnya.
+     appearance:none menghapus chrome bawaan itu; panah custom digambar lewat background-image
+     supaya tetap ada indikator dropdown yang modern & konsisten di semua browser. */
+  .text-field-wrap select{
+    border:none!important;background-color:transparent!important;box-shadow:none!important;
+    flex:1;min-width:0;appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    font:inherit;color:inherit;cursor:pointer;
+    padding:0 32px 0 8px;height:100%;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;background-size:14px;
+  }
+  .text-field-wrap select:focus{outline:none;}
   /* Varian textarea (mis. Alamat sesuai KTP di Edit Agent) — ikon dinaikkan ke baris atas
      (align-items:flex-start) supaya tidak "mengambang" di tengah kotak multi-baris. */
   /* Varian textarea (mis. Alamat sesuai KTP di Edit Agent) — ikon dinaikkan ke baris atas
