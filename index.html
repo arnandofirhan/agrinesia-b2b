@@ -6939,7 +6939,7 @@
     // Promo (status EFEKTIF, dihitung server dari toggle Admin + tanggal — lihat computePromoEffectiveStatus_)
     EXPIRED:'Expired', SCHEDULED:'Scheduled',
     // PO / Order / Komisi (sudah ada sebelumnya di PO_STATUS_LABELS_, digabung ke sini)
-    PENDING_SUPERVISOR:'Pending Supervisor',
+    PENDING_SUPERVISOR:'Menunggu Persetujuan',
     UNPAID:'Unpaid', PAID:'Paid', PENDING:'Pending', PENDING_DELIVERY:'Pending Delivery',
     DELIVERED:'Delivered', COMPLETE:'Complete', MENUNGGU_PEMBAYARAN:'Pending Payment',
     STORE_ORDER_CREATED:'Order Created', DELIVERED_PENDING_DOCS:'Delivered, Docs Pending', CANCELLED:'Cancelled',
@@ -7205,7 +7205,7 @@
     } else if(agent.MOUStatus === 'SIGNED') {
       mouBody += '<div class="profile-signed-note">'+ICON_CHECK_SM+' MOU sudah ditandatangani &mdash; akun Agent Anda aktif.</div>';
     } else if(agent.MOUStatus === 'NOT_GENERATED') {
-      mouBody += '<p style="font-size:12.5px;color:var(--ag-gray-600);margin:0;">MOU akan otomatis dibuat setelah registrasi Anda disetujui Admin/Supervisor.</p>';
+      mouBody += '<p style="font-size:12.5px;color:var(--ag-gray-600);margin:0;">MOU akan otomatis dibuat setelah registrasi Anda disetujui.</p>';
     }
     if(mouBody){
       html += '<div class="card">' +
@@ -7534,7 +7534,7 @@
   function agentResubmitRegistrationPrompt_(agentId){
     openConfirmModal({
       title: 'Ajukan Ulang Registrasi?',
-      message: 'Pastikan semua dokumen yang diminta perbaikan sudah diganti. Registrasi akan dikirim kembali ke Admin/Supervisor untuk direview ulang.',
+      message: 'Pastikan semua dokumen yang diminta perbaikan sudah diganti. Registrasi akan dikirim kembali untuk direview ulang.',
       confirmLabel: 'Ya, Ajukan Ulang',
       danger: false,
       icon: ICONS.fileDoc,
@@ -7587,7 +7587,7 @@
     if(!CHECK_STATUS_IDENTITY_) return;
     openConfirmModal({
       title: 'Ajukan Ulang Registrasi?',
-      message: 'Pastikan semua dokumen yang diminta perbaikan sudah diganti. Registrasi akan dikirim kembali ke Admin/Supervisor untuk direview ulang.',
+      message: 'Pastikan semua dokumen yang diminta perbaikan sudah diganti. Registrasi akan dikirim kembali untuk direview ulang.',
       confirmLabel: 'Ya, Ajukan Ulang',
       danger: false,
       icon: ICONS.fileDoc,
@@ -8193,7 +8193,7 @@
     var areaField =
       '<div class="form-group"><label>Area Pendaftaran</label><div class="text-field-wrap">'+ICONS.location+
         '<select id="agRegArea"><option value="">Memuat area...</option></select>' +
-      '</div><p style="font-size:11.5px;color:var(--ag-gray-600);margin:6px 0 0;">Hanya terlihat oleh Admin/Supervisor/Manager — dipakai untuk memantau asal pendaftaran Agent, tidak mempengaruhi Store tempat Agent order.</p></div>';
+      '</div><p style="font-size:11.5px;color:var(--ag-gray-600);margin:6px 0 0;">Hanya terlihat oleh tim internal — dipakai untuk memantau asal pendaftaran Agent, tidak mempengaruhi Store tempat Agent order.</p></div>';
     var body =
       formField_('agFullName','Nama Lengkap',a.FullName,'text','',false,ICONS.agent) +
       emailField +
@@ -8348,7 +8348,7 @@
     return '<div class="card"><div class="table-toolbar"><span class="card-title">Area Pendaftaran</span>' +
       '<button class="btn btn-primary btn-sm" onclick="editAgentArea_(null)">'+ICONS.plus+' Tambah Area</button>' +
       '</div>' + filterHtml +
-      '<div class="notif-panel-hint" style="margin:0 16px 12px;">'+ICONS.info+' Dipakai sebagai pilihan dropdown "Area Pendaftaran" di form Registrasi Agent — untuk memantau agent itu mendaftar dari area mana. Hanya terlihat oleh Admin/Supervisor/Manager, tidak membatasi Store tempat Agent boleh order.</div>' +
+      '<div class="notif-panel-hint" style="margin:0 16px 12px;">'+ICONS.info+' Dipakai sebagai pilihan dropdown "Area Pendaftaran" di form Registrasi Agent — untuk memantau agent itu mendaftar dari area mana. Hanya terlihat oleh tim internal, tidak membatasi Store tempat Agent boleh order.</div>' +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada area yang cocok' : 'Belum ada area pendaftaran',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan area pertama Anda — akan muncul otomatis di dropdown Area Pendaftaran pada form Registrasi Agent.',
@@ -10333,7 +10333,7 @@
         '<div class="po-estimate-box" id="poEstimateBox">Estimasi Total: <strong id="poEstimateValue">Rp0</strong></div>' +
         (isApprovedEdit
           ? '<p style="font-size:11.5px;color:var(--ag-gray-600);margin-top:10px;">Surat Penawaran akan otomatis dibuat ulang dengan harga &amp; qty terbaru setelah disimpan.</p>'
-          : '<p style="font-size:11.5px;color:var(--ag-gray-600);margin-top:10px;">Catatan: Requested discount hanya permintaan — nilai final ditentukan Supervisor saat approval.</p>'
+          : '<p style="font-size:11.5px;color:var(--ag-gray-600);margin-top:10px;">Catatan: Requested discount hanya permintaan — nilai final ditentukan saat approval.</p>'
         );
       openFormModal(isApprovedEdit ? 'Edit PO '+(NEWPO_EDIT_APPROVED_ID_||'') : 'Buat PO Baru', body, function(){ submitPO(); }, 'modal-lg');
       var saveBtn = document.getElementById('modalSaveBtn');
@@ -11560,7 +11560,7 @@
   var COMMISSION_FLOW_STEPS_ = [
     { status:'ELIGIBLE', label:'Eligible', who:'Sistem', color:'blue' },
     { status:'CLAIMED',  label:'Diklaim',  who:'Agent', color:'orange' },
-    { status:'VERIFIED', label:'Terverifikasi', who:'Supervisor/Admin', color:'purple' },
+    { status:'VERIFIED', label:'Terverifikasi', who:'Admin', color:'purple' },
     { status:'PAID',     label:'Dibayar',  who:'Admin', color:'green' }
   ];
   function commissionFlowStepper_(status){
@@ -11589,7 +11589,7 @@
     }).join('');
     var hintMap = {
       ELIGIBLE:'Menunggu Agent mengajukan klaim (tombol "Ajukan Klaim").',
-      CLAIMED:'Menunggu Supervisor/Admin memverifikasi klaim ini.',
+      CLAIMED:'Menunggu verifikasi klaim ini.',
       VERIFIED:'Menunggu Admin memproses pembayaran (tombol "Bayar").',
       PAID:'Komisi sudah dibayarkan ke Agent. Alur selesai.'
     };
@@ -12570,7 +12570,7 @@
             '<div class="settings-card-icon">'+CHAT_ICONS_.bubble+'</div>' +
             '<div>' +
               '<div class="card-title">Live Chat &mdash; Pengaturan</div>' +
-              '<div class="settings-card-desc">Atur pesan sambutan otomatis, jam operasional (online/offline), dan template balasan cepat (quick reply) untuk tim Admin/Supervisor/Manager.</div>' +
+              '<div class="settings-card-desc">Atur pesan sambutan otomatis, jam operasional (online/offline), dan template balasan cepat (quick reply) untuk tim internal.</div>' +
             '</div>' +
           '</div>' +
           '<div class="settings-card-body">' +
@@ -12806,7 +12806,7 @@
       '<div class="cs-panel">' +
         '<div class="form-field">' +
           '<label>Template Balasan Cepat (Quick Reply)</label>' +
-          '<div class="form-hint">Ditampilkan sebagai tombol pintasan di atas kolom ketik staff (Admin/Supervisor/Manager) saat membalas chat Agent — sekali tap langsung terisi ke kolom pesan.</div>' +
+          '<div class="form-hint">Ditampilkan sebagai tombol pintasan di atas kolom ketik staff saat membalas chat Agent — sekali tap langsung terisi ke kolom pesan.</div>' +
         '</div>' +
         '<div id="csQuickReplyList" class="cs-qr-list">' + (itemsHtml || '<div class="cs-qr-empty">Belum ada quick reply. Tambahkan lewat tombol di bawah.</div>') + '</div>' +
         '<button type="button" class="btn btn-secondary cs-qr-add-btn" onclick="addChatQuickReplyRow_()">'+CHAT_ICONS_.plus+' Tambah Quick Reply</button>' +
@@ -12885,10 +12885,10 @@
     { key:'NEW_ACCOUNT',      label:'Akun Baru Dibuat',        desc:'Terkirim otomatis saat akun Agent baru dibuat dari data registrasi.',            ph:['Nama','Email','Password'] },
     { key:'RESET_PASSWORD',   label:'Reset Password',          desc:'Terkirim saat Admin mereset/mengirim ulang password Agent.',                       ph:['Nama','Email','Password'] },
     { key:'AGENT_REJECTED',   label:'Registrasi Agent Ditolak', desc:'Terkirim ke pendaftar saat registrasi Agent-nya ditolak, berisi alasan & tautan untuk cek status/perbaiki dokumen.', ph:['Nama','AgentID','Alasan'] },
-    { key:'PO_APPROVED',      label:'PO Disetujui',            desc:'Terkirim saat Supervisor/Admin menyetujui pengajuan PO.',                          ph:['Nama','POID','Diskon','GrandTotal'] },
-    { key:'PO_REJECTED',      label:'PO Ditolak',              desc:'Terkirim saat Supervisor/Admin menolak pengajuan PO.',                             ph:['Nama','POID','Alasan'] },
+    { key:'PO_APPROVED',      label:'PO Disetujui',            desc:'Terkirim saat pengajuan PO disetujui.',                          ph:['Nama','POID','Diskon','GrandTotal'] },
+    { key:'PO_REJECTED',      label:'PO Ditolak',              desc:'Terkirim saat pengajuan PO ditolak.',                             ph:['Nama','POID','Alasan'] },
     { key:'ORDER_CREATED',    label:'Order Dibuat',            desc:'Terkirim saat PO berhasil menjadi Order (setelah konfirmasi pembayaran).',          ph:['Nama','POID'] },
-    { key:'SURAT_PENAWARAN',  label:'Surat Penawaran Dikirim',  desc:'Terkirim saat Supervisor/Admin mengirim Surat Penawaran ke Agent.',                ph:['Nama','POID'] }
+    { key:'SURAT_PENAWARAN',  label:'Surat Penawaran Dikirim',  desc:'Terkirim saat Surat Penawaran dikirim ke Agent.',                ph:['Nama','POID'] }
   ];
   var NOTIF_TEMPLATES_STATE_ = {};
   var NOTIF_TEMPLATES_LOADED_ = false;
@@ -14716,7 +14716,7 @@
     var isAgent = data.role === 'AGENT';
     var kpis = isAgent
       ? kpiCard('My POs', data.myTotalPO, 'blue', ICONS.transactions, 'Total PO submitted by you', 'transactions') +
-        kpiCard('POs Pending Review', data.myPendingPO, 'orange', ICONS.warning, 'Awaiting supervisor review', 'transactions') +
+        kpiCard('POs Pending Review', data.myPendingPO, 'orange', ICONS.warning, 'Awaiting review', 'transactions') +
         kpiCard('Commission Received', formatRupiah(data.myCommissionPaid), 'green', ICONS.commission, 'Total commission paid out', 'commission')
       : kpiCard('Total Agent', data.totalAgents, 'green', ICONS.agent, 'Agents registered in the system', 'agents') +
         kpiCard('Total PO', data.totalPO, 'blue', ICONS.transactions, 'All PO submissions', 'transactions') +
@@ -15226,7 +15226,7 @@
   }
 
   var PO_STATUS_LABELS_ = {
-    PENDING_SUPERVISOR:'Pending Supervisor', APPROVED:'Approved', REJECTED:'Rejected',
+    PENDING_SUPERVISOR:'Menunggu Persetujuan', APPROVED:'Approved', REJECTED:'Rejected',
     WAITING_SIGNATURE:'Waiting Signature', UNPAID:'Unpaid', PAID:'Paid',
     PENDING:'Pending', PENDING_DELIVERY:'Pending Delivery', DELIVERED:'Delivered', COMPLETE:'Complete',
     MENUNGGU_PEMBAYARAN:'Pending Payment', STORE_ORDER_CREATED:'Order Created'
@@ -15729,7 +15729,7 @@
     var kpis = kpiCard('Total PO', s.totalPO, 'blue', ICONS.transactions, 'Number of POs in this period') +
       kpiCard('Total Value', formatRupiah(s.totalValue), 'green', ICONS.commission, 'Total PO grand total') +
       kpiCard('Approved/Complete', s.totalApproved, 'orange', ICONS.check, 'POs approved or further along') +
-      kpiCard('Rejected', s.totalRejected, 'red', ICONS.cancel, 'POs rejected by Supervisor');
+      kpiCard('Rejected', s.totalRejected, 'red', ICONS.cancel, 'POs rejected');
 
     function tableRows_(arr, nameKey, isMoney){
       if(!arr.length) return '<tr><td colspan="3" style="text-align:center;color:var(--ag-gray-500);padding:16px;">Tidak ada data</td></tr>';
@@ -16487,7 +16487,7 @@
       if(dot) dot.classList.toggle('offline', !CHAT_STATE_.availabilityOnline);
       if(text){
         text.textContent = CHAT_STATE_.availabilityOnline
-          ? 'Admin & Supervisor siap membantu'
+          ? 'Tim Kami siap membantu'
           : 'Sedang offline' + describeNextOnlineTime_(res && res.officeHours);
       }
     }).withFailureHandler(function(){
@@ -16595,7 +16595,7 @@
         el.innerHTML = '<div class="chat-empty-state">' +
           '<div class="chat-empty-icon">' + CHAT_ICONS_.chatEmpty + '</div>' +
           '<span class="chat-empty-title">Belum ada percakapan</span>' +
-          '<span class="chat-empty-sub">Tulis pesan di bawah untuk mulai chat dengan tim Admin/Supervisor kami. Biasanya dibalas cepat pada jam operasional.</span>' +
+          '<span class="chat-empty-sub">Tulis pesan di bawah untuk mulai chat dengan Tim Kami. Biasanya dibalas cepat pada jam operasional.</span>' +
         '</div>';
       } else {
         var wasNearBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 60;
@@ -16768,7 +16768,7 @@
   }
 
   function roleLabel_(role){
-    return { ADMIN:'Admin', SUPERVISOR:'Supervisor', MANAGER:'Manager', AGENT:'Agent', SYSTEM:'Sistem' }[role] || role;
+    return { ADMIN:'Admin', SUPERVISOR:'Admin', MANAGER:'Manager', AGENT:'Agent', SYSTEM:'Sistem' }[role] || role;
   }
 
   function formatChatTime_(iso){
