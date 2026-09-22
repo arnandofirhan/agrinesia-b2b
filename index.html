@@ -1863,6 +1863,18 @@
      .badge secara global, supaya badge status pendek di tempat lain tetap nowrap seperti
      semula) dan biarkan dia jadi block penuh selebar kolom yang tersedia. */
   .detail-value .badge{white-space:normal;max-width:100%;text-align:left;}
+  /* FIX (permintaan Nando): baris Promo di "Detail Pengajuan" (Review PO) ditumpuk vertikal
+     (label "Promo" di baris atas, badge nama promo di baris baru di bawahnya) alih-alih
+     sejajar kiri-kanan seperti .detail-row biasa — supaya nama promo yang panjang (mis.
+     "B2B AGENT - PETRUS RESPATI HARYO SADEWO") punya lebar penuh modal untuk wrap rapi
+     beberapa baris, bukan cuma lebar kolom .detail-value yang sempit di sebelah kanan
+     label. Dipakai lewat detailRowStack_() di JavaScript.html, bukan mengubah .detail-row
+     global (biar baris lain seperti Deskripsi/Rencana Pengambilan tetap format lama).
+     Salinan CSS ini WAJIB sinkron dengan Stylesheet.html — file ini adalah versi
+     ter-inject yang di-host di GitHub, bukan berdiri sendiri. */
+  .detail-row.detail-row-stack{flex-direction:column;align-items:flex-start;gap:6px;}
+  .detail-row.detail-row-stack .detail-label{width:auto;}
+  .detail-row.detail-row-stack .detail-value{width:100%;}
   .detail-image{width:120px;height:120px;object-fit:cover;border-radius:14px;border:1px solid var(--ag-gray-200);margin:0 auto 16px;display:block;box-shadow:var(--shadow-sm);}
   @keyframes detail-row-in{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:translateX(0);}}
 
@@ -6751,6 +6763,16 @@
     return '<div class="detail-row" style="animation-delay:'+delay+'s;"><div class="detail-label">'+escapeHtml(label)+'</div><div class="detail-value">'+(value==null||value===''?'-':value)+'</div></div>';
   }
 
+  /* Sama seperti detailRow(), tapi label ditaruh di baris atas dan value di baris baru di
+     bawahnya (stack vertikal, bukan kiri-kanan) — dipakai khusus untuk baris Promo di modal
+     Review PO supaya nama promo yang panjang (badge) dapat lebar penuh modal untuk wrap
+     rapi ke beberapa baris, bukan terjepit di kolom kanan yang sempit. Lihat .detail-row-
+     stack di stylesheet untuk CSS-nya. Salinan ini WAJIB sinkron dengan JavaScript.html. */
+  function detailRowStack_(label, value){
+    var delay = (DETAIL_ROW_SEQ_++ % 12) * 0.025;
+    return '<div class="detail-row detail-row-stack" style="animation-delay:'+delay+'s;"><div class="detail-label">'+escapeHtml(label)+'</div><div class="detail-value">'+(value==null||value===''?'-':value)+'</div></div>';
+  }
+
   /** Row-level View/Edit/Delete icon buttons for tables. Any handler can be omitted to skip that button. */
   function rowActionButtons(onView, onEdit, onDelete, onMail){
     var html = '<div class="row-actions">';
@@ -10959,7 +10981,7 @@
       ? detailRow('Diskon Diminta Agent', po.RequestedDiscount+'%') : '';
     // Promo yang dipilih Agent — info penting untuk Supervisor saat menentukan Approved Discount.
     var promoHtml = po
-      ? detailRow('Promo', po.PromoName
+      ? detailRowStack_('Promo', po.PromoName
           ? '<span class="badge badge-green">'+escapeHtml(po.PromoName)+'</span>'
           : '<span class="badge badge-neutral">Tanpa Promo</span>')
       : '';
