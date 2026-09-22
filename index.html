@@ -304,7 +304,13 @@
 
   .content-loading-lock{pointer-events:none;}
   *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;}
+  html,body{height:100%;margin:0;overscroll-behavior-y:contain;}
+  /* html sendiri juga dikunci putih (bukan cuma body) supaya kalau browser mobile
+     "overscroll bounce" (rubber-band effect saat scroll/pull melewati batas paling
+     bawah halaman) sempat kelihatan, backdrop-nya putih juga -- tidak ada lagi celah
+     warna abu-abu/lain yang bocor. overscroll-behavior-y:contain di atas mematikan
+     efek bounce itu sendiri di sebagian besar browser Android modern. */
+  html:not(.ag-has-session){background:#fff;}
   body{
     font-family:var(--font);
     background:var(--ag-gray-50);
@@ -1035,6 +1041,14 @@
       background:transparent;
       position:relative;z-index:1;
       overflow:visible;
+      /* Ditarik penuh sampai mentok bawah layar (bukan cuma setinggi isi kontennya) --
+         permintaan eksplisit: kartu putih jangan berhenti di bawah tombol/link, harus
+         nyambung terus sampai ujung layar. 200px = margin-top di atas (tinggi strip foto).
+         Fallback 100vh dulu utk browser lama, lalu ditimpa 100dvh (dynamic viewport
+         height, ikut menyesuaikan saat address bar browser collapse/expand) di browser
+         yang mendukung -- supaya kartu selalu pas sampai bawah, tidak kurang/lebih. */
+      min-height:calc(100vh - 200px);
+      min-height:calc(100dvh - 200px);
     }
     /* Badge identitas B2B -- logo bulat mengambang tepat di garis batas strip foto/kartu
        (top negatif = setengah di atas strip, setengah di atas kartu). z-index di atas
@@ -1081,7 +1095,7 @@
     .table-toolbar .btn-sm{ padding:6px 12px; font-size:12.5px; }
   }
   @media (max-width:420px){
-    .login-card{margin-top:180px;padding:52px 20px 30px;border-radius:24px 24px 0 0;}
+    .login-card{margin-top:180px;padding:52px 20px 30px;border-radius:24px 24px 0 0;min-height:calc(100vh - 180px);min-height:calc(100dvh - 180px);}
     .login-screen::before{height:180px;}
     .login-heading{font-size:19px;}
     .login-subheading{font-size:12.5px;margin-bottom:22px;}
