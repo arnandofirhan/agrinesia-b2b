@@ -312,6 +312,18 @@
     font-size:14px;
     -webkit-font-smoothing:antialiased;
   }
+  /* ===== FIX "sisa warna abu-abu" di bawah kartu Login (mobile) =====
+     BUG: body defaultnya abu-abu (--ag-gray-50, dipakai utk area App Shell setelah
+     login), sedangkan .login-screen di-set putih (#fff) TAPI cuma menutupi tingginya
+     sendiri. Saat address bar browser mobile collapse/expand, tinggi viewport berubah
+     sesaat lebih tinggi dari .login-screen, dan sisa body abu-abu itu "bocor" kelihatan
+     sebagai strip warna beda di paling bawah layar (persis di bawah kartu putih).
+     FIX: selama BELUM login (html TIDAK punya class ag-has-session -- persis kondisi
+     saat #loginScreen yang tampil, lihat gate flash-login di atas), body ikut dipaksa
+     putih juga, jadi tidak ada lagi celah warna abu-abu yang bocor di baliknya. Begitu
+     sudah login (ag-has-session ada / App Shell tampil), body balik ke abu-abu seperti
+     semula. */
+  html:not(.ag-has-session) body{background:#fff;}
   button, input, select, textarea{font-family:inherit;}
 
   /* ---------- Hilangkan highlight/shadow biru bawaan browser saat tap ----------
