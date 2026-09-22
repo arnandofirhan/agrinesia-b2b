@@ -8492,6 +8492,7 @@
       {label:'No.', render:function(r,i){ return String(i+1); }},
       {label:'Area ID', render:function(r){ return '<span class="id-chip">'+escapeHtml(r.AreaID||'-')+'</span>'; }},
       {label:'Nama Area', titleCol:true, field:'AreaName'},
+      {label:'Brand', render:function(r){ return r.Brand ? escapeHtml(r.Brand) : '<span style="color:var(--ag-gray-400);">-</span>'; }},
       {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     var actions = function(r){
@@ -8502,7 +8503,7 @@
     return '<div class="card"><div class="table-toolbar"><span class="card-title">Area Pendaftaran</span>' +
       '<button class="btn btn-primary btn-sm" onclick="editAgentArea_(null)">'+ICONS.plus+' Tambah Area</button>' +
       '</div>' + filterHtml +
-      '<div class="notif-panel-hint" style="margin:0 16px 12px;">'+ICONS.info+' Dipakai sebagai pilihan dropdown "Area Pendaftaran" di form Registrasi Agent — untuk memantau agent itu mendaftar dari area mana. Hanya terlihat oleh tim internal, tidak membatasi Store tempat Agent boleh order.</div>' +
+      '<div class="notif-panel-hint" style="margin:0 16px 12px;">'+ICONS.info+' Dipakai sebagai pilihan dropdown "Area Pendaftaran" di form Registrasi Agent — untuk memantau agent itu mendaftar dari area mana, dan Brand-nya dipakai otomatis mengisi Lampiran MOU. Hanya terlihat oleh tim internal, tidak membatasi Store tempat Agent boleh order.</div>' +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada area yang cocok' : 'Belum ada area pendaftaran',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan area pertama Anda — akan muncul otomatis di dropdown Area Pendaftaran pada form Registrasi Agent.',
@@ -8534,6 +8535,7 @@
       '</select></div>';
     var body =
       formField_('areaName','Nama Area', a.AreaName, 'text', 'Contoh: Yogyakarta', true, ICONS.location) +
+      formField_('areaBrand','Brand', a.Brand, 'text', 'Contoh: Bolu Susu Lembang', false, ICONS.location) +
       statusField;
     openFormModal(areaId ? 'Edit Area' : 'Tambah Area', body, function(){ saveAgentAreaForm_(areaId); });
   }
@@ -8542,6 +8544,7 @@
     var payload = {
       AreaID: areaId || undefined,
       AreaName: val_('areaName'),
+      Brand: val_('areaBrand'),
       Status: val_('areaStatus') || 'ACTIVE'
     };
     if(!payload.AreaName){ showToast('Nama area wajib diisi.','error'); return; }
