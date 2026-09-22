@@ -10167,6 +10167,15 @@
           (docCards ? '<div class="doc-preview-grid" style="margin-bottom:6px;">'+docCards+'</div>' : '') +
           docNotes + suratBlock.empty
         : '';
+      // FIX BUG NYATA ("Detail PO sudah benar, tapi List di luar masih nampilin total
+      // lama"): backend (reconcilePOGrandTotal_) SUDAH membetulkan GrandTotal & menghapus
+      // cache server begitu popup ini dibuka, tapi List Transaksi/PO yang sudah kadung
+      // ter-render di layar SEBELUM popup ini dibuka tidak tahu apa-apa soal itu — makanya
+      // techincally sudah benar di server, tapi kelihatannya "masih salah" di layar. Kalau
+      // backend menandai grandTotalReconciled=true, panggil ulang renderPO() di background
+      // (list ikut ke-refresh begitu popup ditutup/di belakang popup) supaya Admin tidak
+      // perlu reload manual untuk melihat angka yang sudah diperbaiki otomatis.
+      if(data.grandTotalReconciled){ renderPO(); }
       done(viewModalHtml_('Detail PO', head + infoGrid + itemsHtml + docsSectionHtml, '', 'modal-lg'));
     }).withFailureHandler(function(e){
       // Only hard-fail (close modal + show error) if we had nothing cached to fall back on;
@@ -11362,6 +11371,10 @@
             '<span class="pay-btn-hint">Upload '+escapeHtml(missingParts.join(' & '))+' dulu untuk mengaktifkan tombol ini.</span>' + footerHtml;
         }
       }
+      // FIX: sama seperti viewPODetail() — kalau backend membetulkan GrandTotal PO terkait
+      // Order ini, refresh list Order di background juga (bukan cuma List PO) supaya angka
+      // yang ditampilkan di sana ikut ter-update tanpa Admin harus reload manual.
+      if(data.grandTotalReconciled){ renderOrders(); }
       done(viewModalHtml_('Detail Order', head + infoGrid + itemsHtml + docsHtml, '', 'modal-lg', footerHtml));
     }).withFailureHandler(function(e){
       if(!DETAIL_MODAL_CACHE_['order:'+orderId]){ closeModal(); handleBackendError(e); }
