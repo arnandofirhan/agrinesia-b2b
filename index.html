@@ -325,10 +325,10 @@
      sesaat lebih tinggi dari .login-screen, dan sisa body abu-abu itu "bocor" kelihatan
      sebagai strip warna beda di paling bawah layar (persis di bawah kartu putih).
      FIX: selama BELUM login (html TIDAK punya class ag-has-session -- persis kondisi
-     saat #loginScreen yang tampil, lihat gate flash-login di atas), body ikut dipaksa
-     putih juga, jadi tidak ada lagi celah warna abu-abu yang bocor di baliknya. Begitu
-     sudah login (ag-has-session ada / App Shell tampil), body balik ke abu-abu seperti
-     semula. */
+     saat #loginScreen yang tampil, lihat gate flash-login di index.html), body ikut
+     dipaksa putih juga, jadi tidak ada lagi celah warna abu-abu yang bocor di baliknya.
+     Begitu sudah login (ag-has-session ada / App Shell tampil), body balik ke abu-abu
+     seperti semula. */
   html:not(.ag-has-session) body{background:#fff;}
   button, input, select, textarea{font-family:inherit;}
 
@@ -1853,6 +1853,16 @@
   .po-cart-section .detail-row{padding:8px 0;border-bottom-color:var(--ag-gray-200);font-size:13px;}
   .po-cart-section .detail-label{width:150px;color:var(--ag-gray-600);font-weight:600;}
   .po-cart-section .detail-value{font-weight:600;}
+  /* FIX BUG NYATA ("badge Promo kepotong di mode HP" — mis. "B2B AGENT - PETRUS RESF...",
+     lihat popup Review PO): .badge (dipakai juga untuk status pendek seperti "APPROVED")
+     sengaja white-space:nowrap supaya badge status tidak pernah patah aneh di tengah kata.
+     Tapi nama Promo bisa jauh lebih panjang dari lebar kolom .detail-value di layar sempit,
+     dan nowrap memaksa badge itu melebar MELEBIHI kolomnya sendiri lalu overflow terpotong,
+     alih-alih menyempit/wrap seperti teks biasa. .detail-value sudah flex:1;min-width:0 —
+     cukup izinkan badge DI DALAM konteks ini untuk wrap teksnya sendiri (bukan mengubah
+     .badge secara global, supaya badge status pendek di tempat lain tetap nowrap seperti
+     semula) dan biarkan dia jadi block penuh selebar kolom yang tersedia. */
+  .detail-value .badge{white-space:normal;max-width:100%;text-align:left;}
   .detail-image{width:120px;height:120px;object-fit:cover;border-radius:14px;border:1px solid var(--ag-gray-200);margin:0 auto 16px;display:block;box-shadow:var(--shadow-sm);}
   @keyframes detail-row-in{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:translateX(0);}}
 
@@ -1885,6 +1895,11 @@
      jadi lebih lebar dari layar dan memunculkan scrollbar horizontal. Sekarang teks panjang
      PATAH ke baris berikutnya di dalam kolomnya sendiri, kolom popup tetap fix selebar modal. */
   .agent-detail-field-value{font-size:13.5px;color:var(--ag-gray-900);font-weight:600;line-height:1.4;overflow-wrap:break-word;word-break:break-word;}
+  /* FIX BUG NYATA ("badge Promo kepotong di mode HP", sama seperti .detail-value .badge di
+     atas — lihat catatan lengkap di sana): grid 1fr yang sudah dibetulkan di komentar atas
+     TETAP kepotong kalau isinya .badge, karena .badge sendiri white-space:nowrap memaksa
+     lebarnya sendiri melebihi kolom, terlepas dari perbaikan grid-nya. */
+  .agent-detail-field-value .badge{white-space:normal;max-width:100%;text-align:left;}
 
   /* Commission amount highlight — the single most important figure in Detail Komisi,
      pulled out of the grid into its own quiet green card so it reads instantly instead
