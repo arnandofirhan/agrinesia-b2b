@@ -8453,7 +8453,7 @@
       {label:'No.', render:function(r,i){ return String(i+1); }},
       {label:'Area ID', render:function(r){ return '<span class="id-chip">'+escapeHtml(r.AreaID||'-')+'</span>'; }},
       {label:'Nama Area', titleCol:true, field:'AreaName'},
-      {label:'Status', render:function(r){ return statusBadge(r.Status); }}
+      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     var actions = function(r){
       var edit = 'editAgentArea_(\''+r.AreaID+'\')';
@@ -8872,7 +8872,7 @@
       {label:'Packaging', field:'Packaging'},
       {label:'Shelf Life', render:function(r){ return r.ShelfLife ? escapeHtml(r.ShelfLife)+' hari' : '-'; }},
       {label:'Regular Price', render:function(r){ return formatRupiah(r.RegularPrice); }},
-      {label:'Status', render:function(r){ return statusBadge(r.Status); }}
+      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     var actions = function(r){
       var view = 'viewProduct(\''+r.ProductID+'\')';
@@ -9336,7 +9336,7 @@
       }},
       {label:'Deskripsi', fullWidth:true, render:function(r){ return r.Description ? escapeHtml(r.Description) : '-'; }},
       {label:'Periode', render:function(r){ return formatDateDMY_(r.StartDate)+' &ndash; '+formatDateDMY_(r.EndDate); }},
-      {label:'Status', render:function(r){ return statusBadge(r.EffectiveStatus); }}
+      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.EffectiveStatus); }}
     ];
     var actions = function(r){
       var view = 'viewPromo(\''+r.PromoID+'\')';
@@ -9665,7 +9665,7 @@
       }},
       {label:'PIC', render:function(r){ return r.PIC ? escapeHtml(r.PIC) : '-'; }},
       {label:'Telepon', render:function(r){ return r.Phone ? escapeHtml(r.Phone) : '-'; }},
-      {label:'Status', render:function(r){return statusBadge(r.Status);}}
+      {label:'Status', fullWidth:true, render:function(r){return statusBadge(r.Status);}}
     ];
     var canEdit = STATE.user.role === 'ADMIN';
     var actions = function(r){
@@ -9901,7 +9901,7 @@
         {label:'Diskon Diminta', render:function(r){return '<span class="badge badge-neutral">'+r.RequestedDiscount+'%</span>';}},
         {label:'Diskon Disetujui', render:function(r){return r.ApprovedDiscount!==''&&r.ApprovedDiscount!=null?'<span class="badge badge-green">'+r.ApprovedDiscount+'%</span>':'<span class="badge badge-neutral">-</span>';}},
         {label:'Total', render:function(r){return '<strong>'+formatRupiah(r.GrandTotal)+'</strong>';}},
-        {label:'Status', render:function(r){
+        {label:'Status', fullWidth:true, render:function(r){
           // PO tetap Status=APPROVED di sheet dari saat disetujui sampai Order dibuat, tapi
           // secara tampilan bedakan "baru disetujui, menunggu konfirmasi pembayaran" dari
           // "disetujui" biasa, supaya tidak terlihat seperti belum ada progres.
@@ -12146,7 +12146,7 @@
         {label:'Min Diskon', render:function(r){return r.MinDiscountPct+'%';}},
         {label:'Maks Diskon', render:function(r){return r.MaxDiscountPct+'%';}},
         {label:'Komisi', render:function(r){return '<strong>'+r.CommissionPct+'%</strong>';}},
-        {label:'Status', render:function(r){return statusBadge(r.Status);}}
+        {label:'Status', fullWidth:true, render:function(r){return statusBadge(r.Status);}}
       ];
       var actions = canEdit ? function(r){
         var edit = 'editScheme(\''+r.SchemeID+'\')';
@@ -12240,7 +12240,7 @@
     var cols = [
       {label:'Nama', titleCol:true, field:'Name'}, {label:'Email', field:'Email', fullWidth:true}, {label:'Role', field:'Role'},
       {label:'Jabatan', render:function(r){ return r.Jabatan ? escapeHtml(r.Jabatan) : '<span style="color:var(--ag-gray-400)">-</span>'; }},
-      {label:'Status', render:function(r){return statusBadge(r.Status);}}
+      {label:'Status', fullWidth:true, render:function(r){return statusBadge(r.Status);}}
     ];
     var actions = function(r){
       var isSelf = r.UserID === STATE.user.userId;
@@ -18333,7 +18333,7 @@
         var short = d.length > 30 ? escapeHtml(d.slice(0,30)) + '…' : escapeHtml(d);
         return '<span title="'+escapeHtml(d)+'">'+short+'</span>';
       }},
-      {label:'Status', render:function(r){ return statusBadge(r.Status); }}
+      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     // Tambah/Edit/Hapus dibuka untuk ADMIN, SUPERVISOR & MANAGER — sesuai kebijakan
     // (lihat ebSaveCompany/ebDeleteCompany di EmployeeBenefit.gs, keduanya sekarang
@@ -19081,7 +19081,7 @@
       {label:'Nama Store', titleCol:true, field:'StoreName'},
       {label:'Email', field:'Email'},
       {label:'Dibuat', render:function(r){ return formatDateDMY_(r.CreatedAt); }},
-      {label:'Status', render:function(r){ return statusBadge(r.Status); }}
+      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     // Tambah/Edit/Hapus dibuka untuk ADMIN, SUPERVISOR & MANAGER — sesuai kebijakan
     // (lihat ebSaveStoreUser/ebDeleteStoreUser di EmployeeBenefit.gs, keduanya sekarang
