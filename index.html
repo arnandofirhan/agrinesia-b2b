@@ -6781,7 +6781,7 @@
       positionRowMenuDropdown_(wrap);
     }
   }
-  /** Dropdown-nya position:fixed (lihat CSS) supaya tidak ke-clip oleh
+  /** Dropdown-nya position:fixed (lihat Stylesheet.html) supaya tidak ke-clip oleh
       .table-scroll{overflow-x:auto} — makanya posisinya HARUS dihitung manual di sini
       dari posisi tombol kebab (bukan cuma andalkan CSS top/right relatif ke wrap),
       lalu di-clamp ke batas viewport supaya tidak kepotong di kanan/bawah layar. */
@@ -6793,12 +6793,12 @@
     var ddWidth = dd.offsetWidth || 210;
     var ddHeight = dd.offsetHeight || 160;
     var gap = 6;
-    var left = r.right - ddWidth;
+    var left = r.right - ddWidth; // rata kanan ke tombol, sama seperti perilaku lama
     if(left < 8) left = Math.max(8, r.left);
     if(left + ddWidth > window.innerWidth - 8) left = window.innerWidth - ddWidth - 8;
     var top = r.bottom + gap;
     if(top + ddHeight > window.innerHeight - 8){
-      top = r.top - ddHeight - gap;
+      top = r.top - ddHeight - gap; // tidak cukup ruang di bawah -> buka ke atas tombol
       if(top < 8) top = 8;
     }
     dd.style.left = left + 'px';
@@ -6811,6 +6811,8 @@
     if(e.target.closest && e.target.closest('.row-menu-wrap')) return;
     closeRowMenus_();
   });
+  // Reposisi/tutup saat scroll (termasuk scroll horizontal .table-scroll) atau resize,
+  // supaya dropdown fixed tidak "ketinggalan" nempel di posisi lama saat tabel digeser.
   window.addEventListener('scroll', function(){ closeRowMenus_(); }, true);
   window.addEventListener('resize', function(){ closeRowMenus_(); });
 
@@ -10725,7 +10727,13 @@
       google.script.run.withSuccessHandler(function(products){
         NEWPO_PRODUCTS_ = products;
         NEWPO_CART_ = {};
-        items.forEach(function(it){ NEWPO_CART_[it.ProductID] = Number(it.Qty) || 1; });
+        // FIX BUG NYATA ("Total di List PO beda dgn Total di Detail PO" setelah PO
+        // diedit/diajukan ulang): sebelumnya baris ini pakai `=` (menimpa), jadi kalau
+        // PO_ITEMS punya 2 baris terpisah utk ProductID yang sama, qty baris pertama
+        // TERTIMPA oleh baris kedua alih-alih dijumlah — qty aslinya diam-diam hilang
+        // begitu Agent membuka form "Edit & Ajukan Ulang". Pakai `+=` supaya duplikat
+        // ProductID digabung dgn benar, bukan saling menimpa.
+        items.forEach(function(it){ NEWPO_CART_[it.ProductID] = (NEWPO_CART_[it.ProductID] || 0) + (Number(it.Qty) || 1); });
         google.script.run.withSuccessHandler(function(promos){
           NEWPO_RESUBMIT_ID_ = poId;
           NEWPO_EDIT_APPROVED_ID_ = null;
@@ -10857,7 +10865,9 @@
       var items = data.items, products = data.products;
       NEWPO_PRODUCTS_ = products;
       NEWPO_CART_ = {};
-      items.forEach(function(it){ NEWPO_CART_[it.ProductID] = Number(it.Qty) || 1; });
+      // FIX: sama seperti resubmitPOPrompt() — jumlahkan (bukan timpa) qty per
+      // ProductID supaya PO_ITEMS dgn 2 baris utk produk yang sama tidak kehilangan qty.
+      items.forEach(function(it){ NEWPO_CART_[it.ProductID] = (NEWPO_CART_[it.ProductID] || 0) + (Number(it.Qty) || 1); });
       NEWPO_RESUBMIT_ID_ = null;
       NEWPO_EDIT_APPROVED_ID_ = poId;
       renderNewPOForm_(products, [], true);
@@ -18067,8 +18077,6 @@
           } else if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
             msg = 'Akses kamera butuh koneksi HTTPS. Buka halaman ini lewat https:// lalu coba lagi.';
           }
-          // DIAGNOSTIK sementara: tampilkan nama+pesan error asli browser supaya penyebab (izin situs / izin sistem / kamera dipakai app lain) kelihatan jelas.
-          msg += ' [' + (name || 'Error') + (err && err.message ? ': ' + err.message : '') + ']';
           showToast(msg, 'error');
         });
     });
