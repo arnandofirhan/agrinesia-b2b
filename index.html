@@ -2249,13 +2249,19 @@
     .filter-bar{padding:8px 10px;gap:6px;margin:10px 0 14px;flex-direction:column;align-items:stretch;}
     .filter-search{max-width:none;flex:0 0 auto;}
     .filter-search input{padding:7px 12px 7px 32px;font-size:12.5px;}
-    .filter-controls-row{flex-wrap:wrap;gap:6px;}
+    .filter-controls-row{flex-wrap:wrap;gap:6px;width:100%;}
     .filter-select-wrap{flex:0 0 auto;min-width:0;max-width:calc(50% - 3px);}
     .filter-select{width:auto;max-width:100%;min-width:0;padding:6px 22px 6px 10px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .filter-count-pill{margin-left:auto;padding:5px 10px;font-size:11px;}
     .filter-reset-btn{padding:6px 11px;font-size:12px;}
   }
-  .filter-controls-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;}
+  /* FIX (desktop only — lihat override ":width:100%" khusus mobile di media query di atas):
+     dulu .filter-controls-row selalu width:100%, jadi SELALU pindah ke baris sendiri di
+     bawah search box (baris ke-2) walau ruang kanan search masih kosong. Sekarang di
+     desktop controls-row jadi flex item biasa yang duduk SEJAJAR di kanan search box
+     (karena .filter-bar sudah flex + flex-wrap:wrap) dan cuma "lompat" ke baris berikutnya
+     kalau memang ruang kanan search sudah tidak cukup lagi. */
+  .filter-controls-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:1 1 320px;}
 
   /* ---------- Date field dgn ikon kalender dekoratif (form modal & filter daterange) ----------
      Native <input type=date> tidak bisa di-styling isinya di Android/iOS (OS yang gambar
