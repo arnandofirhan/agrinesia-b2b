@@ -8493,6 +8493,7 @@
       {label:'Area ID', render:function(r){ return '<span class="id-chip">'+escapeHtml(r.AreaID||'-')+'</span>'; }},
       {label:'Nama Area', titleCol:true, field:'AreaName'},
       {label:'Brand', render:function(r){ return r.Brand ? escapeHtml(r.Brand) : '<span style="color:var(--ag-gray-400);">-</span>'; }},
+      {label:'Alamat Pabrik', render:function(r){ return r.FactoryAddress ? escapeHtml(String(r.FactoryAddress).split('\n')[0]) + (String(r.FactoryAddress).indexOf('\n')>=0 ? '…' : '') : '<span style="color:var(--ag-gray-400);">-</span>'; }},
       {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
     ];
     var actions = function(r){
@@ -8536,6 +8537,10 @@
     var body =
       formField_('areaName','Nama Area', a.AreaName, 'text', 'Contoh: Yogyakarta', true, ICONS.location) +
       formField_('areaBrand','Brand', a.Brand, 'text', 'Contoh: Bolu Susu Lembang', false, ICONS.location) +
+      '<div class="form-group"><label>Alamat Pabrik</label><div class="text-field-wrap text-field-wrap--textarea">'+ICONS.location+
+        '<textarea id="areaFactoryAddress" rows="3" placeholder="Contoh: Jalan Garuda, Cupuwatu I, Purwomartani, (baris baru) Kecamatan Kalasan, Kabupaten Sleman, (baris baru) Daerah Istimewa Yogyakarta 55571">'+escapeHtml(a.FactoryAddress||'')+'</textarea></div>' +
+        '<div class="notif-panel-hint" style="margin-top:4px;">'+ICONS.info+' Muncul sebagai kop alamat (kanan atas) di Surat Penawaran Kerjasama untuk Agent yang mendaftar di area ini. Tulis satu baris per Enter.</div>' +
+      '</div>' +
       statusField;
     openFormModal(areaId ? 'Edit Area' : 'Tambah Area', body, function(){ saveAgentAreaForm_(areaId); });
   }
@@ -8545,6 +8550,7 @@
       AreaID: areaId || undefined,
       AreaName: val_('areaName'),
       Brand: val_('areaBrand'),
+      FactoryAddress: val_('areaFactoryAddress'),
       Status: val_('areaStatus') || 'ACTIVE'
     };
     if(!payload.AreaName){ showToast('Nama area wajib diisi.','error'); return; }
