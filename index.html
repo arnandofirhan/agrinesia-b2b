@@ -2255,13 +2255,17 @@
     .filter-count-pill{margin-left:auto;padding:5px 10px;font-size:11px;}
     .filter-reset-btn{padding:6px 11px;font-size:12px;}
   }
-  /* FIX (desktop only — lihat override ":width:100%" khusus mobile di media query di atas):
-     dulu .filter-controls-row selalu width:100%, jadi SELALU pindah ke baris sendiri di
-     bawah search box (baris ke-2) walau ruang kanan search masih kosong. Sekarang di
-     desktop controls-row jadi flex item biasa yang duduk SEJAJAR di kanan search box
-     (karena .filter-bar sudah flex + flex-wrap:wrap) dan cuma "lompat" ke baris berikutnya
-     kalau memang ruang kanan search sudah tidak cukup lagi. */
-  .filter-controls-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:1 1 320px;}
+  /* FIX (desktop only, dibungkus @media (min-width:721px) EKSPLISIT — bukan lagi andalkan
+     urutan cascade — supaya 100% TIDAK MUNGKIN bentrok/mempengaruhi tampilan mobile lagi
+     seperti kejadian kemarin): dulu .filter-controls-row selalu width:100%, jadi SELALU
+     pindah ke baris sendiri di bawah search box (baris ke-2) walau ruang kanan search masih
+     kosong. Sekarang KHUSUS layar >720px, controls-row jadi flex item biasa yang duduk
+     SEJAJAR di kanan search box (karena .filter-bar sudah flex + flex-wrap:wrap) dan cuma
+     "lompat" ke baris berikutnya kalau memang ruang kanan search sudah tidak cukup lagi. */
+  .filter-controls-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;}
+  @media (min-width: 721px){
+    .filter-controls-row{width:auto;flex:1 1 320px;}
+  }
 
   /* ---------- Date field dgn ikon kalender dekoratif (form modal & filter daterange) ----------
      Native <input type=date> tidak bisa di-styling isinya di Android/iOS (OS yang gambar
