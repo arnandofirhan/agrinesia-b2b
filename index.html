@@ -2553,19 +2553,47 @@
   .reg-card-scroll::-webkit-scrollbar-thumb{background:var(--ag-scrollbar-thumb);border-radius:99px;background-clip:padding-box;}
   .reg-card-scroll::-webkit-scrollbar-thumb:hover{background:var(--ag-scrollbar-thumb-hover);}
   .reg-hero{
-    background:linear-gradient(160deg,#0B3D2E 0%,#155940 50%,#1E7A4C 100%);
+    /* Gradasi dipecah jadi banyak titik henti supaya perpindahan hijau-nya halus (tanpa
+       efek pita/banding), konsisten dengan panel di halaman login. */
+    background:linear-gradient(160deg,
+      #0B3D2E 0%,
+      #0E4733 14%,
+      #124E38 28%,
+      #155940 50%,
+      #196744 66%,
+      #1C7048 82%,
+      #1E7A4C 100%);
     color:#fff;padding:30px 30px 24px;position:relative;overflow:hidden;flex-shrink:0;z-index:2;
     box-shadow:0 6px 16px -6px rgba(6,30,22,.35);
   }
   .reg-hero::before{
-    content:'';position:absolute;inset:0;opacity:.5;
-    background-image:repeating-linear-gradient(178deg,transparent 0 30px,rgba(255,255,255,.05) 30px 32px);
-    mask-image:radial-gradient(circle at 85% 15%, black 0%, transparent 65%);
+    /* FIX "garis-garis": pola garis diagonal tajam (repeating-linear-gradient, garis 2px
+       tiap 32px) diganti sorotan cahaya LEMBUT tanpa tepi keras -- sama seperti perbaikan
+       di panel login (.login-visual::before). */
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 65% 90% at 85% 12%,
+        rgba(255,255,255,.085) 0%,
+        rgba(255,255,255,.065) 22%,
+        rgba(255,255,255,.044) 42%,
+        rgba(255,255,255,.022) 62%,
+        rgba(255,255,255,.007) 80%,
+        rgba(255,255,255,0) 100%);
   }
   .reg-hero::after{
-    content:'';position:absolute;width:260px;height:260px;border-radius:50%;
-    background:radial-gradient(circle, rgba(242,153,74,.3) 0%, transparent 70%);
-    top:-100px;right:-80px;
+    /* Lingkaran oranye: sebelumnya berhenti tegas di 70% (tepi terlihat). Sekarang memudar
+       bertahap sampai 0 + blur tipis supaya menyatu mulus dengan latar hijau. */
+    content:'';position:absolute;width:320px;height:320px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,
+      rgba(242,153,74,.28) 0%,
+      rgba(242,153,74,.22) 16%,
+      rgba(242,153,74,.155) 32%,
+      rgba(242,153,74,.098) 48%,
+      rgba(242,153,74,.05) 62%,
+      rgba(242,153,74,.018) 76%,
+      rgba(242,153,74,0) 90%);
+    filter:blur(8px);
+    top:-130px;right:-105px;
   }
   .reg-hero-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1;}
   .reg-hero-badge{
