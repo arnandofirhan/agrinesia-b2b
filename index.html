@@ -11970,18 +11970,29 @@
     var list = document.getElementById('sjFileList');
     var saveBtn = document.getElementById('modalSaveBtn');
     if(tile){
-      tile.classList.add('has-file');
-      tile.innerHTML =
-        '<div class="doc-tile-check">'+ICON_CHECK_SM+'</div>' +
-        '<div class="doc-tile-filename">'+SJ_FILE_OBJS_.length+' file dipilih</div>' +
-        '<div class="doc-tile-hint">Klik untuk tambah file lagi</div>' +
-        '<input type="file" id="sjFile" accept="image/*,application/pdf" multiple onchange="handleSJFileChange_()">';
+      if(SJ_FILE_OBJS_.length === 0){
+        tile.classList.remove('has-file');
+        tile.innerHTML =
+          '<div class="doc-tile-icon">'+ICONS.fileDoc+'</div>' +
+          '<div class="doc-tile-label">Upload Surat Jalan</div>' +
+          '<div class="doc-tile-hint">PNG, JPG atau PDF &middot; bisa multi file</div>' +
+          '<input type="file" id="sjFile" accept="image/*,application/pdf" multiple onchange="handleSJFileChange_()">';
+      } else {
+        tile.classList.add('has-file');
+        tile.innerHTML =
+          '<div class="doc-tile-check">'+ICON_CHECK_SM+'</div>' +
+          '<div class="doc-tile-filename">'+SJ_FILE_OBJS_.length+' file dipilih</div>' +
+          '<div class="doc-tile-hint">Klik untuk tambah file lagi</div>' +
+          '<input type="file" id="sjFile" accept="image/*,application/pdf" multiple onchange="handleSJFileChange_()">';
+      }
       tile.onclick = function(){ document.getElementById('sjFile').click(); };
     }
     if(list){
-      list.innerHTML = '<div class="doc-preview-grid">' + SJ_FILE_OBJS_.map(function(f, i){
-        return pendingFileCard_(f, 'removeSJFile_', i);
-      }).join('') + '</div>';
+      list.innerHTML = SJ_FILE_OBJS_.length
+        ? '<div class="doc-preview-grid">' + SJ_FILE_OBJS_.map(function(f, i){
+            return pendingFileCard_(f, 'removeSJFile_', i);
+          }).join('') + '</div>'
+        : '';
     }
     if(saveBtn) saveBtn.disabled = SJ_FILE_OBJS_.length === 0;
   }
@@ -12095,18 +12106,29 @@
     var list = document.getElementById('docFileList');
     var saveBtn = document.getElementById('modalSaveBtn');
     if(tile){
-      tile.classList.add('has-file');
-      tile.innerHTML =
-        '<div class="doc-tile-check">'+ICON_CHECK_SM+'</div>' +
-        '<div class="doc-tile-filename">'+DOC_FILE_OBJS_.length+' file dipilih</div>' +
-        '<div class="doc-tile-hint">Klik untuk tambah file lagi</div>' +
-        '<input type="file" id="docFile" accept="image/*,application/pdf" multiple onchange="handleDocFileChange_()">';
+      if(DOC_FILE_OBJS_.length === 0){
+        tile.classList.remove('has-file');
+        tile.innerHTML =
+          '<div class="doc-tile-icon">'+ICONS.camera+'</div>' +
+          '<div class="doc-tile-label">Upload Dokumen</div>' +
+          '<div class="doc-tile-hint">PNG, JPG atau PDF &middot; bisa multi file</div>' +
+          '<input type="file" id="docFile" accept="image/*,application/pdf" multiple onchange="handleDocFileChange_()">';
+      } else {
+        tile.classList.add('has-file');
+        tile.innerHTML =
+          '<div class="doc-tile-check">'+ICON_CHECK_SM+'</div>' +
+          '<div class="doc-tile-filename">'+DOC_FILE_OBJS_.length+' file dipilih</div>' +
+          '<div class="doc-tile-hint">Klik untuk tambah file lagi</div>' +
+          '<input type="file" id="docFile" accept="image/*,application/pdf" multiple onchange="handleDocFileChange_()">';
+      }
       tile.onclick = function(){ document.getElementById('docFile').click(); };
     }
     if(list){
-      list.innerHTML = '<div class="doc-preview-grid">' + DOC_FILE_OBJS_.map(function(f, i){
-        return pendingFileCard_(f, 'removeDocFile_', i);
-      }).join('') + '</div>';
+      list.innerHTML = DOC_FILE_OBJS_.length
+        ? '<div class="doc-preview-grid">' + DOC_FILE_OBJS_.map(function(f, i){
+            return pendingFileCard_(f, 'removeDocFile_', i);
+          }).join('') + '</div>'
+        : '';
     }
     if(saveBtn) saveBtn.disabled = DOC_FILE_OBJS_.length === 0;
   }
