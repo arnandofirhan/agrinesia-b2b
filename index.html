@@ -2728,7 +2728,10 @@
   .doc-tile-hint{font-size:10px;color:var(--ag-gray-400);margin-top:3px;}
   .doc-tile-filelist{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
   .doc-filelist-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--ag-gray-50);border-radius:8px;font-size:12px;color:var(--ag-gray-900);}
-  .doc-filelist-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .doc-filelist-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .doc-filelist-thumb{width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--ag-gray-200);background:#fff;}
+  .doc-filelist-thumb-pdf{display:flex;align-items:center;justify-content:center;color:var(--ag-gray-400);}
+  .doc-filelist-thumb-pdf svg{width:16px;height:16px;}
   .doc-filelist-remove{border:none;background:none;color:var(--ag-gray-400);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;padding:0 2px;}
   .doc-filelist-remove:hover{color:var(--ag-danger,#D64545);}
   .doc-tile-preview{width:100%;height:78px;border-radius:9px;object-fit:cover;margin-bottom:8px;box-shadow:var(--shadow-sm);}
@@ -11924,7 +11927,12 @@
     }
     if(list){
       list.innerHTML = SJ_FILE_OBJS_.map(function(f, i){
-        return '<div class="doc-filelist-item"><span>'+escapeHtml(f.name)+'</span>' +
+        var isImage = /^image\//.test(f.mimeType||'') || /\.(png|jpe?g|gif|webp)$/i.test(f.name||'');
+        var thumb = isImage
+          ? '<img class="doc-filelist-thumb" src="'+f.data+'">'
+          : '<div class="doc-filelist-thumb doc-filelist-thumb-pdf">'+ICONS.fileDoc+'</div>';
+        return '<div class="doc-filelist-item">' + thumb +
+          '<span>'+escapeHtml(f.name)+'</span>' +
           '<button type="button" class="doc-filelist-remove" onclick="event.stopPropagation();removeSJFile_('+i+')">&times;</button></div>';
       }).join('');
     }
@@ -12050,7 +12058,12 @@
     }
     if(list){
       list.innerHTML = DOC_FILE_OBJS_.map(function(f, i){
-        return '<div class="doc-filelist-item"><span>'+escapeHtml(f.name)+'</span>' +
+        var isImage = /^image\//.test(f.mimeType||'') || /\.(png|jpe?g|gif|webp)$/i.test(f.name||'');
+        var thumb = isImage
+          ? '<img class="doc-filelist-thumb" src="'+f.data+'">'
+          : '<div class="doc-filelist-thumb doc-filelist-thumb-pdf">'+ICONS.fileDoc+'</div>';
+        return '<div class="doc-filelist-item">' + thumb +
+          '<span>'+escapeHtml(f.name)+'</span>' +
           '<button type="button" class="doc-filelist-remove" onclick="event.stopPropagation();removeDocFile_('+i+')">&times;</button></div>';
       }).join('');
     }
