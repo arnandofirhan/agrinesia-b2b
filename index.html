@@ -292,6 +292,8 @@
   html[data-theme="dark"] .action-btn.review:hover{background:rgba(201,154,28,.3);color:#F0D384;}
   html[data-theme="dark"] .action-btn.confirm{background:rgba(31,169,113,.2);color:#5FDBA3;}
   html[data-theme="dark"] .action-btn.confirm:hover{background:rgba(31,169,113,.3);color:#7EE4B6;}
+  html[data-theme="dark"] .action-btn.confirm.has-proof{background:#1FA971;color:#fff;box-shadow:0 0 0 2px rgba(95,219,163,.3);}
+  html[data-theme="dark"] .action-btn.confirm.has-proof:hover{background:#25BE81;color:#fff;}
   html[data-theme="dark"] .action-btn.delete{background:rgba(224,71,63,.2);color:#F08883;}
   html[data-theme="dark"] .action-btn.delete:hover{background:rgba(224,71,63,.3);color:#F4A29E;}
   html[data-theme="dark"] .action-btn.more{background:rgba(255,255,255,.06);color:var(--ag-gray-400);}
@@ -1719,6 +1721,17 @@
   /* confirm payment — emerald */
   .action-btn.confirm{background:#E4F8ED;color:#1FA971;}
   .action-btn.confirm:hover{background:#CFF2E1;color:#178A5B;}
+
+  /* confirm payment — Agent SUDAH upload bukti transfer: hijau SOLID + badge lampiran,
+     supaya Admin bisa membedakannya sekilas dari PO yang belum ada bukti (pastel biasa). */
+  .action-btn.confirm.has-proof{background:#1FA971;color:#fff;position:relative;box-shadow:0 0 0 2px rgba(31,169,113,.25);}
+  .action-btn.confirm.has-proof:hover{background:#178A5B;color:#fff;}
+  .action-btn-proof-badge{
+    position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:999px;
+    background:#F59E0B;color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1.5px var(--ag-surface);
+  }
+  .action-btn-proof-badge svg{width:9px;height:9px;stroke-width:2.6;}
 
   /* delete — red */
   .action-btn.delete{background:var(--ag-red-soft);color:#E0473F;}
@@ -10076,7 +10089,10 @@
           if(r.Status === 'APPROVED'){
             if(!r.PaymentConfirmedAt){
               if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
-                btns += '<button class="action-btn confirm" title="Konfirmasi Pembayaran'+(r.AgentProofFileURL ? ' (Agent sudah upload bukti)' : '')+'" onclick="confirmPaymentPrompt(\''+r.POID+'\',\''+escapeHtml(r.AgentProofFileID||'')+'\',\''+escapeHtml(r.AgentProofFileURL||'')+'\')">'+ICONS.check+'</button>';
+                // Kalau Agent sudah upload bukti transfer: tombol jadi hijau SOLID + badge lampiran
+                // (has-proof) supaya beda jelas dari PO yang belum ada bukti (pastel biasa).
+                var hasAgentProof = !!r.AgentProofFileURL;
+                btns += '<button class="action-btn confirm'+(hasAgentProof ? ' has-proof' : '')+'" title="'+(hasAgentProof ? 'Konfirmasi Pembayaran \u2014 Agent sudah upload bukti transfer' : 'Konfirmasi Pembayaran \u2014 belum ada bukti dari Agent')+'" onclick="confirmPaymentPrompt(\''+r.POID+'\',\''+escapeHtml(r.AgentProofFileID||'')+'\',\''+escapeHtml(r.AgentProofFileURL||'')+'\')">'+ICONS.check+(hasAgentProof ? '<span class="action-btn-proof-badge" aria-hidden="true">'+ICONS.upload+'</span>' : '')+'</button>';
               }
             } else if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
               btns += '<button class="btn btn-primary btn-sm" onclick="createOrderPrompt(\''+r.POID+'\')">Buat Order</button>';
