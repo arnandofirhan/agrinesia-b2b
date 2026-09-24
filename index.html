@@ -7275,7 +7275,7 @@
     PENDING_SUPERVISOR:'Menunggu Persetujuan',
     UNPAID:'Unpaid', PAID:'Paid', PENDING:'Pending', PENDING_DELIVERY:'Pending Delivery',
     DELIVERED:'Delivered', COMPLETE:'Complete', MENUNGGU_PEMBAYARAN:'Pending Payment',
-    STORE_ORDER_CREATED:'Order Created', DELIVERED_PENDING_DOCS:'Delivered, Docs Pending', CANCELLED:'Cancelled',
+    STORE_ORDER_CREATED:'Order Created', DELIVERED_PENDING_DOCS:'Awaiting Supporting Docs', CANCELLED:'Cancelled',
     // Komisi
     ELIGIBLE:'Eligible', CLAIMED:'Claimed', VERIFIED:'Verified'
   };
@@ -7292,6 +7292,44 @@
     var cls = map[status] || 'badge-neutral';
     var label = STATUS_LABELS_ID_[status] || (PO_STATUS_LABELS_ && PO_STATUS_LABELS_[status]) || (status||'-').replace(/_/g,' ');
     return '<span class="badge '+cls+'">'+escapeHtml(label)+'</span>';
+  }
+
+  /** Badge khusus status PENYELESAIAN transaksi (Order.CustomerPaymentStatus) — TIDAK ADA
+      pembayaran dari Store dalam alur ini. Store hanya memproses & mengirim pesanan; yang
+      membayar (Cash Before Delivery) hanya Agent, dan itu sudah dikonfirmasi di tahap PO
+      (lihat confirmPOPayment) SEBELUM Order ini dibuat.
+      Field CustomerPaymentStatus di sini sebenarnya adalah PENANDA ADMIN bahwa pengiriman
+      sudah selesai & terverifikasi lengkap (Surat Jalan + dokumen pendukung sudah diupload)
+      — syarat MOU Pasal 4 ayat 1 sebelum komisi Agent dihitung (lihat markCustomerPayment /
+      completeTransactionAndCalculateCommission_ di Code.gs). Nama field & nilai mentahnya
+      (UNPAID/PAID) sengaja tidak diubah di sheet supaya tidak perlu migrasi data; hanya LABEL
+      TAMPILAN yang diperjelas di sini, terpisah dari statusBadge() supaya label global
+      "Paid/Unpaid" di modul lain (mis. Komisi = sudah dibayar ke Agent) tidak ikut berubah. */
+  var SETTLEMENT_LABELS_ = { UNPAID:'Menunggu Penyelesaian', PAID:'Transaksi Selesai' };
+  var SETTLEMENT_TIPS_ = {
+    UNPAID:'Menunggu Surat Jalan & dokumen pendukung lengkap, lalu dikonfirmasi Tim B2B Agent. (Store tidak melakukan pembayaran — pembayaran Agent sudah dikonfirmasi sejak PO.)',
+    PAID:'Pengiriman sudah lengkap & dikonfirmasi Tim B2B Agent. Komisi Agent sudah dihitung.'
+  };
+  function settlementBadge_(status){
+    var cls = (status === 'PAID') ? 'badge-green' : (status === 'UNPAID' ? 'badge-orange' : 'badge-neutral');
+    var label = SETTLEMENT_LABELS_[status] || (status||'-').replace(/_/g,' ');
+    var tip = SETTLEMENT_TIPS_[status] || '';
+    return '<span class="badge '+cls+'"'+(tip ? ' title="'+escapeHtml(tip)+'"' : '')+'>'+escapeHtml(label)+'</span>';
+  }
+
+  /** Badge Pengiriman KHUSUS Order, mengganti statusBadge(r.DeliveryStatus) polos. Kalau masih
+      tahap "Awaiting Supporting Docs", sebutkan LANGSUNG dokumen mana yang sudah/belum (pakai
+      SJCount & SupportingDocCount yang backend sudah kirim lewat attachDocCounts_ di Code.gs)
+      supaya staff tidak perlu buka Detail Order dulu untuk tahu "udah upload apa belum". */
+  function deliveryBadge_(row){
+    var status = row.DeliveryStatus;
+    if(status !== 'DELIVERED_PENDING_DOCS'){
+      return statusBadge(status);
+    }
+    var hasSJ = Number(row.SJCount) > 0, hasOther = Number(row.SupportingDocCount) > 0;
+    var label = !hasOther ? 'Menunggu Dok. Pendukung' : (!hasSJ ? 'Menunggu Surat Jalan' : 'Awaiting Supporting Docs');
+    var tip = 'Surat Jalan: '+(hasSJ ? 'sudah diupload' : 'BELUM diupload')+'. Dokumen Pendukung: '+(hasOther ? 'sudah diupload' : 'BELUM diupload')+'.';
+    return '<span class="badge badge-orange" title="'+escapeHtml(tip)+'">'+escapeHtml(label)+'</span>';
   }
 
   // =============================================================
@@ -11483,8 +11521,9 @@
       ORDERS_LAST_RENDER_ARGS_ = { rows:rows, storeMap:storeMap, agentMap:agentMap };
       var fieldConfigs = [
         {key:'deliveryStatus', label:'Pengiriman', options:uniqueOptions_(rows,'DeliveryStatus'), match:function(r,v){return r.DeliveryStatus===v;}},
-        {key:'paymentStatus', label:'Pembayaran', options:uniqueOptions_(rows,'CustomerPaymentStatus'), match:function(r,v){return r.CustomerPaymentStatus===v;}},
-        {key:'transactionStatus', label:'Transaksi', options:uniqueOptions_(rows,'TransactionStatus'), match:function(r,v){return r.TransactionStatus===v;}}
+        // Filter "Transaksi" (TransactionStatus) SENGAJA dihapus: nilainya selalu sama dengan
+        // "Penyelesaian" (IN_PROGRESS<->UNPAID, COMPLETE<->PAID), jadi 1 filter ini sudah cukup.
+        {key:'paymentStatus', label:'Penyelesaian', options:uniqueOptions_(rows,'CustomerPaymentStatus').map(function(o){ return {value:o.value, label:SETTLEMENT_LABELS_[o.value] || o.label}; }), match:function(r,v){return r.CustomerPaymentStatus===v;}}
       ];
       var searchFields = ['OrderID','POID'];
       if(storeMap){ searchFields.push(function(r){ var s=storeMap[r.StoreID]; return s ? s.StoreName : ''; }); }
@@ -11523,9 +11562,11 @@
         var short = po.PromoName.length > 22 ? escapeHtml(po.PromoName.slice(0,22)) + '…' : escapeHtml(po.PromoName);
         return '<span title="'+escapeHtml(po.PromoName)+'">'+short+'</span>';
       }});
-      cols.push({label:'Pengiriman', render:function(r){return statusBadge(r.DeliveryStatus);}});
-      cols.push({label:'Pembayaran', render:function(r){return statusBadge(r.CustomerPaymentStatus);}});
-      cols.push({label:'Transaksi', render:function(r){return statusBadge(r.TransactionStatus);}});
+      cols.push({label:'Pengiriman', render:function(r){return deliveryBadge_(r);}});
+      // TransactionStatus SENGAJA tidak ditampilkan sebagai kolom terpisah: nilainya selalu
+      // 1:1 mengikuti CustomerPaymentStatus (IN_PROGRESS<->UNPAID, COMPLETE<->PAID), jadi
+      // badge "Penyelesaian" di bawah sudah mewakili keduanya.
+      cols.push({label:'Penyelesaian', render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
       var isStaffAction = (STATE.user.role==='SUPERVISOR'||STATE.user.role==='ADMIN');
       var actions = function(r){
         var btns = '<div class="row-actions">';
@@ -11587,7 +11628,7 @@
       (agentMap ? '<div class="order-card-field"><span>Agent</span><b>'+agentHtml+'</b></div>' : '') +
       '<div class="order-card-field"><span>Promo</span><b>'+promoHtml+'</b></div>' +
       '<div class="order-card-badges">' +
-        statusBadge(r.DeliveryStatus) + statusBadge(r.CustomerPaymentStatus) + statusBadge(r.TransactionStatus) +
+        deliveryBadge_(r) + settlementBadge_(r.CustomerPaymentStatus) +
       '</div>' +
       '<div class="order-card-actions">'+actionsFn(r)+'</div>' +
     '</div>';
@@ -11635,7 +11676,7 @@
             '</div>' +
           '</div>' +
           '<div class="order-summary-badges">' +
-            statusBadge(order.DeliveryStatus) + statusBadge(order.CustomerPaymentStatus) + statusBadge(order.TransactionStatus) +
+            deliveryBadge_(order) + settlementBadge_(order.CustomerPaymentStatus) +
           '</div>' +
         '</div>';
 
