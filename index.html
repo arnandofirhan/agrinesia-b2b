@@ -10076,7 +10076,7 @@
           if(r.Status === 'APPROVED'){
             if(!r.PaymentConfirmedAt){
               if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
-                btns += '<button class="action-btn confirm" title="Konfirmasi Pembayaran" onclick="confirmPaymentPrompt(\''+r.POID+'\')">'+ICONS.check+'</button>';
+                btns += '<button class="action-btn confirm" title="Konfirmasi Pembayaran'+(r.AgentProofFileURL ? ' (Agent sudah upload bukti)' : '')+'" onclick="confirmPaymentPrompt(\''+r.POID+'\',\''+escapeHtml(r.AgentProofFileID||'')+'\',\''+escapeHtml(r.AgentProofFileURL||'')+'\')">'+ICONS.check+'</button>';
               }
             } else if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
               btns += '<button class="btn btn-primary btn-sm" onclick="createOrderPrompt(\''+r.POID+'\')">Buat Order</button>';
@@ -10085,6 +10085,11 @@
         }
         if(STATE.user.role === 'AGENT' && r.Status === 'REJECTED'){
           btns += '<button class="btn btn-pill-outline btn-sm" onclick="resubmitPOPrompt(\''+r.POID+'\')">Edit &amp; Ajukan Ulang</button>';
+        }
+        // Agent: begitu sudah membayar, langsung upload bukti transfer dari sini. Ini HANYA
+        // lampiran — status PO tetap "Menunggu Pembayaran" sampai Admin/SPV klik konfirmasi.
+        if(STATE.user.role === 'AGENT' && r.Status === 'APPROVED' && !r.PaymentConfirmedAt){
+          btns += '<button class="action-btn confirm" title="'+(r.AgentProofFileURL ? 'Ganti Bukti Pembayaran' : 'Upload Bukti Pembayaran')+'" onclick="agentUploadProofPrompt(\''+r.POID+'\')">'+ICONS.upload+'</button>';
         }
 
         // Aksi SEKUNDER (jarang dipakai / bukan bagian dari alur status utama) dikumpulkan ke
@@ -10313,6 +10318,17 @@
         }, null);
         docNotes += '<div class="doc-locked-note">'+ICONS.lock+' Tidak dapat diganti/dihapus &mdash; Order untuk Store sudah terbentuk berdasarkan bukti pembayaran ini.</div>';
       }
+      // Bukti transfer dari AGENT yang belum dikonfirmasi staff. Ditampilkan sebagai kartu
+      // dokumen biasa (tidak locked) — masih bisa diganti Agent lewat tombol di list PO.
+      if(!po.PaymentConfirmedAt && po.AgentProofFileURL){
+        docCards += docPreviewCard_({
+          label:'Bukti Transfer dari Agent',
+          url:po.AgentProofFileURL,
+          fileId:po.AgentProofFileID||'',
+          isPdf:/\.pdf($|\?)/i.test(po.AgentProofFileURL)
+        }, null);
+        docNotes += '<div class="doc-locked-note" style="opacity:.85;">Bukti transfer diunggah Agent &mdash; menunggu konfirmasi Admin/Supervisor.</div>';
+      }
 
       var suratBlock = renderSuratPenawaranBlock_(po, isStaff);
       docCards += suratBlock.card;
@@ -10413,10 +10429,28 @@
 
   var CONFIRM_PAY_FILE_ = null;
 
-  function confirmPaymentPrompt(poId){
+  function confirmPaymentPrompt(poId, agentProofFileId, agentProofUrl){
     CONFIRM_PAY_FILE_ = null;
+    // Kalau Agent sudah upload bukti sendiri, tampilkan preview-nya supaya staff bisa
+    // mengecek dulu sebelum konfirmasi. Tanpa upload file baru di sini, bukti Agent ini
+    // otomatis dipakai backend sebagai bukti final (lihat confirmPOPayment di Code.gs).
+    var agentProofHtml = '';
+    if(agentProofUrl){
+      var isPdfAgent = /\.pdf($|\?)/i.test(agentProofUrl);
+      var agentThumb = (agentProofFileId && !isPdfAgent)
+        ? '<img src="https://lh3.googleusercontent.com/d/'+encodeURIComponent(agentProofFileId)+'=s400" alt="Bukti dari Agent" style="max-width:100%;max-height:180px;border-radius:8px;display:block;margin:8px 0;" onerror="this.style.display=\'none\'">'
+        : '';
+      agentProofHtml =
+        '<div class="form-group" style="background:var(--ag-gray-50,#f8faf9);border:1px solid var(--ag-gray-200,#e5e7eb);border-radius:10px;padding:12px 14px;margin-bottom:16px;">' +
+          '<label style="margin-bottom:4px;">Bukti Transfer dari Agent</label>' +
+          agentThumb +
+          '<a href="'+escapeHtml(agentProofUrl)+'" target="_blank" rel="noopener" style="font-size:12.5px;">Buka file bukti transfer</a>' +
+          '<div style="font-size:12px;color:var(--ag-gray-500);margin-top:6px;">Agent sudah mengunggah bukti ini. Kamu tidak perlu upload lagi kecuali ingin mengganti dengan file lain.</div>' +
+        '</div>';
+    }
     var body =
       '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Pastikan Agent sudah melakukan pembayaran (Cash Before Delivery) sebelum mengonfirmasi. Setelah dikonfirmasi, PO ini dapat diproses menjadi Order ke Store.</p>' +
+      agentProofHtml +
       '<div class="form-group">' +
         '<label>Bukti Pembayaran <span style="font-weight:400;color:var(--ag-gray-500);">(opsional)</span></label>' +
         '<div class="doc-tile" id="payProofTile" onclick="document.getElementById(\'payProofFile\').click()">' +
@@ -10457,6 +10491,62 @@
       if(res.success){ showToast('Pembayaran dikonfirmasi.','success'); closeModal(); invalidateDetailModalCache_('po:'+poId); invalidateDashboardCache_(); renderPO(); }
       else showToast(res.message,'error');
     }).withFailureHandler(function(e){ handleBackendError(e); }).confirmPOPayment(STATE.token, poId, CONFIRM_PAY_FILE_);
+  }
+
+  // ===== AGENT: upload bukti pembayaran sendiri =====
+  // Hanya menyimpan LAMPIRAN. Status PO tidak berubah & Order belum dibuat — konfirmasi
+  // final tetap oleh Admin/SPV lewat confirmPaymentPrompt/confirmPOPayment.
+  var AGENT_PROOF_FILE_ = null;
+
+  function agentUploadProofPrompt(poId){
+    AGENT_PROOF_FILE_ = null;
+    var body =
+      '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Sudah melakukan pembayaran (Cash Before Delivery)? Unggah bukti transfer di sini. Admin/Supervisor akan memeriksa bukti Anda lalu mengonfirmasi pembayaran. Status PO tetap <strong>Menunggu Pembayaran</strong> sampai dikonfirmasi.</p>' +
+      '<div class="form-group">' +
+        '<label>Bukti Pembayaran <span style="color:var(--ag-red);">*</span></label>' +
+        '<div class="doc-tile" id="agentProofTile" onclick="document.getElementById(\'agentProofFile\').click()">' +
+          '<div class="doc-tile-icon">'+ICONS.camera+'</div>' +
+          '<div class="doc-tile-label">Upload Bukti Transfer</div>' +
+          '<div class="doc-tile-hint">JPG, PNG, atau PDF</div>' +
+          '<input type="file" id="agentProofFile" accept="image/png,image/jpeg,application/pdf" onchange="handleAgentProofFileChange_()">' +
+        '</div>' +
+      '</div>';
+    openFormModal('Upload Bukti Pembayaran', body, function(){ agentUploadProofSubmit_(poId); });
+    var saveBtn = document.getElementById('modalSaveBtn');
+    if(saveBtn) saveBtn.textContent = 'Kirim Bukti Pembayaran';
+  }
+
+  function handleAgentProofFileChange_(){
+    var input = document.getElementById('agentProofFile');
+    var tile = document.getElementById('agentProofTile');
+    if(!input.files.length){ AGENT_PROOF_FILE_ = null; return; }
+    var file = input.files[0];
+    if(file.size > 10 * 1024 * 1024){
+      showToast('Ukuran file terlalu besar (maksimal 10 MB).','error');
+      input.value = ''; AGENT_PROOF_FILE_ = null; return;
+    }
+    fileToBase64_(file, function(fileObj){
+      AGENT_PROOF_FILE_ = fileObj;
+      var isImage = file.type && file.type.indexOf('image/') === 0;
+      var previewHtml = isImage
+        ? '<img class="doc-tile-preview" src="'+fileObj.data+'">'
+        : '<div class="doc-tile-pdf-badge">'+ICON_PDF+'PDF</div>';
+      tile.classList.add('has-file');
+      tile.innerHTML =
+        '<div class="doc-tile-check">'+ICON_CHECK_SM+'</div>' +
+        previewHtml +
+        '<div class="doc-tile-filename">'+escapeHtml(file.name)+'</div>' +
+        '<input type="file" id="agentProofFile" accept="image/png,image/jpeg,application/pdf" onchange="handleAgentProofFileChange_()">';
+      tile.onclick = function(){ document.getElementById('agentProofFile').click(); };
+    });
+  }
+
+  function agentUploadProofSubmit_(poId){
+    if(!AGENT_PROOF_FILE_){ showToast('Pilih file bukti pembayaran terlebih dahulu.','error'); return; }
+    google.script.run.withSuccessHandler(function(res){
+      if(res.success){ showToast(res.message || 'Bukti pembayaran berhasil diunggah.','success'); closeModal(); invalidateDetailModalCache_('po:'+poId); invalidateDashboardCache_(); renderPO(); }
+      else showToast(res.message || 'Gagal mengunggah bukti pembayaran.','error');
+    }).withFailureHandler(function(e){ handleBackendError(e); }).uploadAgentPaymentProof(STATE.token, poId, AGENT_PROOF_FILE_);
   }
 
   /** Modern "Buat PO" form rendered as a proper modal: product grid (with product
