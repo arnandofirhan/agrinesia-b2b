@@ -10327,7 +10327,7 @@
           fileId:po.AgentProofFileID||'',
           isPdf:/\.pdf($|\?)/i.test(po.AgentProofFileURL)
         }, null);
-        docNotes += '<div class="doc-locked-note" style="opacity:.85;">Bukti transfer diunggah Agent &mdash; menunggu konfirmasi Admin/Supervisor.</div>';
+        docNotes += '<div class="doc-locked-note" style="opacity:.85;">Bukti transfer diunggah Agent &mdash; menunggu konfirmasi Tim B2B Agent.</div>';
       }
 
       var suratBlock = renderSuratPenawaranBlock_(po, isStaff);
@@ -10501,7 +10501,7 @@
   function agentUploadProofPrompt(poId){
     AGENT_PROOF_FILE_ = null;
     var body =
-      '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Sudah melakukan pembayaran (Cash Before Delivery)? Unggah bukti transfer di sini. Admin/Supervisor akan memeriksa bukti Anda lalu mengonfirmasi pembayaran. Status PO tetap <strong>Menunggu Pembayaran</strong> sampai dikonfirmasi.</p>' +
+      '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Sudah melakukan pembayaran (Cash Before Delivery)? Unggah bukti transfer di sini. Tim B2B Agent akan memeriksa bukti Anda lalu mengonfirmasi pembayaran. Status PO tetap <strong>Menunggu Pembayaran</strong> sampai dikonfirmasi.</p>' +
       '<div class="form-group">' +
         '<label>Bukti Pembayaran <span style="color:var(--ag-red);">*</span></label>' +
         '<div class="doc-tile" id="agentProofTile" onclick="document.getElementById(\'agentProofFile\').click()">' +
