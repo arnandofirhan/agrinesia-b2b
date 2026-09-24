@@ -4674,6 +4674,7 @@
         <span class="sidebar-title">B2B Agent Management</span>
       </div>
 
+
       <nav class="sidebar-nav" id="sidebarNav">
         <!-- menu items injected by renderSidebar() in Javascript.html -->
       </nav>
@@ -5001,15 +5002,24 @@
   // QR Code -> Riwayat Transaksi -> Profile). Bottom-nav mobile TIDAK terpengaruh karena role STORE
   // punya urutan eksplisit sendiri di BOTTOM_NAV_PRIMARY_ORDER_.
   var MENU_GROUPS = [
-    { key: '__top__',   label: null,               items: ['dashboard'] }, // ungrouped, always visible, no header
-    { key: 'transaksi', label: 'Transaksi',         items: ['catalog','promo','livechat','transactions','orders','commission','commission-scheme'] },
+    // sectionLabel: judul kecil di ATAS grup ini. Sengaja ditaruh di grup 'transaksi' (BUKAN
+    // di atas Dashboard) karena Dashboard itu SHARED (ada tab B2B Agent & Employee Benefit
+    // di dalamnya — lihat renderDashboard di JavaScript.html), jadi tidak boleh keliatan
+    // seolah-olah Dashboard adalah bagian eksklusif dari section "B2B Agent".
+    { key: '__top__',   label: null, items: ['dashboard'] }, // ungrouped, always visible, no header
+    { key: 'transaksi', label: 'Transaksi', sectionLabel: 'B2B Agent', items: ['catalog','promo','livechat','transactions','orders'] },
+    { key: 'komisi',    label: 'Komisi',            items: ['commission','commission-scheme'] },
     { key: 'master',    label: 'Master Data',       items: ['agents','agent-areas','products','stores'] },
     { key: 'laporan',   label: 'Laporan & Jadwal',  items: ['reports','calendar'] },
     { key: 'sistem',    label: 'Sistem',            items: ['users','settings','dashboard-settings','audit-log'] },
-    { key: 'eb-menu',   label: 'Employee Benefit',  items: ['eb-companies','eb-employees','eb-transactions-admin','eb-store-users','eb-qr','eb-transactions','eb-scan','eb-store-transactions','eb-profile'] }
+    // divider: true -> render garis pemisah tipis SEBELUM grup ini (tanpa teks "modul lain",
+    // cuma garis) supaya Employee Benefit kerasa sebagai blok terpisah dari menu B2B di atasnya.
+    { key: 'eb-menu',   label: 'Employee Benefit',  divider: true, items: ['eb-companies','eb-employees','eb-transactions-admin','eb-store-users','eb-qr','eb-transactions','eb-scan','eb-store-transactions','eb-profile'] }
   ];
-  // Which groups start expanded by default (persisted in-session via SIDEBAR_GROUP_STATE_ below).
-  var SIDEBAR_GROUP_STATE_ = { transaksi: true, master: true, laporan: true, sistem: true, 'eb-menu': true };
+  // Semua grup default COLLAPSED (sidebar kepanjangan kalau semua expanded) — renderSidebar()
+  // tetap auto-expand grup manapun yang isinya halaman aktif (lihat containsActivePage di bawah),
+  // jadi user tetap langsung lihat menu yang lagi dibuka meski defaultnya collapsed.
+  var SIDEBAR_GROUP_STATE_ = { transaksi: false, komisi: false, master: false, laporan: false, sistem: false, 'eb-menu': false };
 
   var PAGE_TITLES = {
     dashboard: 'Dashboard', agents: 'Agent', 'agent-areas': 'Area Pendaftaran', products: 'Master Item Product',
@@ -5958,6 +5968,7 @@
     var el = document.createElement('div');
     el.className = 'nav-item' + (item.key === STATE.currentPage ? ' active' : '');
     el.setAttribute('title', label);
+    el.setAttribute('data-search', label.toLowerCase());
     var count = counts[item.key] || 0;
     var badgeHtml = count > 0 ? '<span class="nav-badge">'+(count > 99 ? '99+' : String(count))+'</span>' : '';
     el.innerHTML = '<span class="nav-icon">'+item.icon+'</span>' +
@@ -5986,6 +5997,22 @@
         .map(function(k){ return itemsByKey[k]; })
         .filter(function(item){ return item && item.roles.indexOf(STATE.user.role) !== -1; });
       if(!visibleItems.length) return;
+
+      // sectionLabel muncul sekali di atas grup ini (dipakai buat blok "B2B Agent" di atas
+      // Dashboard) — beda dari nav-group-header biasa: bukan collapsible, cuma label statis.
+      if(group.sectionLabel){
+        var secLabel = document.createElement('div');
+        secLabel.className = 'nav-section-label';
+        secLabel.textContent = group.sectionLabel;
+        nav.appendChild(secLabel);
+      }
+      // divider: garis pemisah tipis sebelum grup ini (dipakai buat motong Employee Benefit
+      // dari blok menu B2B di atasnya — TANPA teks "modul lain", cuma garis polos).
+      if(group.divider){
+        var divEl = document.createElement('div');
+        divEl.className = 'nav-divider';
+        nav.appendChild(divEl);
+      }
 
       if(!group.label){
         // Ungrouped section (Dashboard) — render its items directly, no header/indent.
@@ -6778,7 +6805,7 @@
      bawahnya (stack vertikal, bukan kiri-kanan) — dipakai khusus untuk baris Promo di modal
      Review PO supaya nama promo yang panjang (badge) dapat lebar penuh modal untuk wrap
      rapi ke beberapa baris, bukan terjepit di kolom kanan yang sempit. Lihat .detail-row-
-     stack di stylesheet untuk CSS-nya. Salinan ini WAJIB sinkron dengan JavaScript.html. */
+     stack di stylesheet untuk CSS-nya. */
   function detailRowStack_(label, value){
     var delay = (DETAIL_ROW_SEQ_++ % 12) * 0.025;
     return '<div class="detail-row detail-row-stack" style="animation-delay:'+delay+'s;"><div class="detail-label">'+escapeHtml(label)+'</div><div class="detail-value">'+(value==null||value===''?'-':value)+'</div></div>';
