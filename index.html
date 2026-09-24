@@ -1734,6 +1734,31 @@
     box-shadow:0 0 0 1.5px var(--ag-surface);
   }
   .action-btn-proof-badge svg{width:9px;height:9px;stroke-width:2.6;}
+  /* Varian badge untuk sisi AGENT: centang "sudah terkirim" (hijau tua), bukan tanda upload oranye. */
+  .action-btn-proof-badge.action-btn-proof-badge-ok{background:#0B6B4A;}
+  .action-btn-proof-badge.action-btn-proof-badge-ok svg{width:9px;height:9px;stroke-width:3.2;}
+
+  /* ---------- Tombol berteks Agent: Upload Bukti / Bukti Terkirim ---------- */
+  .btn-proof-upload, .btn-proof-sent{
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-weight:700;
+    border-radius:20px;padding:6px 13px 6px 10px;line-height:1;cursor:pointer;
+    transition:background .15s, color .15s, box-shadow .15s, transform .12s;
+  }
+  .btn-proof-upload:active, .btn-proof-sent:active{transform:scale(.95);}
+  .btn-proof-ico{display:inline-flex;width:14px;height:14px;flex-shrink:0;}
+  .btn-proof-ico svg{width:100%;height:100%;stroke-width:2.4;}
+  /* belum upload: hijau solid, mengajak bertindak */
+  .btn-proof-upload{background:var(--ag-green);color:#fff;border:1.4px solid var(--ag-green);box-shadow:0 2px 6px rgba(20,120,70,.22);}
+  .btn-proof-upload:hover{background:#178A5B;border-color:#178A5B;box-shadow:0 4px 12px rgba(20,120,70,.3);transform:translateY(-1px);}
+  /* sudah upload: outline lembut + centang, tanda "beres" */
+  .btn-proof-sent{background:#E4F8ED;color:#178A5B;border:1.4px solid #B7E4CB;}
+  .btn-proof-sent:hover{background:#CFF2E1;border-color:#8FD3B0;}
+  html[data-theme="dark"] .btn-proof-sent{background:rgba(31,169,113,.16);color:#5FDBA3;border-color:rgba(95,219,163,.32);}
+  html[data-theme="dark"] .btn-proof-sent:hover{background:rgba(31,169,113,.26);}
+  /* Layar sempit: kolom Aksi tidak boleh melebar, tombol berteks ringkas jadi ikon + teks pendek */
+  @media (max-width:480px){
+    .btn-proof-upload, .btn-proof-sent{padding:6px 10px 6px 8px;font-size:11.5px;}
+  }
 
   /* ---------- Modal Konfirmasi Pembayaran: kartu bukti transfer dari Agent ---------- */
   .pay-proof-agent{
@@ -10140,7 +10165,14 @@
         // Agent: begitu sudah membayar, langsung upload bukti transfer dari sini. Ini HANYA
         // lampiran — status PO tetap "Menunggu Pembayaran" sampai Admin/SPV klik konfirmasi.
         if(STATE.user.role === 'AGENT' && r.Status === 'APPROVED' && !r.PaymentConfirmedAt){
-          btns += '<button class="action-btn confirm" title="'+(r.AgentProofFileURL ? 'Ganti Bukti Pembayaran' : 'Upload Bukti Pembayaran')+'" onclick="agentUploadProofPrompt(\''+r.POID+'\')">'+ICONS.upload+'</button>';
+          // Tombol BERTEKS (bukan ikon saja) supaya Agent langsung paham fungsinya tanpa hover:
+          //  - belum upload : "Upload Bukti"    (hijau solid = ajakan bertindak)
+          //  - sudah upload : "Bukti Terkirim"  (outline + centang; klik = lihat / ganti)
+          var agentHasProof = !!r.AgentProofFileURL;
+          var agentProofArgs = '\''+r.POID+'\',\''+escapeHtml(r.AgentProofFileID||'')+'\',\''+escapeHtml(r.AgentProofFileURL||'')+'\'';
+          btns += agentHasProof
+            ? '<button type="button" class="btn btn-sm btn-proof-sent" title="Klik untuk melihat atau mengganti bukti" onclick="agentUploadProofPrompt('+agentProofArgs+')"><span class="btn-proof-ico">'+ICONS.check+'</span><span>Bukti Terkirim</span></button>'
+            : '<button type="button" class="btn btn-sm btn-proof-upload" title="Upload bukti transfer pembayaran" onclick="agentUploadProofPrompt('+agentProofArgs+')"><span class="btn-proof-ico">'+ICONS.upload+'</span><span>Upload Bukti</span></button>';
         }
 
         // Aksi SEKUNDER (jarang dipakai / bukan bagian dari alur status utama) dikumpulkan ke
@@ -10573,22 +10605,51 @@
   // final tetap oleh Admin/SPV lewat confirmPaymentPrompt/confirmPOPayment.
   var AGENT_PROOF_FILE_ = null;
 
-  function agentUploadProofPrompt(poId){
+  function agentUploadProofPrompt(poId, currentFileId, currentUrl){
     AGENT_PROOF_FILE_ = null;
-    var body =
-      '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Sudah melakukan pembayaran (Cash Before Delivery)? Unggah bukti transfer di sini. Tim B2B Agent akan memeriksa bukti Anda lalu mengonfirmasi pembayaran. Status PO tetap <strong>Menunggu Pembayaran</strong> sampai dikonfirmasi.</p>' +
-      '<div class="form-group">' +
-        '<label>Bukti Pembayaran <span style="color:var(--ag-red);">*</span></label>' +
-        '<div class="doc-tile" id="agentProofTile" onclick="document.getElementById(\'agentProofFile\').click()">' +
-          '<div class="doc-tile-icon">'+ICONS.camera+'</div>' +
-          '<div class="doc-tile-label">Upload Bukti Transfer</div>' +
-          '<div class="doc-tile-hint">JPG, PNG, atau PDF</div>' +
-          '<input type="file" id="agentProofFile" accept="image/png,image/jpeg,application/pdf" onchange="handleAgentProofFileChange_()">' +
-        '</div>' +
+    var hasCurrent = !!currentUrl;
+    var uploadTile =
+      '<div class="doc-tile" id="agentProofTile" onclick="document.getElementById(\'agentProofFile\').click()">' +
+        '<div class="doc-tile-icon">'+ICONS.camera+'</div>' +
+        '<div class="doc-tile-label">'+(hasCurrent ? 'Pilih File Pengganti' : 'Upload Bukti Transfer')+'</div>' +
+        '<div class="doc-tile-hint">JPG, PNG, atau PDF</div>' +
+        '<input type="file" id="agentProofFile" accept="image/png,image/jpeg,application/pdf" onchange="handleAgentProofFileChange_()">' +
       '</div>';
-    openFormModal('Upload Bukti Pembayaran', body, function(){ agentUploadProofSubmit_(poId); });
+    var body;
+    if(hasCurrent){
+      // Mode GANTI: tunjukkan dulu bukti yang sedang tersimpan supaya Agent bisa memeriksa
+      // (klik = zoom) sebelum memutuskan menggantinya. Kirim tanpa pilih file = tidak ada
+      // perubahan (bukti lama dipertahankan), bukan error.
+      var currentCard = docPreviewCard_({
+        label: 'Bukti Pembayaran Anda',
+        url: currentUrl,
+        fileId: currentFileId || '',
+        isPdf: /\.pdf($|\?)/i.test(currentUrl)
+      }, null);
+      body =
+        '<div class="pay-proof-agent">' +
+          '<div class="pay-proof-agent-card">' + currentCard + '</div>' +
+          '<div class="pay-proof-agent-info">' +
+            '<span class="pay-proof-agent-badge">'+ICON_CHECK_SM+' Sudah terkirim</span>' +
+            '<div class="pay-proof-agent-title">Bukti pembayaran Anda sudah diunggah</div>' +
+            '<div class="pay-proof-agent-desc">Klik gambar untuk memperbesar. Salah upload? Anda masih bisa menggantinya selama Tim B2B Agent belum mengonfirmasi pembayaran.</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pay-proof-replace" style="display:block;">' +
+          '<div class="pay-proof-replace-label">Ganti bukti transfer</div>' +
+          uploadTile +
+        '</div>';
+    } else {
+      body =
+        '<p style="font-size:13px;color:var(--ag-gray-600);margin:0 0 16px;">Sudah melakukan pembayaran (Cash Before Delivery)? Unggah bukti transfer di sini. Tim B2B Agent akan memeriksa bukti Anda lalu mengonfirmasi pembayaran. Status PO tetap <strong>Menunggu Pembayaran</strong> sampai dikonfirmasi.</p>' +
+        '<div class="form-group">' +
+          '<label>Bukti Pembayaran <span style="color:var(--ag-red);">*</span></label>' +
+          uploadTile +
+        '</div>';
+    }
+    openFormModal(hasCurrent ? 'Bukti Pembayaran' : 'Upload Bukti Pembayaran', body, function(){ agentUploadProofSubmit_(poId, hasCurrent); });
     var saveBtn = document.getElementById('modalSaveBtn');
-    if(saveBtn) saveBtn.textContent = 'Kirim Bukti Pembayaran';
+    if(saveBtn) saveBtn.textContent = hasCurrent ? 'Simpan Bukti Baru' : 'Kirim Bukti Pembayaran';
   }
 
   function handleAgentProofFileChange_(){
@@ -10616,8 +10677,12 @@
     });
   }
 
-  function agentUploadProofSubmit_(poId){
-    if(!AGENT_PROOF_FILE_){ showToast('Pilih file bukti pembayaran terlebih dahulu.','error'); return; }
+  function agentUploadProofSubmit_(poId, isReplace){
+    if(!AGENT_PROOF_FILE_){
+      // Mode ganti: klik simpan tanpa memilih file baru = tidak ada yang berubah, cukup tutup.
+      if(isReplace){ showToast('Belum ada file pengganti dipilih. Bukti sebelumnya tetap dipakai.','info'); closeModal(); return; }
+      showToast('Pilih file bukti pembayaran terlebih dahulu.','error'); return;
+    }
     google.script.run.withSuccessHandler(function(res){
       if(res.success){ showToast(res.message || 'Bukti pembayaran berhasil diunggah.','success'); closeModal(); invalidateDetailModalCache_('po:'+poId); invalidateDashboardCache_(); renderPO(); }
       else showToast(res.message || 'Gagal mengunggah bukti pembayaran.','error');
