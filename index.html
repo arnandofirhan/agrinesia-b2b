@@ -10183,6 +10183,10 @@
           detailField_('Grand Total', formatRupiah(po.GrandTotal)) +
           detailField_('Diskon Diminta', po.RequestedDiscount+'%') +
           detailField_('Diskon Disetujui', (po.ApprovedDiscount!==''&&po.ApprovedDiscount!=null) ? po.ApprovedDiscount+'%' : '-') +
+          // Store tempat PO dipesan — KHUSUS ADMIN. data.storeName juga hanya diisi backend
+          // untuk ADMIN, jadi role lain (Agent, dst) tidak pernah melihat/menerima field ini.
+          // Kolom hanya muncul kalau PO sudah di-approve (Store baru dipilih saat Approve).
+          ((STATE.user.role === 'ADMIN' && data.storeName) ? detailField_('Store', escapeHtml(data.storeName)) : '') +
           (po.PickupDate ? detailField_('Rencana Pengambilan', formatDateDMY_(po.PickupDate)) : '') +
           (po.Description ? detailField_('Deskripsi', escapeHtml(po.Description)) : '') +
         '</div>' +
