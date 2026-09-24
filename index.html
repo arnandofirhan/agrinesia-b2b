@@ -3972,6 +3972,10 @@
 
   .eb-recent-list{display:flex;flex-direction:column;gap:2px;}
   .eb-trx-list{display:flex;flex-direction:column;gap:8px;}
+  /* Dipakai saat ganti filter bulan di Riwayat Transaksi (Employee/Store): list lama tetap
+     tampil (bukan diganti spinner besar) tapi diredupkan + tidak bisa diklik selama data
+     bulan baru masih diambil dari server. */
+  .eb-trx-list.is-refetching, .empty-state.is-refetching{opacity:.45;pointer-events:none;transition:opacity .15s ease;}
   .eb-recent-row, .eb-trx-item{
     display:flex;align-items:center;gap:12px;padding:12px 6px;border-radius:12px;cursor:pointer;
     transition:background .15s ease, transform .15s ease, box-shadow .15s ease;
@@ -17717,11 +17721,29 @@
   }
 
   /** Dipanggil dari dropdown filter bulan di halaman Riwayat Transaksi (backend
-   *  ebGetMyTransactions sudah mendukung parameter yearMonth — cuma belum ada UI-nya). */
+   *  ebGetMyTransactions sudah mendukung parameter yearMonth — cuma belum ada UI-nya).
+   *  FIX: sebelumnya ganti bulan bikin seluruh #content di-reset ke spinner besar (kelihatan
+   *  seperti reload 1 halaman penuh, termasuk filter & judul ikut hilang sesaat). Sekarang
+   *  filter/judul TETAP tampil (dirender ulang dari cache lama apa adanya, cuma listnya yang
+   *  diberi kelas 'is-refetching' biar redup) sementara data baru diambil, baru diganti total
+   *  begitu data baru datang -- jadi kelihatan seperti list-nya saja yang refresh, bukan
+   *  halaman penuh. */
   function ebChangeTrxMonth_(ym){
     EB_EMP_TRX_YM_ = ym;
-    EB_EMP_TRX_CACHE_ = null;
-    renderEmployeeTransactions();
+    var content = document.getElementById('content');
+    var listEl = content ? content.querySelector('.eb-trx-list, .empty-state') : null;
+    if(listEl) listEl.classList.add('is-refetching');
+    google.script.run
+      .withSuccessHandler(function(rows){
+        if(STATE.currentPage !== 'eb-transactions') return;
+        EB_EMP_TRX_CACHE_ = rows || [];
+        content.innerHTML = ebEmpTransactionsHtml_(EB_EMP_TRX_CACHE_);
+      })
+      .withFailureHandler(function(err){
+        if(listEl) listEl.classList.remove('is-refetching');
+        showToast((err && err.message) || 'Gagal memuat data.', 'error');
+      })
+      .ebGetMyTransactions(STATE.token, EB_EMP_TRX_YM_ || null);
   }
 
   function ebEmpTransactionsHtml_(rows){
@@ -18056,10 +18078,25 @@
       .ebGetStoreTransactions(STATE.token, EB_STORE_TRX_YM_ || null);
   }
 
+  /** Sama seperti ebChangeTrxMonth_ (role EMPLOYEE): filter/judul tetap tampil, hanya list
+   *  yang diberi kelas 'is-refetching' selama data baru diambil -- bukan reset ke spinner
+   *  besar seperti sebelumnya. */
   function ebChangeStoreTrxMonth_(ym){
     EB_STORE_TRX_YM_ = ym;
-    EB_STORE_TRX_CACHE_ = null;
-    renderStoreTransactions();
+    var content = document.getElementById('content');
+    var listEl = content ? content.querySelector('.eb-trx-list, .empty-state') : null;
+    if(listEl) listEl.classList.add('is-refetching');
+    google.script.run
+      .withSuccessHandler(function(rows){
+        if(STATE.currentPage !== 'eb-store-transactions') return;
+        EB_STORE_TRX_CACHE_ = rows || [];
+        content.innerHTML = ebStoreTrxHtml_(EB_STORE_TRX_CACHE_);
+      })
+      .withFailureHandler(function(err){
+        if(listEl) listEl.classList.remove('is-refetching');
+        showToast((err && err.message) || 'Gagal memuat data.', 'error');
+      })
+      .ebGetStoreTransactions(STATE.token, EB_STORE_TRX_YM_ || null);
   }
 
   function ebStoreTrxHtml_(rows){
