@@ -5134,6 +5134,30 @@
     return LIVECHAT_FEATURE_ENABLED_ || item.key !== 'livechat';
   });
 
+  // =============================================================
+  // MAPPING pageKey <-> SLUG URL (untuk pindah menu jadi pindah URL beneran,
+  // mis. /katalog, /promo, dst — lihat pushAppHistory_/initAppHistory_/bootApp)
+  // =============================================================
+  var PAGE_SLUG_MAP_ = {
+    'dashboard': 'dashboard', 'agents': 'agent', 'agent-areas': 'areapendaftaran',
+    'products': 'masteritem', 'catalog': 'katalog', 'promo': 'promo',
+    'livechat': 'livechat', 'transactions': 'transaksi', 'orders': 'order',
+    'commission': 'komisi', 'commission-scheme': 'skemakomisi', 'stores': 'store',
+    'reports': 'laporan', 'calendar': 'kalender', 'users': 'kelolauser',
+    'settings': 'pengaturan', 'dashboard-settings': 'pengaturandashboard',
+    'audit-log': 'auditlog', 'eb-qr': 'ebqrcode', 'eb-transactions': 'ebriwayat',
+    'eb-scan': 'ebscan', 'eb-store-transactions': 'ebriwayatstore',
+    'eb-profile': 'ebprofile', 'eb-companies': 'ebcompany', 'eb-employees': 'ebemployee',
+    'eb-transactions-admin': 'ebtransaksi', 'eb-store-users': 'ebstoreuser'
+  };
+  var SLUG_PAGE_MAP_ = (function(){
+    var out = {};
+    for(var k in PAGE_SLUG_MAP_){ out[PAGE_SLUG_MAP_[k]] = k; }
+    return out;
+  })();
+  function pageKeyToSlug_(pageKey){ return PAGE_SLUG_MAP_[pageKey] || pageKey; }
+  function slugToPageKey_(slug){ return SLUG_PAGE_MAP_[slug] || null; }
+
   // ---------- Sidebar grouping (visual only — layout/order for the collapsible sections;
   // MENU_ITEMS above remains the flat source of truth for role/icon/label/preload) ----------
   // Urutan item di grup 'eb-menu' menentukan urutan SIDEBAR DESKTOP. 'eb-profile' sengaja paling
@@ -5894,6 +5918,19 @@
     if(!IS_FRESH_LOGIN_){
       try{ pageToOpen = sessionStorage_get(LAST_PAGE_STORAGE_KEY_) || 'dashboard'; }catch(e){}
     }
+    // FIX: kalau browser membuka app langsung lewat URL slug menu (mis. user paste/bookmark
+    // link https://.../katalog, atau refresh browser saat sedang di URL itu), URL itu
+    // diutamakan di atas ag_last_open_page — supaya app benar-benar mendarat di menu yang
+    // tertulis di address bar, bukan diam-diam melompat ke menu lain yang kebetulan terakhir
+    // dibuka sebelumnya. Validasi role tetap jalan seperti biasa di bawah (pageAllowedForRole_)
+    // supaya slug dari URL pun tidak bisa dipakai buka menu yang bukan haknya role ini.
+    try{
+      var slugFromUrl_ = currentUrlSlug_();
+      if(slugFromUrl_){
+        var pageFromUrl_ = slugToPageKey_(slugFromUrl_);
+        if(pageFromUrl_) pageToOpen = pageFromUrl_;
+      }
+    }catch(e){}
     // FIX BUG NYATA (lapis pertahanan KEDUA, selain penghapusan key ini saat logout di atas):
     // validasi pageToOpen terhadap MENU_ITEMS + role user YANG SEDANG LOGIN sebelum dipakai.
     // Kalaupun ag_last_open_page ternyata masih menyimpan halaman yang TIDAK ADA di menu role
@@ -6460,12 +6497,23 @@
   function initAppHistory_(){
     if(APP_HISTORY_READY_) return;
     APP_HISTORY_READY_ = true;
-    try{ history.replaceState({ agPage: 'dashboard' }, '', location.href); }catch(e){}
+    // Baseline dicatat dengan URL SLUG dashboard ('/dashboard'), bukan cuma location.href apa
+    // adanya — supaya baseline back-gesture juga konsisten dengan skema URL menu lainnya.
+    try{ history.replaceState({ agPage: 'dashboard' }, '', '/' + pageKeyToSlug_('dashboard')); }catch(e){}
     window.addEventListener('popstate', function(e){
-      var page = (e.state && e.state.agPage) ? e.state.agPage : 'dashboard';
+      // Utamakan state.agPage (lebih pasti benar, diisi sendiri oleh app). Fallback: parse
+      // slug dari URL saat ini — berguna kalau back/forward mendarat di entri yang state-nya
+      // hilang (mis. reload di tengah riwayat) tapi URL-nya masih ada.
+      var page = (e.state && e.state.agPage) ? e.state.agPage : (slugToPageKey_(currentUrlSlug_()) || 'dashboard');
       SKIP_NEXT_HISTORY_PUSH_ = true;
       showPage(page);
     });
+  }
+
+  // Ambil slug path saat ini dari URL, mis. "/katalog" -> "katalog". Slash awal/akhir
+  // dibuang; string kosong (root "/") dikembalikan sebagai ''.
+  function currentUrlSlug_(){
+    return (location.pathname || '').replace(/^\/+|\/+$/g, '');
   }
 
   function pushAppHistory_(pageKey){
@@ -6475,7 +6523,11 @@
     // tap dobel tak sengaja) — tanpa ini, back gesture jadi harus ditekan berkali-kali
     // cuma buat "keluar" dari halaman yang sama.
     if(history.state && history.state.agPage === pageKey) return;
-    try{ history.pushState({ agPage: pageKey }, '', location.href); }catch(e){}
+    // URL bar sekarang ikut berubah sungguhan (mis. /katalog, /promo) — bukan cuma
+    // location.href yang di-replay apa adanya seperti sebelumnya. Lihat PAGE_SLUG_MAP_ untuk
+    // daftar lengkap pageKey -> slug, dan vercel.json untuk rewrite rule yang membuat refresh
+    // di URL ini tidak 404 (SPA single index.html).
+    try{ history.pushState({ agPage: pageKey }, '', '/' + pageKeyToSlug_(pageKey)); }catch(e){}
   }
 
   function showPage(pageKey){
@@ -19822,9 +19874,6 @@
   }
 
 </script>
-  <!-- Service Worker (PWA): cache app shell supaya index.html (+ api-bridge.js) tidak diunduh ulang
-       tiap buka. Strategi stale-while-revalidate: tampil instan dari cache, lalu cek versi terbaru
-       di background; kalau ada versi baru, user dikasih tahu lewat toast. Lihat sw.js. -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
