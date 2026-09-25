@@ -5227,7 +5227,20 @@
     }
     var btn = document.getElementById('loginBtn');
     btn.disabled = true; btn.textContent = 'Memproses...';
+    doLoginRequest_(email, password, true);
+  }
 
+  // FIX PERFORMA LOGIN ("kadang lama kadang cepat"): login() bisa kena cold-start Apps
+  // Script (lihat catatan panjang di ping()/Code.gs) kalau request ini kebetulan jadi
+  // request PERTAMA setelah idle — biasanya karena user mengetik+klik "Masuk" SANGAT cepat,
+  // sebelum ping() pemanasan di _agBootInit_ sempat selesai duluan. Ini murni overhead
+  // infrastruktur (redirect internal script.googleusercontent.com yang kadang lambat di
+  // percobaan pertama), BUKAN error dari kredensial salah — jadi aman dicoba ulang sekali,
+  // otomatis, tanpa user perlu sadar atau klik ulang manual. allowRetry hanya true di
+  // percobaan pertama supaya tidak infinite-retry kalau memang errornya menetap.
+  function doLoginRequest_(email, password, allowRetry){
+    var errEl = document.getElementById('loginError');
+    var btn = document.getElementById('loginBtn');
     google.script.run
       .withSuccessHandler(function(res){
         btn.disabled = false; btn.textContent = 'Masuk';
@@ -5250,6 +5263,14 @@
         }
       })
       .withFailureHandler(function(err){
+        // Kredensial/response valid tapi ditolak server (res.success:false) TIDAK lewat sini
+        // sama sekali — itu masuk withSuccessHandler di atas. withFailureHandler HANYA kena
+        // kalau request-nya sendiri gagal total (timeout, cold-start, jaringan) — kandidat
+        // yang aman untuk dicoba ulang otomatis sekali.
+        if(allowRetry){
+          doLoginRequest_(email, password, false);
+          return;
+        }
         btn.disabled = false; btn.textContent = 'Masuk';
         errEl.textContent = 'Terjadi kesalahan: ' + (err.message || err);
         errEl.style.display = 'block';
@@ -10828,36 +10849,31 @@
       applyNewPOPreselect_();
     }
 
-    // Fetch products & promos in parallel (instead of one after another) so first-open latency
-    // is roughly the slower of the two calls, not the sum of both.
-    var got = {};
-    function tryFinish(){
-      if(got.products === undefined || got.promos === undefined) return;
+    // FIX PERFORMA: sebelumnya listProducts() & listPromos() ditembak PARALEL (2 request
+    // /exec terpisah bersaing kuota eksekusi GAS yang sama) — sekarang digabung jadi SATU
+    // panggilan (getNewPOFormData). Struktur cache-first (paint instan dari cache lama kalau
+    // ada, lalu refresh diam-diam di background) TETAP DIPERTAHANKAN — cuma sumber datanya
+    // yang sekarang 1 call, bukan 2. Lihat getNewPOFormData (Code.gs).
+    google.script.run.withSuccessHandler(function(data){
       // Modal ini sudah ditutup (atau ditutup-lalu-dibuka lagi jadi generasi baru) sebelum
       // response server ini datang — JANGAN buka/render modal, biarkan tetap tertutup.
       if(myModalGeneration !== MODAL_GENERATION_) return;
-      NEWPO_PRODUCTS_CACHE_ = got.products;
-      NEWPO_PROMOS_CACHE_ = got.promos;
-      persistProductsCache_(got.products);
-      persistPromosCache_(got.promos);
-      NEWPO_PRODUCTS_ = got.products;
+      NEWPO_PRODUCTS_CACHE_ = data.products;
+      NEWPO_PROMOS_CACHE_ = data.promos;
+      persistProductsCache_(data.products);
+      persistPromosCache_(data.promos);
+      NEWPO_PRODUCTS_ = data.products;
       NEWPO_CART_ = NEWPO_CART_ || {};
       // Only (re)paint from scratch if we hadn't already painted from cache above.
       if(!document.getElementById('poProductGrid') || !NEWPO_PRODUCTS_CACHE_){
-        renderNewPOForm_(got.products, got.promos);
+        renderNewPOForm_(data.products, data.promos);
       } else {
-        pruneUnavailableFromNewPOCart_(got.products);
+        pruneUnavailableFromNewPOCart_(data.products);
         renderNewPOProductGrid_();
         renderNewPOCart_();
       }
       applyNewPOPreselect_();
-    }
-    google.script.run.withSuccessHandler(function(products){
-      got.products = products; tryFinish();
-    }).withFailureHandler(function(e){ if(!NEWPO_PRODUCTS_CACHE_) handleBackendError(e); }).listProducts(STATE.token);
-    google.script.run.withSuccessHandler(function(promos){
-      got.promos = promos; tryFinish();
-    }).withFailureHandler(function(e){ if(!NEWPO_PROMOS_CACHE_) handleBackendError(e); }).listPromos(STATE.token, true);
+    }).withFailureHandler(function(e){ if(!NEWPO_PRODUCTS_CACHE_ || !NEWPO_PROMOS_CACHE_) handleBackendError(e); }).getNewPOFormData(STATE.token);
   }
 
   // Dipanggil sekali tiap modal selesai dirender KALAU dibuka lewat klik Banner/Produk
@@ -11206,41 +11222,41 @@
   function resubmitPOPrompt(poId){
     var po = findPO_(poId);
     if(!po){ showToast('Data tidak ditemukan.','error'); return; }
-    google.script.run.withSuccessHandler(function(items){
-      google.script.run.withSuccessHandler(function(products){
-        NEWPO_PRODUCTS_ = products;
-        NEWPO_CART_ = {};
-        // FIX BUG NYATA ("Total di List PO beda dgn Total di Detail PO" setelah PO
-        // diedit/diajukan ulang): sebelumnya baris ini pakai `=` (menimpa), jadi kalau
-        // PO_ITEMS punya 2 baris terpisah utk ProductID yang sama, qty baris pertama
-        // TERTIMPA oleh baris kedua alih-alih dijumlah — qty aslinya diam-diam hilang
-        // begitu Agent membuka form "Edit & Ajukan Ulang". Pakai `+=` supaya duplikat
-        // ProductID digabung dgn benar, bukan saling menimpa.
-        items.forEach(function(it){ NEWPO_CART_[it.ProductID] = (NEWPO_CART_[it.ProductID] || 0) + (Number(it.Qty) || 1); });
-        google.script.run.withSuccessHandler(function(promos){
-          NEWPO_RESUBMIT_ID_ = poId;
-          NEWPO_EDIT_APPROVED_ID_ = null;
-          // Sama seperti newPOForm() — form ini juga sebuah "pembukaan form" tersendiri
-          // (jalur resubmit PO REJECTED), jadi butuh clientRequestId baru sendiri, bukan
-          // sisa dari form sebelumnya (lihat catatan idempotency lengkap di newPOForm()).
-          NEWPO_CLIENT_REQUEST_ID_ = 'cid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-          renderNewPOForm_(products, promos);
-          var descEl = document.getElementById('poDescription');
-          if(descEl) descEl.value = po.Description || '';
-          var discEl = document.getElementById('poDiscount');
-          if(discEl) discEl.value = String(Math.round(Number(po.RequestedDiscount)||0));
-          var promoEl = document.getElementById('poPromo');
-          if(promoEl && po.PromoID) promoEl.value = po.PromoID;
-          var pickupEl = document.getElementById('poPickupDate');
-          if(pickupEl && po.PickupDate){
-            var d = new Date(po.PickupDate);
-            if(!isNaN(d.getTime())) pickupEl.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-          }
-          updateNewPOEstimate_();
-          showToast('Form diisi ulang dari PO yang ditolak. Silakan sesuaikan lalu kirim.', 'success');
-        }).withFailureHandler(function(e){ handleBackendError(e); }).listPromos(STATE.token, true);
-      }).withFailureHandler(function(e){ handleBackendError(e); }).listProducts(STATE.token);
-    }).withFailureHandler(function(e){ handleBackendError(e); }).getPOItems(STATE.token, poId);
+    // FIX PERFORMA: sebelumnya getPOItems -> listProducts -> listPromos dipanggil BERANTAI
+    // (3 round-trip /exec berurutan, masing-masing menunggu yang sebelumnya selesai —
+    // lebih lambat dari sekadar paralel). Digabung jadi SATU call (getResubmitPOFormData).
+    google.script.run.withSuccessHandler(function(data){
+      var items = data.items, products = data.products, promos = data.promos;
+      NEWPO_PRODUCTS_ = products;
+      NEWPO_CART_ = {};
+      // FIX BUG NYATA ("Total di List PO beda dgn Total di Detail PO" setelah PO
+      // diedit/diajukan ulang): sebelumnya baris ini pakai `=` (menimpa), jadi kalau
+      // PO_ITEMS punya 2 baris terpisah utk ProductID yang sama, qty baris pertama
+      // TERTIMPA oleh baris kedua alih-alih dijumlah — qty aslinya diam-diam hilang
+      // begitu Agent membuka form "Edit & Ajukan Ulang". Pakai `+=` supaya duplikat
+      // ProductID digabung dgn benar, bukan saling menimpa.
+      items.forEach(function(it){ NEWPO_CART_[it.ProductID] = (NEWPO_CART_[it.ProductID] || 0) + (Number(it.Qty) || 1); });
+      NEWPO_RESUBMIT_ID_ = poId;
+      NEWPO_EDIT_APPROVED_ID_ = null;
+      // Sama seperti newPOForm() — form ini juga sebuah "pembukaan form" tersendiri
+      // (jalur resubmit PO REJECTED), jadi butuh clientRequestId baru sendiri, bukan
+      // sisa dari form sebelumnya (lihat catatan idempotency lengkap di newPOForm()).
+      NEWPO_CLIENT_REQUEST_ID_ = 'cid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+      renderNewPOForm_(products, promos);
+      var descEl = document.getElementById('poDescription');
+      if(descEl) descEl.value = po.Description || '';
+      var discEl = document.getElementById('poDiscount');
+      if(discEl) discEl.value = String(Math.round(Number(po.RequestedDiscount)||0));
+      var promoEl = document.getElementById('poPromo');
+      if(promoEl && po.PromoID) promoEl.value = po.PromoID;
+      var pickupEl = document.getElementById('poPickupDate');
+      if(pickupEl && po.PickupDate){
+        var d = new Date(po.PickupDate);
+        if(!isNaN(d.getTime())) pickupEl.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      }
+      updateNewPOEstimate_();
+      showToast('Form diisi ulang dari PO yang ditolak. Silakan sesuaikan lalu kirim.', 'success');
+    }).withFailureHandler(function(e){ handleBackendError(e); }).getResubmitPOFormData(STATE.token, poId);
   }
 
   function submitPO(){
