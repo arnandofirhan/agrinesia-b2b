@@ -12142,10 +12142,12 @@
     if(!DOC_FILE_OBJS_.length){ showToast('Pilih minimal 1 file dokumen.','error'); return; }
     var saveBtn = document.getElementById('modalSaveBtn');
     if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Mengupload...'; }
+    setPageLoading_(true, 'Mengupload Dokumen Pendukung');
     // Semua file dikirim dalam SATU panggilan (bukan loop sekuensial satu-per-satu) — upload
     // 5 foto dulu butuh 5 round-trip berurutan ke server, sekarang cukup 1, jadi jauh lebih
     // cepat terutama untuk foto berukuran besar.
     google.script.run.withSuccessHandler(function(res){
+      setPageLoading_(false);
       if(res.success){
         DOC_FILE_OBJS_ = [];
         closeModal();
@@ -12158,6 +12160,7 @@
         if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Upload'; }
       }
     }).withFailureHandler(function(e){
+      setPageLoading_(false);
       handleBackendError(e);
       if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Upload'; }
     }).uploadSupportingDocument(STATE.token, orderId, 'OTHER', DOC_FILE_OBJS_);
