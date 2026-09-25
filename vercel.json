@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/((?!sw.js|api-bridge.js|manifest.json|favicon.ico|robots.txt|.*\\.png|.*\\.js|.*\\.json).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",
