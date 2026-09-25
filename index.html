@@ -14227,6 +14227,39 @@
         loadDashboardTrendInsights_();
       }
     }
+    // FIX PERFORMA ("Dashboard 18 requests, sampai 85 detik, kadang 404 pas login pertama"):
+    // SEBELUMNYA getDashboardData() ditembak dulu SENDIRIAN, lalu BEGITU selesai baru memicu
+    // 2 call lain (listPO via loadDashboardPoInsights_, getDashboardTrendAndLeaderboard via
+    // loadDashboardTrendInsights_) — jadi total 3 round-trip /exec yang menumpuk nyaris
+    // bersamaan tepat saat login PERTAMA KALI (DASH_DATA_CACHE_ masih kosong, kondisi PALING
+    // rawan kuota GAS penuh/cold-start). Sekarang untuk kasus TANPA cache ini, ketiganya
+    // digabung jadi SATU panggilan (getDashboardFullData). Kalau DASH_DATA_CACHE_ SUDAH ada
+    // (instant-paint di atas sudah jalan), tetap pakai jalur lama yang lebih granular
+    // (getDashboardData sendiri untuk KPI, lalu loadDashboardPoInsights_/
+    // loadDashboardTrendInsights_ HANYA kalau sub-datanya belum ada) — supaya kunjungan
+    // berikutnya tidak jadi menembak ulang seluruh PO+trend cuma untuk refresh KPI kecil.
+    if(!DASH_DATA_CACHE_){
+      google.script.run
+        .withSuccessHandler(function(data){
+          DASH_DATA_CACHE_ = {
+            kpiData: data.kpiData,
+            poRows: data.poRows,
+            trendData: data.trendData,
+            leaderboard: data.leaderboard
+          };
+          paintDashboardKpis_(data.kpiData);
+          startDashboardClock_();
+          renderDashPoStatusBox_(data.poRows);
+          renderDashRecentPoBox_(data.poRows);
+          renderDashTrendBox_(data.trendData);
+          renderDashLeaderboardBox_(data.leaderboard || []);
+        })
+        .withFailureHandler(function(err){
+          handleBackendError(err, PAGE_HTML_CACHE['dashboard'] ? null : document.getElementById('content'));
+        })
+        .getDashboardFullData(STATE.token);
+      return;
+    }
     // Always refresh quietly in the background so numbers stay current, even after an instant
     // paint from cache above.
     google.script.run
