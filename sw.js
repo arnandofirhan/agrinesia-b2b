@@ -4,7 +4,7 @@
 //   'ag-update' ke halaman supaya user tahu ada versi baru (berlaku begitu app dibuka lagi).
 // - Icon: cache-first.
 // - Request lintas domain (Apps Script /exec, Google Drive, dst.) TIDAK disentuh sama sekali.
-var CACHE = 'agrinesia-shell-v1';
+var CACHE = 'agrinesia-shell-v2';
 var SHELL = ['./', './index.html', './api-bridge.js', './manifest.json',
              './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
 
