@@ -11578,7 +11578,7 @@
           if(r.CustomerPaymentStatus !== 'PAID'){
             var canMarkPaid = !!(r.SJCount && r.SupportingDocCount);
             btns += canMarkPaid
-              ? '<button class="action-btn confirm" title="Tandai Lunas" onclick="markPaidConfirm(\''+r.OrderID+'\')">'+ICONS.check+'</button>'
+              ? '<button class="action-btn confirm" title="Tandai Selesai & Terverifikasi" onclick="markPaidConfirm(\''+r.OrderID+'\')">'+ICONS.check+'</button>'
               : '<button class="action-btn confirm" disabled title="Upload Surat Jalan dan Dokumen Pendukung terlebih dahulu" style="opacity:.4;cursor:not-allowed;">'+ICONS.check+'</button>';
           }
         }
@@ -11788,11 +11788,11 @@
         if(!otherCountForBtn) missingParts.push('Dokumen Pendukung');
         var canMarkPaid = missingParts.length === 0;
         if(canMarkPaid){
-          footerHtml = '<button class="btn btn-primary" onclick="closeModal();markPaidConfirm(\''+order.OrderID+'\')">'+ICON_CHECK_SM+' Tandai Lunas</button>' + footerHtml;
+          footerHtml = '<button class="btn btn-primary" onclick="closeModal();markPaidConfirm(\''+order.OrderID+'\')">'+ICON_CHECK_SM+' Tandai Selesai</button>' + footerHtml;
         } else {
           // Disabled + tooltip yang jelas menyebutkan dokumen apa saja yang masih kurang,
           // supaya user langsung tahu apa yang harus dilakukan, bukan cuma "tombol abu-abu".
-          footerHtml = '<button class="btn btn-primary" disabled title="Upload dulu: '+escapeHtml(missingParts.join(' & '))+'">'+ICON_CHECK_SM+' Tandai Lunas</button>' +
+          footerHtml = '<button class="btn btn-primary" disabled title="Upload dulu: '+escapeHtml(missingParts.join(' & '))+'">'+ICON_CHECK_SM+' Tandai Selesai</button>' +
             '<span class="pay-btn-hint">Upload '+escapeHtml(missingParts.join(' & '))+' dulu untuk mengaktifkan tombol ini.</span>' + footerHtml;
         }
       }
@@ -12173,16 +12173,16 @@
       return;
     }
     openConfirmModal({
-      title: 'Tandai Pembayaran Lunas?',
-      message: 'Order '+orderId+' akan ditandai LUNAS dan komisi Agent terkait akan otomatis dihitung. Tindakan ini tidak dapat dibatalkan.',
-      confirmLabel: 'Ya, Tandai Lunas',
+      title: 'Tandai Pengiriman Selesai?',
+      message: 'Order '+orderId+' akan ditandai SELESAI & TERVERIFIKASI, lalu komisi Agent terkait otomatis dihitung. (Store tidak melakukan pembayaran apa pun di sini — pembayaran Agent sudah dikonfirmasi sejak PO.) Tindakan ini tidak dapat dibatalkan.',
+      confirmLabel: 'Ya, Tandai Selesai',
       iconStyle: 'info',
       icon: ICON_CHECK_SM,
       onConfirm: function(){
-        setPageLoading_(true, 'Menghitung komisi & menandai lunas');
+        setPageLoading_(true, 'Menghitung komisi & menandai selesai');
         google.script.run.withSuccessHandler(function(res){
           setPageLoading_(false);
-          if(res.success){ invalidateDetailModalCache_('order:'+orderId); showToast('Pembayaran tercatat, komisi dihitung.','success'); renderOrders(); }
+          if(res.success){ invalidateDetailModalCache_('order:'+orderId); showToast('Pengiriman terverifikasi, komisi Agent dihitung.','success'); renderOrders(); }
           else showToast(res.message,'error');
         }).withFailureHandler(function(e){ setPageLoading_(false); handleBackendError(e); }).markCustomerPayment(STATE.token, orderId, true);
       }
