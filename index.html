@@ -5348,6 +5348,16 @@
     document.documentElement.classList.remove('ag-app-ready');
     document.getElementById('appShell').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+    // FIX BUG NYATA ("logout tapi URL bar masih /pengaturan dkk"): sejak URL ikut berubah
+    // sungguhan tiap pindah menu (lihat pushAppHistory_/PAGE_SLUG_MAP_), logout SEBELUMNYA
+    // tidak pernah menyentuh URL sama sekali — jadi begitu balik ke Login, address bar masih
+    // menunjukkan slug menu terakhir sebelum logout (mis. /pengaturan), padahal tampilannya
+    // sudah Login. Refresh di kondisi itu bahkan bisa membingungkan (URL bilang /pengaturan,
+    // tapi yang ke-render Login). FIX: balikkan URL ke root ('/') di sini juga, pakai
+    // replaceState (BUKAN pushState) supaya tidak menambah entri history baru — user yang
+    // klik tombol Back browser setelah logout tetap masuk akal (tidak nyangkut di URL menu
+    // lama yang sebenarnya sudah tidak valid lagi untuk sesi yang baru logout ini).
+    try{ history.replaceState({ agPage: null }, '', '/'); }catch(e){}
   }
 
   function openChangePasswordModal(){
@@ -6522,6 +6532,13 @@
     // adanya — supaya baseline back-gesture juga konsisten dengan skema URL menu lainnya.
     try{ history.replaceState({ agPage: 'dashboard' }, '', '/' + pageKeyToSlug_('dashboard')); }catch(e){}
     window.addEventListener('popstate', function(e){
+      // FIX: kalau user sudah logout (STATE.token kosong) lalu klik Back/Forward browser,
+      // jangan panggil showPage() sama sekali — showPage() mengasumsikan app sudah
+      // login/boot (langsung otak-atik #appShell dkk), jadi memanggilnya di halaman Login
+      // bisa berpotensi error atau menampilkan konten yang seharusnya sudah tidak boleh
+      // diakses. Biarkan browser tetap di halaman Login apa adanya; entri history sisa akun
+      // yang sudah logout memang sudah tidak relevan lagi.
+      if(!STATE.token) return;
       // Utamakan state.agPage (lebih pasti benar, diisi sendiri oleh app). Fallback: parse
       // slug dari URL saat ini — berguna kalau back/forward mendarat di entri yang state-nya
       // hilang (mis. reload di tengah riwayat) tapi URL-nya masih ada.
