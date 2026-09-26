@@ -6025,7 +6025,31 @@
     IS_FRESH_LOGIN_ = false; // reset — reload berikutnya default dianggap bukan login baru
     loadNotifications_();
     if(NOTIF_POLL_INTERVAL_) clearInterval(NOTIF_POLL_INTERVAL_);
-    NOTIF_POLL_INTERVAL_ = setInterval(loadNotifications_, 120000); // refresh tiap 2 menit
+    // FIX PERFORMA ("getNotifications sering Failed di Executions log, numpuk tiap 2 menit
+    // TERUS-MENERUS termasuk pas semua user lagi idle"): diturunkan dari 120000 (2 menit) ->
+    // 300000 (5 menit), DAN sekarang ikut pola yang sama seperti CART_POLL_INTERVAL_ di bawah
+    // (skip total kalau tab lagi tidak dilihat, document.visibilityState !== 'visible') —
+    // sebelumnya notif TETAP polling walau tab di-minimize/pindah tab lain, jadi ikut
+    // menyumbang beban ke server 24/7 selama user belum logout, padahal tidak ada yang
+    // melihat hasilnya. Begitu tab dibuka lagi, polling otomatis lanjut normal — tidak ada
+    // bedanya dirasakan user saat sedang benar-benar memakai app (real-time tetap terjaga),
+    // cuma tidak lagi boros saat tab ditinggal.
+    NOTIF_POLL_INTERVAL_ = setInterval(function(){
+      if(document.visibilityState === 'visible') loadNotifications_();
+    }, 300000);
+    // Begitu tab dibuka lagi setelah sempat di-background, langsung refresh notifikasi saat
+    // itu juga (jangan nunggu sampai interval 5 menit berikutnya) — supaya user yang balik
+    // ke tab ini tetap lihat notifikasi terbaru secepat mungkin, bukan data basi.
+    // Guard NOTIF_VISIBILITY_LISTENER_WIRED_ mencegah listener ini terpasang DOBEL kalau
+    // bootApp() sempat terpanggil lebih dari sekali dalam satu sesi tab yang sama (mis.
+    // login tanpa reload penuh) — tanpa guard ini, loadNotifications_() bisa terpicu
+    // berkali-kali lipat tiap kali tab kembali terlihat.
+    if(!NOTIF_VISIBILITY_LISTENER_WIRED_){
+      NOTIF_VISIBILITY_LISTENER_WIRED_ = true;
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState === 'visible' && STATE.token) loadNotifications_();
+      });
+    }
 
     // ===== CART SYNC lintas device (HP <-> Desktop, seperti Shopee) =====
     // Hanya relevan utk role AGENT (yang punya troli Dashboard). Tarik (pull) isi troli
@@ -6046,6 +6070,7 @@
     }
   }
   var NOTIF_POLL_INTERVAL_ = null;
+  var NOTIF_VISIBILITY_LISTENER_WIRED_ = false;
   var CART_POLL_INTERVAL_ = null;
 
   // Begitu tab/app dibuka lagi dari background (mis. balik dari switch app di HP, atau
