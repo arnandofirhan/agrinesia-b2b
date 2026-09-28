@@ -19802,7 +19802,7 @@
 
     var body =
       '<p style="font-size:13.5px;color:var(--ag-gray-600);margin:0 0 16px;">Pendaftaran "'+escapeHtml(name)+'" akan ditolak. Jelaskan alasannya agar karyawan tahu apa yang harus diperbaiki.</p>' +
-      '<div class="form-group"><label>Alasan Penolakan</label><textarea id="ebEmployeeRejectNote" rows="3" placeholder="Contoh: Foto KTP buram, mohon upload ulang."></textarea></div>';
+      '<div class="form-group"><label>Alasan Penolakan</label><textarea id="ebEmployeeRejectNote" rows="3" placeholder="Contoh: Foto ID Card buram, mohon upload ulang."></textarea></div>';
     openFormModal('Reject Karyawan', body, function(){
       var note = val_('ebEmployeeRejectNote').trim();
       if(!note){ showToast('Alasan penolakan wajib diisi.','error'); return; }
