@@ -7743,7 +7743,7 @@
 
     // ---- Dokumen registrasi: HANYA bisa diganti sendiri oleh Agent selama statusnya
     // REJECTED (lihat agentSelfReplaceDocument di backend) — ini jalur resmi supaya Agent
-    // yang ditolak (mis. "Foto KTP buram") tahu persis di mana harus upload ulang, tanpa
+    // yang ditolak (mis. "Foto ID Card buram") tahu persis di mana harus upload ulang, tanpa
     // perlu menghubungi Admin/Supervisor secara manual. Begitu APPROVED, kartu ini tampil
     // read-only (tanpa tombol Ganti) supaya dokumen yang sudah disetujui tidak diubah sendiri.
     var isRejected = agent.RegistrationStatus === 'REJECTED';
