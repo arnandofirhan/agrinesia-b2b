@@ -8262,8 +8262,10 @@
   // PUBLIC EMPLOYEE BENEFIT REGISTRATION (Tahap 2)
   // Pola sama persis dengan PUBLIC AGENT REGISTRATION di atas.
   // =============================================================
+  // Foto KTP TIDAK LAGI diminta saat registrasi Employee Benefit -- cukup Foto ID Card
+  // Karyawan. Jangan tambahkan entri 'ktp' kembali tanpa juga mengembalikan validasinya di
+  // backend (registerEmployeeBenefit / ebValidateRegistration_ di EmployeeBenefit.gs).
   var EB_REG_DOCS = [
-    { key:'ktp',    fileId:'ebRegKTPFile',    tileId:'ebRegKTPTile',    label:'Foto KTP',              hint:'JPG, PNG atau PDF', changeHandler:'handleEbRegDocChange_' },
     { key:'idcard', fileId:'ebRegIDCardFile', tileId:'ebRegIDCardTile', label:'Foto ID Card Karyawan', hint:'JPG, PNG atau PDF', changeHandler:'handleEbRegDocChange_' }
   ];
   var EB_REG_FILES = {}; // key -> {data, mimeType, name}
@@ -8368,7 +8370,7 @@
     var hasEmail = !!val_('ebRegEmail');
     var hasIdCard = !!val_('ebRegIDCardNumber');
     var hasCompany = !!val_('ebRegCompanyId');
-    var hasDocs = !!(EB_REG_FILES.ktp && EB_REG_FILES.idcard);
+    var hasDocs = !!EB_REG_FILES.idcard;
     btn.disabled = !(hasName && hasEmail && hasIdCard && hasCompany && hasDocs);
   }
 
@@ -8395,8 +8397,8 @@
       errEl.style.display = 'block';
       return;
     }
-    if(!EB_REG_FILES.ktp || !EB_REG_FILES.idcard){
-      errEl.textContent = 'Foto KTP dan Foto ID Card Karyawan wajib diupload.';
+    if(!EB_REG_FILES.idcard){
+      errEl.textContent = 'Foto ID Card Karyawan wajib diupload.';
       errEl.style.display = 'block';
       return;
     }
@@ -8408,7 +8410,7 @@
     var payload = {
       fullName: val_('ebRegFullName'), email: val_('ebRegEmail'), phone: val_('ebRegPhone'),
       idCardNumber: val_('ebRegIDCardNumber'), companyId: val_('ebRegCompanyId'),
-      ktpFile: EB_REG_FILES.ktp, idCardFile: EB_REG_FILES.idcard
+      idCardFile: EB_REG_FILES.idcard
     };
     google.script.run.withSuccessHandler(function(res){
       btn.disabled = false; btn.textContent = 'Kirim Registrasi';
@@ -8508,7 +8510,11 @@
       var docs = [
         { type:'KTP', label:'KTP', fileId:(d.KTP||{}).fileId, url:(d.KTP||{}).url },
         { type:'IDCARD', label:'ID Card Karyawan', fileId:(d.IDCARD||{}).fileId, url:(d.IDCARD||{}).url }
-      ];
+      ].filter(function(dd){
+        // KTP tidak lagi diminta saat registrasi Employee Benefit. Kartu KTP hanya
+        // ditampilkan untuk data lama yang memang sudah punya file KTP; ID Card selalu tampil.
+        return dd.type !== 'KTP' || !!dd.url;
+      });
       var docsHtml = docs.map(function(dd){
         return docPreviewCard_(
           { type:dd.type, label:dd.label, fileId:dd.fileId, url:dd.url, isPdf:/\.pdf($|\?)/i.test(dd.url||'') },
