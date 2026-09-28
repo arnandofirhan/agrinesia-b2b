@@ -2610,7 +2610,30 @@
     transition:opacity .12s ease,background .12s ease;
   }
   .form-group input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1;background:var(--ag-green-soft);}
-  .form-group input[type=date]:focus{background:var(--ag-green-soft);}
+    .form-group input[type=date]:focus{background:var(--ag-green-soft);}
+
+  /* ---------- FIX: klik di MANA SAJA pada kotak tanggal langsung buka kalender + ikon
+     kalender terlihat di dark mode ----------
+     Sebelumnya kalender hanya terbuka kalau klik tepat di ikon bawaan browser (kanan) dan
+     di dark mode ikon itu jadi abu gelap krn filter invert menimpa color-scheme:dark.
+     Sekarang: indikator bawaan browser DIBENTANGKAN memenuhi seluruh input (transparan,
+     tapi tetap menangkap klik -> picker native terbuka), dan ikon kanan digambar sendiri
+     lewat ::after (mask + warna brand) sehingga selalu terlihat di light maupun dark. */
+  .date-field-wrap input[type=date]{position:relative;cursor:pointer;padding-right:38px!important;}
+  .date-field-wrap--sm input[type=date]{padding-right:32px!important;}
+  .date-field-wrap input[type=date]::-webkit-calendar-picker-indicator{
+    position:absolute!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+    width:auto!important;height:auto!important;margin:0!important;padding:0!important;
+    opacity:0!important;cursor:pointer!important;background:transparent!important;filter:none!important;
+  }
+  .date-field-wrap::after{
+    content:'';position:absolute;right:12px;top:50%;width:16px;height:16px;margin-top:-8px;
+    background-color:var(--ag-green);pointer-events:none;
+    -webkit-mask:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .date-field-wrap--sm::after{right:11px;width:14px;height:14px;margin-top:-7px;}
+  html[data-theme="dark"] .date-field-wrap::after{background-color:#8FD3A8;}
 
   /* ---------- Agent Registration Modal (redesigned) ---------- */
   .reg-overlay{display:none;position:fixed;inset:0;background:rgba(6,20,15,.6);z-index:200;
@@ -6019,14 +6042,14 @@
     // reload/refresh (IS_FRESH_LOGIN_ === false), jangan ikut menembak menu2 lain sama
     // sekali, supaya bandwidth/slot request fokus ke 1 menu yang memang sedang dibuka user
     // (lihat catatan panjang di deklarasi IS_FRESH_LOGIN_).
-    if(!isSlowConn && IS_FRESH_LOGIN_){
+    if(!isSlowConn){ // preload juga saat reload, supaya cache data (*_CACHE_) terisi lagi
       // DITURUNKAN dari 2.5 detik -> 1 detik: sekarang HI dan LO punya jatah slot masing-
       // masing yang lebih dari 1 (lihat MAX_CONCURRENT_HI/LO di api-bridge.js), jadi preload
       // background TIDAK LAGI bisa menyita satu-satunya slot yang dipakai request Dashboard
       // sendiri — keduanya bisa jalan bersamaan tanpa saling memblokir. Jeda 1 detik masih
       // disisakan sekadar supaya request Dashboard (2 request) sempat berangkat duluan,
       // bukan lagi untuk menghindari rebutan slot tunggal.
-      setTimeout(preloadAllPages_, 1000);
+      setTimeout(preloadAllPages_, IS_FRESH_LOGIN_ ? 1000 : 2500);
     }
     IS_FRESH_LOGIN_ = false; // reset — reload berikutnya default dianggap bukan login baru
     wireCrossTabNotifLeader_(); // lihat definisi lengkap + alasan di bawah
@@ -6231,11 +6254,17 @@
       settings: renderSettings,
       'audit-log': renderAuditLog,
       reports: renderReports,
-      calendar: renderCalendarPage
+      calendar: renderCalendarPage,
+      'eb-companies': renderEbCompanies,
+      'eb-employees': renderEbEmployees,
+      'eb-transactions-admin': renderEbTransactionsAdmin,
+      'eb-store-users': renderEbStoreUsers,
+      'eb-transactions': renderEmployeeTransactions
     };
     var keys = MENU_ITEMS
       .filter(function(item){
         if(item.key === 'dashboard') return false; // already loaded by showPage() above
+        if(item.key === STATE.currentPage) return false; // halaman yang sedang dibuka sudah memuat datanya sendiri
         if(item.roles.indexOf(STATE.user.role) === -1) return false;
         return typeof renderers[item.key] === 'function';
       })
@@ -6274,7 +6303,7 @@
     // menu itu beberapa detik setelah login, jadi tetap kena spinner lama seolah-olah
     // preload tidak berguna sama sekali. FIX: definisikan urutan PRIORITAS eksplisit di
     // sini (transaksi & order didahulukan), independen dari urutan tampilan menu.
-    var PRELOAD_PRIORITY_ORDER_ = ['transactions','orders','catalog','products','commission','promo','agents','stores','reports','calendar','commission-scheme','users','settings','audit-log'];
+    var PRELOAD_PRIORITY_ORDER_ = ['transactions','orders','catalog','products','commission','promo','agents','stores','reports','calendar','commission-scheme','users','settings','audit-log','eb-employees','eb-companies','eb-transactions-admin','eb-store-users','eb-transactions'];
     keys.sort(function(a, b){
       var ia = PRELOAD_PRIORITY_ORDER_.indexOf(a); if(ia === -1) ia = 999;
       var ib = PRELOAD_PRIORITY_ORDER_.indexOf(b); if(ib === -1) ib = 999;
@@ -6292,8 +6321,8 @@
     // berdekatan, total request yang berebut kuota eksekusi paralel GAS di detik yang sama
     // jadi jauh lebih sedikit. api-bridge.js juga sudah retry otomatis kalau tetap kena
     // respons "sibuk", jadi kombinasi keduanya menghilangkan gejala "sesi kedaluwarsa palsu".
-    var STAGGER_MS = 1100;
-    var PRELOAD_PAGE_LIMIT_ = 4;
+    var STAGGER_MS = 800;
+    var PRELOAD_PAGE_LIMIT_ = 30; // SEMUA menu (dulu 4) — data tampil tanpa harus klik menunya dulu
     keys = keys.slice(0, PRELOAD_PAGE_LIMIT_);
     keys.forEach(function(key, i){
       setTimeout(function(){
@@ -7277,6 +7306,7 @@
     if(!wrap) return;
     var inp = wrap.querySelector('input[type=date]');
     if(!inp || inp.disabled) return;
+    if(e.target === inp) return; // klik di input sudah ditangani indikator native yang dibentangkan penuh (CSS)
     try{ inp.focus(); if(typeof inp.showPicker === 'function') inp.showPicker(); }catch(err){}
   });
 
@@ -19325,8 +19355,8 @@
     var actions = function(r){
       var html = '<div class="row-actions" style="flex-wrap:wrap;">';
       if((r.RegistrationStatus === 'SUBMITTED' || r.RegistrationStatus === 'UNDER_REVIEW') && canManage){
-        html += '<button class="btn btn-secondary btn-sm" onclick="reviewEbEmployeePrompt(\''+r.EmployeeID+'\',\'APPROVE\')">Approve</button> ' +
-                '<button class="btn btn-ghost btn-sm" onclick="reviewEbEmployeePrompt(\''+r.EmployeeID+'\',\'REJECT\')">Reject</button> ';
+        html += '<button class="btn btn-secondary btn-sm" onclick="reviewEbEmployeePrompt(\''+r.EmployeeID+'\',\'APPROVE\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\')">Approve</button> ' +
+                '<button class="btn btn-ghost btn-sm" onclick="reviewEbEmployeePrompt(\''+r.EmployeeID+'\',\'REJECT\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\')">Reject</button> ';
       }
       html += '<button class="action-btn view" title="Lihat" onclick="viewEbEmployee_(\''+r.EmployeeID+'\')">'+ICONS.view+'</button>';
       if(canManage) html += '<button class="action-btn edit" title="Edit" onclick="editEbEmployee_(\''+r.EmployeeID+'\')">'+ICONS.edit+'</button>';
@@ -19784,9 +19814,11 @@
   /** decision: 'APPROVE' | 'REJECT' — mirror reviewAgentPrompt/doReviewAgent_. Approve
    *  otomatis membuat akun login EMPLOYEE & mengirim email kredensial (ebReviewEmployee
    *  di backend); Reject wajib diisi alasan dan otomatis mengirim email penolakan. */
-  function reviewEbEmployeePrompt(employeeId, decision){
+  function reviewEbEmployeePrompt(employeeId, decision, nameArg){
     var e = findEbEmployee_(employeeId);
-    var name = e ? e.FullName : employeeId;
+    // Nama diprioritaskan dari cache; kalau cache kosong (mis. halaman dipulihkan dari
+    // PAGE_HTML_CACHE setelah reload), pakai nama yang dikirim dari tombol; ID hanya fallback terakhir.
+    var name = (e && e.FullName) || nameArg || employeeId;
 
     if(decision === 'APPROVE'){
       openConfirmModal({
