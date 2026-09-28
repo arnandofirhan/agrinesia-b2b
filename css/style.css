@@ -1,4 +1,4 @@
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
   /* =========================================================
      AGRINESIA DESIGN TOKENS
      Colors sourced from reference screenshots: dark green header
@@ -2426,6 +2426,15 @@
   .data-card-field b{font-size:12.5px;font-weight:600;color:var(--ag-gray-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
   .data-card-field.full-w{grid-column:1 / -1;}
   .data-card-field.full-w b{white-space:normal;word-break:break-word;}
+  /* FIX: badge status (mis. "MENUNGGU PENYELESAIAN" di kartu Order mobile) kepotong,
+     karena aturan ellipsis di atas (dibuat utk teks polos) ikut menimpa badge yang
+     lebih panjang dari lebar kolom grid 2-kolom. Badge bukan teks biasa (inline-flex),
+     jadi overflow:hidden MEMOTONG-nya langsung tanpa sempat menampilkan "…".
+     Fix: kalau isi field ini badge, matikan ellipsis-nya dan izinkan teks di dalam
+     badge turun baris (bukan dipotong), sekaligus badge boleh melebar penuh kolom. */
+  .data-card-field:has(.badge){overflow:visible;}
+  .data-card-field:has(.badge) b{overflow:visible;text-overflow:clip;white-space:normal;}
+  .data-card-field .badge{white-space:normal;text-align:left;max-width:100%;}
   .data-card-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;border-top:1px dashed var(--ag-gray-200);padding-top:10px;}
   @media (max-width:760px){
     .data-card-list{display:flex;}
@@ -4195,4 +4204,3 @@
     .eb-qr-box{min-width:180px;min-height:180px;padding:10px;}
     .eb-doc-grid{grid-template-columns:1fr;}
   }
-
