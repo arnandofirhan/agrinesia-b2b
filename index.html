@@ -5318,6 +5318,12 @@
     MY_SIGNATURE_STATUS_CACHE_ = null;
     NOTIF_STATE_.items = [];
     if(NOTIF_POLL_INTERVAL_){ clearInterval(NOTIF_POLL_INTERVAL_); NOTIF_POLL_INTERVAL_ = null; }
+    // Lepas klaim leader notifikasi lintas-tab (lihat wireCrossTabNotifLeader_) supaya tab
+    // lain yang masih login tidak menunggu klaim basi 10 detik sebelum bisa mengambil alih.
+    if(NOTIF_LEADER_HEARTBEAT_INTERVAL_){ clearInterval(NOTIF_LEADER_HEARTBEAT_INTERVAL_); NOTIF_LEADER_HEARTBEAT_INTERVAL_ = null; }
+    if(NOTIF_IS_LEADER_){ try{ localStorage.removeItem(NOTIF_LEADER_STORAGE_KEY_); }catch(e){} }
+    NOTIF_IS_LEADER_ = false;
+    if(NOTIF_BROADCAST_CHANNEL_){ try{ NOTIF_BROADCAST_CHANNEL_.close(); }catch(e){} NOTIF_BROADCAST_CHANNEL_ = null; }
     if(CART_POLL_INTERVAL_){ clearInterval(CART_POLL_INTERVAL_); CART_POLL_INTERVAL_ = null; }
     if(CART_SAVE_TIMER_){ clearTimeout(CART_SAVE_TIMER_); CART_SAVE_TIMER_ = null; }
     CART_LAST_SYNCED_JSON_ = null;
@@ -6023,7 +6029,8 @@
       setTimeout(preloadAllPages_, 1000);
     }
     IS_FRESH_LOGIN_ = false; // reset — reload berikutnya default dianggap bukan login baru
-    loadNotifications_();
+    wireCrossTabNotifLeader_(); // lihat definisi lengkap + alasan di bawah
+    loadNotifOrDeferToLeader_();
     if(NOTIF_POLL_INTERVAL_) clearInterval(NOTIF_POLL_INTERVAL_);
     // FIX PERFORMA ("getNotifications sering Failed di Executions log, numpuk tiap 2 menit
     // TERUS-MENERUS termasuk pas semua user lagi idle"): diturunkan dari 120000 (2 menit) ->
@@ -6035,7 +6042,7 @@
     // bedanya dirasakan user saat sedang benar-benar memakai app (real-time tetap terjaga),
     // cuma tidak lagi boros saat tab ditinggal.
     NOTIF_POLL_INTERVAL_ = setInterval(function(){
-      if(document.visibilityState === 'visible') loadNotifications_();
+      if(document.visibilityState === 'visible') loadNotifOrDeferToLeader_();
     }, 300000);
     // Begitu tab dibuka lagi setelah sempat di-background, langsung refresh notifikasi saat
     // itu juga (jangan nunggu sampai interval 5 menit berikutnya) — supaya user yang balik
@@ -6047,7 +6054,7 @@
     if(!NOTIF_VISIBILITY_LISTENER_WIRED_){
       NOTIF_VISIBILITY_LISTENER_WIRED_ = true;
       document.addEventListener('visibilitychange', function(){
-        if(document.visibilityState === 'visible' && STATE.token) loadNotifications_();
+        if(document.visibilityState === 'visible' && STATE.token) loadNotifOrDeferToLeader_();
       });
     }
 
@@ -6071,6 +6078,119 @@
   }
   var NOTIF_POLL_INTERVAL_ = null;
   var NOTIF_VISIBILITY_LISTENER_WIRED_ = false;
+
+  // =============================================================
+  // FIX PERFORMA ("doPost numpuk padat pas buka banyak tab/window bersamaan"): laporan
+  // nyata dari Executions log menunjukkan beberapa doPost berjalan nyaris di detik yang
+  // sama persis, ternyata karena user memang SENGAJA membuka beberapa tab sekaligus untuk
+  // kerja (mis. 1 tab Dashboard, 1 tab Order) — pola pemakaian yang sah, BUKAN sesuatu yang
+  // perlu diubah dari sisi user. Sebelum fix ini, TIAP TAB polling notifikasi sendiri-
+  // sendiri secara independen (masing-masing punya setInterval sendiri) — 3 tab terbuka
+  // bersamaan = 3x lipat request notifikasi ke server tiap siklus, walau semuanya milik
+  // SATU orang yang sama, SATU browser yang sama.
+  //
+  // FIX: leader election antar-tab pakai BroadcastChannel (didukung semua browser modern;
+  // fallback ke localStorage event untuk browser sangat lama yang tidak punya
+  // BroadcastChannel — cukup jarang terjadi, tapi dijaga supaya tidak pernah rusak total).
+  // Tab-tab yang berasal dari origin+browser yang SAMA bisa saling "dengar" tanpa lewat
+  // server sama sekali. Hanya SATU tab (leader) yang benar-benar memanggil
+  // getNotifications() ke server; tab lain cukup menyiarkan ulang (broadcast) hasil yang
+  // leader dapat, jadi semua tab tetap tampil notifikasi yang sama & tetap terasa
+  // real-time, TANPA request berlipat ke server.
+  //
+  // Leader dipilih otomatis (tab pertama yang berhasil "klaim" kepemimpinan lewat
+  // localStorage dengan timestamp), dan leadership OTOMATIS BERPINDAH ke tab lain kalau
+  // leader lama ditutup/idle (heartbeat basi > 10 detik) — tidak ada satu titik gagal
+  // permanen kalau tab leader kebetulan yang pertama ditutup user.
+  // =============================================================
+  var NOTIF_TAB_ID_ = 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+  var NOTIF_BROADCAST_CHANNEL_ = null;
+  var NOTIF_IS_LEADER_ = false;
+  var NOTIF_LEADER_HEARTBEAT_INTERVAL_ = null;
+  var NOTIF_LEADER_STORAGE_KEY_ = 'ag_notif_leader';
+  var NOTIF_LEADER_HEARTBEAT_MS_ = 4000;   // leader "lapor diri" tiap 4 detik
+  var NOTIF_LEADER_STALE_MS_ = 10000;      // leader dianggap mati kalau tidak lapor > 10 detik
+
+  function wireCrossTabNotifLeader_(){
+    if(NOTIF_BROADCAST_CHANNEL_) return; // sudah pernah di-wire di sesi tab ini, jangan dobel
+    try{
+      if(typeof BroadcastChannel !== 'undefined'){
+        NOTIF_BROADCAST_CHANNEL_ = new BroadcastChannel('ag_notif_sync');
+        NOTIF_BROADCAST_CHANNEL_.onmessage = function(ev){
+          // Pesan dari tab LAIN yang kebetulan sedang jadi leader: pakai hasilnya langsung,
+          // render seolah-olah tab ini yang memanggil server sendiri — user tidak akan bisa
+          // membedakan, tapi server hanya menerima SATU request untuk semua tab ini.
+          if(ev && ev.data && ev.data.type === 'notif_data' && ev.data.tabId !== NOTIF_TAB_ID_){
+            if(!STATE.user) return; // tab ini belum login / sudah logout — abaikan
+            NOTIF_STATE_.items = ev.data.items || [];
+            renderNotifBadge_();
+            recomputeNavBadgeCounts_();
+            renderSidebar();
+            renderBottomNav();
+          }
+        };
+      }
+    }catch(e){ /* BroadcastChannel gagal diinisialisasi (jarang) — tetap fallback ke localStorage di bawah */ }
+
+    // Coba klaim leadership begitu tab ini boot, lalu terus perbarui/cek ulang secara berkala
+    // supaya leadership otomatis berpindah kalau leader lama ternyata sudah mati.
+    tryClaimNotifLeadership_();
+    if(NOTIF_LEADER_HEARTBEAT_INTERVAL_) clearInterval(NOTIF_LEADER_HEARTBEAT_INTERVAL_);
+    NOTIF_LEADER_HEARTBEAT_INTERVAL_ = setInterval(tryClaimNotifLeadership_, NOTIF_LEADER_HEARTBEAT_MS_);
+
+    // Kalau tab ini ditutup TEPAT saat sedang jadi leader, lepaskan klaimnya secepat mungkin
+    // (bukan menunggu 10 detik basi) supaya tab lain bisa segera ambil alih tanpa jeda.
+    window.addEventListener('beforeunload', function(){
+      if(NOTIF_IS_LEADER_){
+        try{ localStorage.removeItem(NOTIF_LEADER_STORAGE_KEY_); }catch(e){}
+      }
+    });
+  }
+
+  function tryClaimNotifLeadership_(){
+    try{
+      var raw = localStorage.getItem(NOTIF_LEADER_STORAGE_KEY_);
+      var current = raw ? JSON.parse(raw) : null;
+      var now = Date.now();
+      var isStale = !current || (now - current.at) > NOTIF_LEADER_STALE_MS_;
+      var iAmVisible = document.visibilityState === 'visible';
+      var currentIsMe = current && current.tabId === NOTIF_TAB_ID_;
+      // Leader boleh diambil alih kalau: (a) klaim lama sudah basi/tidak ada, ATAU (b) aku
+      // tab yang sedang DILIHAT user — tab tersembunyi sering dibekukan browser timer-nya,
+      // jadi tab yang aktif dipakai harus jadi leader supaya notifikasi yang dilihat user
+      // selalu segar. Kalau aku memang leader tapi TIDAK lagi visible, aku tetap leader
+      // hanya selama TIDAK ada tab lain yang sudah mengambil klaim (currentIsMe dicek dari
+      // localStorage terbaru, jadi begitu tab lain menimpanya, currentIsMe otomatis false
+      // dan aku turun jadi non-leader — tidak pernah ada 2 leader sekaligus).
+      if(isStale || (currentIsMe && iAmVisible) || (iAmVisible && !currentIsMe)){
+        localStorage.setItem(NOTIF_LEADER_STORAGE_KEY_, JSON.stringify({ tabId: NOTIF_TAB_ID_, at: now }));
+        NOTIF_IS_LEADER_ = true;
+      } else if(currentIsMe){
+        // Aku leader tapi sedang tersembunyi & belum ada yang menggantikan: pertahankan
+        // klaim (perbarui heartbeat) supaya notifikasi tetap jalan walau semua tab hidden.
+        localStorage.setItem(NOTIF_LEADER_STORAGE_KEY_, JSON.stringify({ tabId: NOTIF_TAB_ID_, at: now }));
+        NOTIF_IS_LEADER_ = true;
+      } else {
+        NOTIF_IS_LEADER_ = false;
+      }
+    }catch(e){
+      // localStorage tidak tersedia (mode private/incognito ketat dsb) — aman fallback ke
+      // "semua tab jadi leader" (perilaku LAMA, tiap tab polling sendiri), lebih baik
+      // daripada notifikasi sama sekali tidak jalan.
+      NOTIF_IS_LEADER_ = true;
+    }
+  }
+
+  // Dipanggil alih-alih loadNotifications_() langsung di titik-titik polling — HANYA tab
+  // leader yang benar-benar menembak ke server; tab lain diam saja menunggu broadcast dari
+  // leader (lihat NOTIF_BROADCAST_CHANNEL_.onmessage di atas). Kalau leadership belum
+  // sempat ditentukan (mis. race condition sesaat di boot), default aman: tetap load sendiri
+  // (lebih baik sesekali ada request dobel daripada notifikasi tidak muncul sama sekali).
+  function loadNotifOrDeferToLeader_(){
+    if(NOTIF_IS_LEADER_ || NOTIF_IS_LEADER_ === undefined){
+      loadNotifications_();
+    }
+  }
   var CART_POLL_INTERVAL_ = null;
 
   // Begitu tab/app dibuka lagi dari background (mis. balik dari switch app di HP, atau
@@ -16870,6 +16990,14 @@
       recomputeNavBadgeCounts_();
       renderSidebar();
       renderBottomNav();
+      // Siarkan hasil ke tab-tab lain di browser yang sama (lihat wireCrossTabNotifLeader_)
+      // supaya mereka tidak perlu menembak server sendiri-sendiri. Kalau tidak ada tab lain
+      // yang mendengarkan, postMessage ini tidak berdampak apa-apa (tidak error).
+      try{
+        if(NOTIF_BROADCAST_CHANNEL_){
+          NOTIF_BROADCAST_CHANNEL_.postMessage({ type: 'notif_data', tabId: NOTIF_TAB_ID_, items: NOTIF_STATE_.items });
+        }
+      }catch(e){}
     }).withFailureHandler(function(err){
       // Gagal biasa (jaringan dsb) tetap diam-diam. Tapi kalau sesi sudah habis (token
       // kedaluwarsa, mis. tab dibiarkan terbuka lama), keluar dengan rapi supaya tidak terus
