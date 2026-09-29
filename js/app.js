@@ -1331,8 +1331,16 @@
     // berdekatan, total request yang berebut kuota eksekusi paralel GAS di detik yang sama
     // jadi jauh lebih sedikit. api-bridge.js juga sudah retry otomatis kalau tetap kena
     // respons "sibuk", jadi kombinasi keduanya menghilangkan gejala "sesi kedaluwarsa palsu".
-    var STAGGER_MS = 800;
-    var PRELOAD_PAGE_LIMIT_ = 30; // SEMUA menu (dulu 4) — data tampil tanpa harus klik menunya dulu
+    // REVERT ("CORS error / 404 bertumpuk di Network tab, exec sampai 5 menit nyangkut"):
+    // percobaan "preload SEMUA menu" (30) dgn jeda 800ms di atas TERBUKTI menabrak lagi
+    // persis masalah yang riwayat panjang di atas sudah pernah temukan solusinya --
+    // terlalu banyak request /exec staggered rapat, GAS kehabisan kuota eksekusi paralel,
+    // sebagian balik error/CORS/404 alih-alih JSON. Dikembalikan ke angka aman semula
+    // (limit halaman kecil + jeda lebih lebar), urutan prioritas di atas tetap dipakai
+    // supaya Transaksi/Order -- yang paling sering diklik -- tetap di-preload duluan;
+    // menu lain tetap bisa dibuka manual (cuma tanpa keuntungan sudah-di-cache).
+    var STAGGER_MS = 1500;
+    var PRELOAD_PAGE_LIMIT_ = 4;
     keys = keys.slice(0, PRELOAD_PAGE_LIMIT_);
     keys.forEach(function(key, i){
       setTimeout(function(){
