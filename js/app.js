@@ -1,4 +1,4 @@
-  /*************************************************************
+/*************************************************************
    * AGRINESIA B2B — FRONTEND (PHASE 1)
    * SPA router (showPage), auth, sidebar per role, dashboard.
    *************************************************************/
@@ -843,13 +843,27 @@
     // cuma modalnya yang masih disembunyikan) — hasilnya ditaruh di REG_AREAS_CACHE_ yang
     // sama dipakai loadRegAreaOptions_(), jadi begitu user benar-benar buka modal Registrasi,
     // fungsi itu langsung kena cache-hit dan render instan, tidak nunggu apa-apa lagi.
-    try{ loadRegAreaOptions_(); }catch(e){}
-    // Sama seperti fix di atas untuk dropdown Area Pendaftaran, tapi untuk dropdown
-    // "Perusahaan" di modal Registrasi Employee Benefit (lihat ebLoadCompanyOptions_) —
-    // sama-sama cuma dipanggil pas modal dibuka sebelumnya, sekarang di-prefetch juga
-    // sedini mungkin di boot supaya sudah kena cache-hit (EB_COMPANIES_CACHE_) begitu
-    // modalnya benar-benar dibuka.
-    try{ ebLoadCompanyOptions_(); }catch(e){}
+    // FIX PERFORMA LOGIN (ditemukan dari Network waterfall: 2 request /exec + 1 redirect
+    // "echo?user_content_key=..." nyangkut belasan detik tepat di layar Login): dua prefetch
+    // di bawah ini SEBELUMNYA ditembak SERENTAK dengan ping() di atas, keduanya HIGH-priority
+    // (tidak ditandai __BG_LOW_PRIORITY__) — jadi begitu halaman Login dibuka, ada 3 request
+    // rebutan slot GAS yang kemungkinan besar masih cold-start, TERMASUK ikut menyita slot
+    // MAX_CONCURRENT_HI yang seharusnya dijatah buat login() beneran kalau user keburu klik
+    // "Masuk" duluan. Datanya sendiri (dropdown Area Pendaftaran & Perusahaan) baru benar-benar
+    // dibutuhkan NANTI kalau modal Registrasi dibuka — jeda beberapa detik di sini tidak
+    // kerasa sama sekali oleh user, tapi bikin beban awal ke GAS yang cold jauh lebih ringan.
+    // FIX: (a) ditandai low-priority sama seperti ping(), (b) ditunda dikit lewat setTimeout
+    // supaya TIDAK ikut nge-batch bareng ping() jadi satu request — ping() sendirian dulu
+    // yang menanggung cold-start, baru dropdown ini menyusul (biasanya sudah kena GAS yang
+    // sudah "panas" dari ping() barusan, jadi ikut lebih cepat juga).
+    setTimeout(function(){
+      try{
+        window.__BG_LOW_PRIORITY__ = true;
+        loadRegAreaOptions_();
+        ebLoadCompanyOptions_();
+      }catch(e){}
+      finally{ window.__BG_LOW_PRIORITY__ = false; }
+    }, 1500);
     // "Ingat saya" HANYA mengingat alamat email (bukan password — menyimpan password mentah
     // di browser tidak aman) di localStorage supaya form login sudah terisi otomatis di
     // kunjungan berikutnya, termasuk setelah logout. Kalau checkbox tidak dicentang saat
@@ -15110,4 +15124,3 @@
       }
     });
   }
-
