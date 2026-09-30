@@ -7644,11 +7644,35 @@
   }
 
   function renderCommissions(){
+    var mySeq = ++COMMISSION_REQUEST_SEQ_;
     google.script.run.withSuccessHandler(function(rows){
+      if(mySeq !== COMMISSION_REQUEST_SEQ_) return;
       COMMISSION_CACHE_ = rows;
+      // FIX ("kolom Agent di Commission cuma nampilin kode AGT-000001, bukan nama"):
+      // commissionsPageHtml_ cari nama Agent dari AGENTS_CACHE (lihat findAgentInList_),
+      // tapi AGENTS_CACHE cuma keisi kalau menu "B2B Agent" sudah pernah dibuka duluan di
+      // sesi ini. Kalau user langsung ke Commission tanpa pernah buka menu Agent, cache-nya
+      // masih kosong -- makanya yang kelihatan cuma kode. FIX: kalau cache-nya masih kosong
+      // & role bukan AGENT (yang memang tidak butuh kolom ini sama sekali, lihat comment di
+      // commissionsPageHtml_), tarik juga listAgents() sebelum ngecat halamannya, supaya
+      // nama Agent selalu ada dari kunjungan PERTAMA ke Commission, bukan cuma kalau
+      // kebetulan sudah pernah buka menu Agent duluan.
+      if(!AGENTS_CACHE.length && STATE.user.role !== 'AGENT'){
+        google.script.run.withSuccessHandler(function(agents){
+          if(mySeq !== COMMISSION_REQUEST_SEQ_) return;
+          AGENTS_CACHE = agents;
+          paintPage_('commission', commissionsPageHtml_());
+        }).withFailureHandler(function(){
+          // Gagal tarik daftar Agent bukan alasan buat gagalkan seluruh halaman -- tetap
+          // tampilkan Commission-nya, kolom Agent jatuh balik ke kode saja seperti semula.
+          if(mySeq === COMMISSION_REQUEST_SEQ_) paintPage_('commission', commissionsPageHtml_());
+        }).listAgents(STATE.token, null);
+        return;
+      }
       paintPage_('commission', commissionsPageHtml_());
     }).withFailureHandler(function(e){ handleBackendError(e, pageErrorEl_('commission')); }).listCommissions(STATE.token);
   }
+  var COMMISSION_REQUEST_SEQ_ = 0;
 
   /** Export PDF "Laporan Komisi" per baris — sama seperti exportReportsCsv_ (server bikin
    *  file, kirim base64, browser download-kan), tapi hasilnya PDF berkop hijau & informatif
@@ -7746,8 +7770,10 @@
         // Diurutkan per Category lalu nama produk supaya konsisten dgn tampilan lain — juga
         // supaya 2 item "ringkas" yang ditampilkan bukan sekadar 2 item pertama yang acak.
         var sortedKomisiItems = sortByCategoryThenName_(items, function(it){ return productMap[it.ProductID]; });
-        var showAll = sortedKomisiItems.length <= 2;
-        var visibleItems = showAll ? sortedKomisiItems : sortedKomisiItems.slice(0,2);
+        // FIX ("+4 item lainnya, jangan disembunyikan, mau kelihatan semua item"): sebelumnya
+        // cuma 2 item pertama ditampilkan lalu sisanya diringkas jadi teks "+N item lainnya".
+        // Sekarang semua item transaksi ditampilkan penuh di modal Detail Komisi ini.
+        var visibleItems = sortedKomisiItems;
         var rowsHtml = visibleItems.map(function(it){
           var p = productMap[it.ProductID] || {};
           var thumb = p.ImageURL
@@ -7762,8 +7788,7 @@
             '<div class="po-cart-linetotal">'+formatRupiah(it.LineTotal)+'</div>' +
           '</div>';
         }).join('');
-        var moreHtml = showAll ? '' :
-          '<div class="doc-preview-empty" style="text-align:left;padding:8px 2px 0;font-size:12px;">+'+(items.length-2)+' item lainnya &mdash; lihat lewat Detail PO '+escapeHtml(c.POID)+'.</div>';
+        var moreHtml = ''; // semua item sudah ditampilkan di atas, tidak ada lagi yang diringkas
         // Baris total langsung di bawah garis Subtotal terakhir, dipisah border tebal +
         // warna hijau supaya kebaca sbg penjumlahan, bukan item lain.
         var totalRowHtml =
@@ -12647,6 +12672,42 @@
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 90) + 'px';
   }
+
+  // FIX ("kotak Alamat sesuai KTP bisa diseret manual jadi ukuran aneh, teks panjang
+  // kepotong"): textarea di dalam .text-field-wrap--textarea (mis. Alamat sesuai KTP di
+  // form Registrasi/Edit Agent) sekarang TIDAK bisa di-resize manual (lihat resize:none di
+  // Stylesheet.html) -- sebagai gantinya tingginya menyesuaikan OTOMATIS ke isi teksnya,
+  // tidak dibatasi max-height (beda dari autoGrowChatInput_ di atas yang sengaja dibatasi
+  // 90px), supaya alamat sepanjang apa pun selalu kelihatan utuh, turun baris sendiri,
+  // tidak pernah ada yang kepotong/ke-scroll di dalam kotak kecil.
+  // Dipasang via event delegation di document (bukan addEventListener per textarea satu-
+  // satu) supaya otomatis berlaku untuk textarea yang di-render ulang kapan saja (modal
+  // dibuka lagi, dsb) tanpa perlu nambah kode di tiap tempat textarea itu dibuat.
+  function autoGrowKtpAddress_(el){
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+  document.addEventListener('input', function(ev){
+    var el = ev.target;
+    if(el && el.tagName === 'TEXTAREA' && el.closest('.text-field-wrap--textarea')){
+      autoGrowKtpAddress_(el);
+    }
+  });
+  // Textarea yang SUDAH ada isinya saat modal pertama dibuka (mis. buka form Edit Agent
+  // yang alamatnya sudah panjang) perlu langsung disesuaikan tingginya juga, tidak nunggu
+  // user ngetik dulu -- makanya dipasang juga lewat MutationObserver yang mengawasi kapan
+  // textarea itu ditambahkan ke DOM.
+  new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      m.addedNodes && m.addedNodes.forEach(function(node){
+        if(node.nodeType !== 1) return;
+        var textareas = node.matches && node.matches('.text-field-wrap--textarea textarea')
+          ? [node]
+          : (node.querySelectorAll ? node.querySelectorAll('.text-field-wrap--textarea textarea') : []);
+        Array.prototype.forEach.call(textareas, autoGrowKtpAddress_);
+      });
+    });
+  }).observe(document.body, {childList:true, subtree:true});
 
   /** Render satu bubble chat ke dalam container.
    *  PENTING (fix bug "pesan terkirim 2x di layar Agent tapi cuma 1x di Admin"):
