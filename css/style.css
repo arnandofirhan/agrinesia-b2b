@@ -328,6 +328,15 @@
     width:100%;padding:10px 12px;border:1px solid var(--ag-gray-200);border-radius:var(--radius-sm);
     font-size:14px;background:var(--ag-surface);color:var(--ag-gray-900);
   }
+  /* FIX ("Alamat sesuai KTP di modal Registrasi masih bisa ditarik manual"): ini textarea
+     POLOS (bukan yang dibungkus .text-field-wrap--textarea di form Edit Agent -- itu sudah
+     dibetulkan sebelumnya) -- dipakai apa adanya di modal Registrasi Agent B2B (index.html)
+     lewat rule generic .form-group textarea ini. Resize manual dimatikan di sini juga +
+     tinggi otomatis mengikuti isi diatur oleh autoGrowKtpAddress_ (lihat app.js/
+     JavaScript.html), yang sekarang mendeteksi textarea manapun di dalam .form-group, bukan
+     cuma yang di dalam .text-field-wrap--textarea.
+  */
+  .form-group textarea{resize:none;overflow:hidden;font-family:inherit;line-height:1.5;}
   /* Native <select> (mis. field "Status" di form Produk) sebelumnya dibiarkan pakai
      panah bawaan browser/OS — di Android/Chrome itu SERING tampil hitam pekat dan
      kontras aneh dgn field lain yang panahnya abu-abu tipis (lihat .combo-select-arrow).
