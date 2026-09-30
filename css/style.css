@@ -2301,8 +2301,13 @@
   .text-field-wrap.text-field-wrap--textarea svg{margin-top:1px;margin-left:12px;}
   .text-field-wrap textarea{
     border:none!important;background:transparent!important;box-shadow:none!important;
-    flex:1;min-width:0;resize:vertical;font:inherit;line-height:1.5;
+    flex:1;min-width:0;font:inherit;line-height:1.5;
     padding:0 12px 0 8px;min-height:44px;
+    /* FIX: sebelumnya resize:vertical -- kotak bisa diseret manual jadi ukuran aneh, dan
+       teks panjang bisa kepotong (scroll di dalam kotak, bukan turun baris otomatis).
+       Sekarang resize dimatikan total & overflow disembunyikan; tinggi kotaknya diatur
+       otomatis oleh JS (lihat autoGrowTextarea_ di JavaScript.html/app.js) mengikuti isi. */
+    resize:none;overflow:hidden;
   }
 
   /* ---------- Promo — modern card list (menggantikan tabel supaya tidak ada
