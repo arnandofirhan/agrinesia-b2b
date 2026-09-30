@@ -12689,7 +12689,12 @@
   }
   document.addEventListener('input', function(ev){
     var el = ev.target;
-    if(el && el.tagName === 'TEXTAREA' && el.closest('.text-field-wrap--textarea')){
+    // FIX: sebelumnya cuma textarea di dalam .text-field-wrap--textarea (form Edit Agent)
+    // yang kena auto-grow -- textarea POLOS di modal Registrasi (mis. #regAddress di
+    // index.html, tidak dibungkus .text-field-wrap sama sekali) tidak ke-cover, jadi masih
+    // pakai resize manual bawaan browser. Sekarang deteksinya diperluas ke SEMUA textarea
+    // di dalam .form-group, mencakup keduanya.
+    if(el && el.tagName === 'TEXTAREA' && el.closest('.form-group')){
       autoGrowKtpAddress_(el);
     }
   });
@@ -12701,9 +12706,9 @@
     mutations.forEach(function(m){
       m.addedNodes && m.addedNodes.forEach(function(node){
         if(node.nodeType !== 1) return;
-        var textareas = node.matches && node.matches('.text-field-wrap--textarea textarea')
+        var textareas = node.matches && node.matches('.form-group textarea')
           ? [node]
-          : (node.querySelectorAll ? node.querySelectorAll('.text-field-wrap--textarea textarea') : []);
+          : (node.querySelectorAll ? node.querySelectorAll('.form-group textarea') : []);
         Array.prototype.forEach.call(textareas, autoGrowKtpAddress_);
       });
     });
