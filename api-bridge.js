@@ -35,7 +35,7 @@
  * PENTING: Content-Type SENGAJA text/plain agar tidak memicu preflight CORS (GAS tak bisa jawab OPTIONS). */
 (function(){
   'use strict';
-  var BATCH_WINDOW_MS = 25, MAX_BATCH = 8, MAX_HI = 3, MAX_LO = 2, TIMEOUT_MS = 90000, MAX_RETRY = 2;
+  var BATCH_WINDOW_MS = 25, MAX_BATCH = 4, MAX_HI = 3, MAX_LO = 2, TIMEOUT_MS = 90000, MAX_RETRY = 2;
   var hi = [], lo = [], inHi = 0, inLo = 0, timer = null, gen = 0;
 
   function url_(){
@@ -69,9 +69,11 @@
     var done = function(){ if(low) inLo--; else inHi--; pump(); };
     var u = url_();
     if(!u){ done(); failAll(batch, 'GAS_EXEC_URL belum diisi / tidak valid di index.html'); return; }
+    var t0 = Date.now(), names = batch.map(function(j){ return j.fn; }).join(',');
     var ctl = ('AbortController' in window) ? new AbortController() : null;
     var to = setTimeout(function(){ if(ctl) ctl.abort(); }, TIMEOUT_MS);
     var retry = function(why){
+      console.warn('[bridge] RETRY', names, why, (Date.now()-t0)+'ms');
       var again = batch.filter(function(j){ return j.tries < MAX_RETRY; });
       var dead = batch.filter(function(j){ return j.tries >= MAX_RETRY; });
       if(dead.length) failAll(dead, why);
@@ -91,6 +93,7 @@
       return res.text().then(function(t){
         var data; try{ data = JSON.parse(t); }catch(e){ done(); retry('Respons server tidak valid'); return; }
         done();
+        console.info('[bridge]', names, (Date.now()-t0)+'ms', t.length+' bytes');
         if(!data || data.ok === false || !Array.isArray(data.batch)){
           failAll(batch, (data && data.error) || 'Respons server tidak valid'); return;
         }
@@ -102,6 +105,7 @@
       });
     }).catch(function(err){
       clearTimeout(to); done();
+      console.warn('[bridge] ERROR', names, err && err.name, err && err.message, (Date.now()-t0)+'ms');
       if(err && err.name === 'AbortError'){ failAll(batch, 'Waktu tunggu server habis'); return; } // timeout: jangan retry (cegah duplikasi data)
       retry('Tidak bisa terhubung ke server. Periksa koneksi internet.');
     });
