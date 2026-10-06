@@ -4254,8 +4254,7 @@
   .nav-item,.btn,.icon-btn,.kpi-card,.dash-tab-btn{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s,transform .12s !important;}
   .nav-group-body{transition:grid-template-rows .18s var(--wl-ease) !important;}
   @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
-  /* FIX: loading indicator (spinner/skeleton) WAJIB tetap bergerak walau OS memakai "reduce motion" —
-     aturan di atas membuat animasi infinite jadi membeku (spinner terlihat macet). */
+  /* FIX: loading indicator WAJIB tetap bergerak walau OS memakai "reduce motion". */
   @media (prefers-reduced-motion:reduce){
     .spinner{animation:spin .7s linear infinite !important;}
     .kpi-card.kpi-skeleton .skeleton-line{animation:skeleton-shimmer 1.4s ease infinite !important;}
@@ -5277,3 +5276,25 @@
 
   /* Judul banner WAJIB 1 baris (terpotong "..." kalau kepanjangan) di semua ukuran layar */
   .agent-banner-title{display:block !important;-webkit-line-clamp:unset !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
+
+  /* ================= HP + DARK MODE: Dashboard Agent ================= */
+  @media (max-width:760px){
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid){background:radial-gradient(120% 40% at 50% 0,rgba(23,179,124,.16) 0,transparent 70%) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-dash-search{background:rgba(22,38,31,.92) !important;border:1px solid rgba(255,255,255,.1) !important;box-shadow:0 10px 26px rgba(0,0,0,.45) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-dash-search input{color:#eaf6f0;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-dash-search input::placeholder{color:#8fa79b;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-item{background:linear-gradient(135deg,#17302a,#12211c) !important;border:1px solid rgba(255,255,255,.08) !important;box-shadow:0 8px 20px rgba(0,0,0,.4) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-item:nth-child(2){background:linear-gradient(135deg,#17243f,#121b2e) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-item:nth-child(3){background:linear-gradient(135deg,#3a2616,#2a1c12) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-item:nth-child(4){background:linear-gradient(135deg,#2a1f45,#1d1630) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-label{color:#f1faf5 !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-shortcut-sublabel{color:#a6bdb2 !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-section-head,html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-section-head *{color:#eaf6f0;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-see-all{background:rgba(23,179,124,.18) !important;color:#5fe0ac !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-category-item{background:#14231d !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:0 6px 16px rgba(0,0,0,.4) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-category-label{color:#eaf6f0 !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-category-thumb{background:#fff !important;border-color:#14231d !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-trend-card,html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-product-card{background:#14231d !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:0 10px 24px rgba(0,0,0,.45) !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-product-name{color:#f1faf5 !important;}
+    html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-product-price{color:#5fe0ac !important;}
+  }
