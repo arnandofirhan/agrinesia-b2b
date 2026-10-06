@@ -5301,3 +5301,60 @@
     html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-product-name{color:#f1faf5 !important;}
     html[data-theme="dark"] #content:has(.agent-shortcut-grid) .agent-product-price{color:#5fe0ac !important;}
   }
+
+  /* ================= DASHBOARD ADMIN (HP): kartu KPI ringkas + tab rapi ================= */
+  @media (max-width:760px){
+    .welcome-banner{padding:12px 14px !important;gap:10px !important;border-radius:18px !important;}
+    .welcome-banner-title{font-size:15px !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .welcome-banner-sub{font-size:11px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .welcome-banner-clock-time{font-size:18px !important;letter-spacing:0 !important;font-variant-numeric:tabular-nums;}
+    .dash-tabs{width:100% !important;box-sizing:border-box;gap:4px !important;padding:4px !important;border-radius:14px !important;margin:12px 0 12px !important;}
+    .dash-tab-btn{flex:1 1 0;min-width:0;padding:9px 4px !important;font-size:12px !important;line-height:1.2;text-align:center;border-radius:10px !important;}
+    .dash-tabs ~ .kpi-grid,.dash-panel .kpi-grid,.dash-panel .kpi-grid-sm{grid-template-columns:1fr 1fr !important;gap:10px !important;margin-bottom:14px !important;}
+    .dash-tabs ~ .kpi-grid .kpi-card:not(.kpi-skeleton),.dash-panel .kpi-grid .kpi-card:not(.kpi-skeleton),.dash-panel .kpi-grid-sm .kpi-card:not(.kpi-skeleton){
+      display:grid;grid-template-columns:32px 1fr;grid-template-areas:"ic lb" "vl vl" "ds ds";column-gap:9px;row-gap:5px;align-items:center;
+      padding:12px 12px 11px !important;border-radius:16px !important;min-height:0;}
+    .dash-tabs ~ .kpi-grid .kpi-icon,.dash-panel .kpi-grid .kpi-icon,.dash-panel .kpi-grid-sm .kpi-icon{grid-area:ic;width:32px !important;height:32px !important;margin:0 !important;border-radius:10px !important;}
+    .dash-tabs ~ .kpi-grid .kpi-icon svg,.dash-panel .kpi-grid .kpi-icon svg,.dash-panel .kpi-grid-sm .kpi-icon svg{width:16px !important;height:16px !important;}
+    .dash-tabs ~ .kpi-grid .kpi-label,.dash-panel .kpi-grid .kpi-label,.dash-panel .kpi-grid-sm .kpi-label{grid-area:lb;margin:0 !important;font-size:9.5px !important;line-height:1.25;letter-spacing:.06em;overflow-wrap:anywhere;}
+    .dash-tabs ~ .kpi-grid .kpi-value,.dash-panel .kpi-grid .kpi-value,.dash-panel .kpi-grid-sm .kpi-value{grid-area:vl;font-size:20px !important;line-height:1.1;white-space:nowrap;}
+    .dash-tabs ~ .kpi-grid .kpi-desc,.dash-panel .kpi-grid .kpi-desc,.dash-panel .kpi-grid-sm .kpi-desc{grid-area:ds;margin:2px 0 0 !important;padding-top:7px;border-top:1px solid rgba(255,255,255,.2);font-size:10px !important;line-height:1.3;overflow-wrap:anywhere;}
+    .kpi-grid > .kpi-card:last-child:nth-child(odd){grid-column:1 / -1;}
+    .kpi-card.kpi-skeleton{min-height:96px;}
+  }
+  @media (max-width:760px) and (min-width:360px){ .dash-tab-btn{white-space:nowrap;font-size:11.5px !important;} }
+
+  /* ================= REVIEW PO (modal): modern, rapi, tidak ada teks terpotong ================= */
+  .po-review-head{padding:16px 18px !important;gap:12px;align-items:center;border-bottom:1px solid var(--ag-gray-100);}
+  .po-review-head .modal-title{flex:1;min-width:0;display:block;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere;font-size:16px;font-weight:800;line-height:1.3;}
+  .po-review-body{padding:14px 14px 16px !important;}
+  .po-review-body .po-cart-section{border:1px solid var(--ag-gray-200);border-radius:18px;padding:14px !important;background:var(--ag-surface);box-shadow:none;margin-bottom:14px !important;}
+  .po-review-body .po-cart-title{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ag-green);margin:0 0 10px;}
+  .po-review-body .po-cart-title::before{content:'';width:4px;height:14px;border-radius:4px;background:linear-gradient(180deg,#17b37c,#0c8f63);}
+  .po-review-body .po-cart-row:not(:has(.po-cart-thumb)){display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--ag-green-soft,rgba(23,179,124,.12));border:0 !important;border-radius:14px;padding:12px 14px !important;margin:4px 0 0 !important;}
+  .po-review-body .po-cart-row:has(.po-cart-thumb){display:grid;grid-template-columns:56px minmax(0,1fr);grid-template-areas:"th nm" "th tt";column-gap:12px;row-gap:4px;align-items:start;padding:10px !important;border:1px solid var(--ag-gray-200) !important;border-radius:14px;margin-bottom:8px;background:var(--ag-surface);}
+  .po-review-body .po-cart-thumb{grid-area:th;width:56px !important;height:56px !important;border-radius:12px !important;}
+  .po-review-body .po-cart-row:has(.po-cart-thumb) > div:nth-child(2){grid-area:nm;min-width:0;}
+  .po-review-body .po-cart-row:has(.po-cart-thumb) .po-cart-linetotal{grid-area:tt;justify-self:end;}
+  .po-review-body .po-cart-name{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere;font-size:13.5px;line-height:1.3;font-weight:800;}
+  .po-review-body .po-cart-unitprice{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;font-size:11.5px;line-height:1.35;margin-top:3px;}
+  .po-review-body .po-cart-linetotal{width:auto !important;font-size:14px;font-weight:800;color:var(--ag-green);text-align:right;}
+  .po-review-body .po-cart-section .detail-row{padding:10px 0;gap:12px;font-size:13px;align-items:flex-start;}
+  .po-review-body .po-cart-section .detail-label{width:42% !important;flex-shrink:0;font-size:12px;overflow-wrap:anywhere;}
+  .po-review-body .po-cart-section .detail-value{flex:1;min-width:0;text-align:right;overflow-wrap:anywhere;word-break:normal;}
+  .po-review-body .detail-row.detail-row-stack .detail-value{text-align:left;}
+  .po-review-body .badge{white-space:normal;text-align:left;line-height:1.3;}
+  .po-review-body .form-group{margin-bottom:12px;}
+  .po-review-body .form-group label{display:block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ag-gray-600);margin-bottom:6px;}
+  .po-review-body .form-group select{width:100%;min-height:46px;border-radius:12px;padding:0 12px;font-size:14px;font-weight:600;}
+  .po-review-body .po-review-actions{flex-direction:row;gap:10px;margin-top:16px;position:sticky;bottom:0;background:var(--ag-surface);padding:10px 0 2px;z-index:2;}
+  .po-review-body .po-review-actions .btn{min-height:46px;border-radius:14px;font-weight:800;white-space:nowrap;}
+  .po-review-body .po-review-actions .btn-primary{flex:1.5;}
+  .po-review-body .po-review-actions .btn-ghost{flex:1;}
+
+  /* ---- Review PO: perbaikan Subtotal & bar aksi ---- */
+  .po-review-body .po-cart-row:not(:has(.po-cart-thumb)){flex-wrap:nowrap !important;align-items:center !important;row-gap:0 !important;border:1px solid rgba(23,179,124,.28) !important;background:linear-gradient(135deg,rgba(23,179,124,.14),rgba(23,179,124,.05)) !important;padding:13px 16px !important;margin:6px 0 0 !important;}
+  .po-review-body .po-cart-row:not(:has(.po-cart-thumb)) > div:first-child{flex:1 1 auto;font-size:12px !important;font-weight:800 !important;letter-spacing:.07em;text-transform:uppercase;color:var(--ag-gray-600);line-height:1.2;}
+  .po-review-body .po-cart-row:not(:has(.po-cart-thumb)) .po-cart-linetotal{flex:0 0 auto;width:auto !important;font-size:19px !important;font-weight:800 !important;color:var(--ag-green);letter-spacing:-.01em;white-space:nowrap;}
+  .po-review-body .po-review-actions{margin:14px -14px -16px !important;padding:12px 14px 14px !important;border-top:1px solid var(--ag-gray-200);box-shadow:0 -8px 18px rgba(16,24,32,.07);border-radius:0 0 inherit inherit;}
+  .po-review-body .po-review-actions .btn-primary{box-shadow:0 6px 14px rgba(12,143,99,.3);}
