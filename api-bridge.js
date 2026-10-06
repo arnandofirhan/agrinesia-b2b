@@ -1,3 +1,34 @@
+/* ===== GUARD GITHUB PAGES (subfolder /nama-repo/) =====
+ * 1) Paksa semua history.pushState/replaceState("/xxx") dipasangi prefix APP_BASE, jadi URL tidak pernah
+ *    lepas dari "/agrinesia-b2b/" walau ada kode lama yang menulis "/dashboard".
+ * 2) Buang Service Worker + cache SISA situs lain di domain yang sama (github.io berbagi satu origin),
+ *    lalu reload sekali supaya file terbaru yang dipakai. */
+(function(){
+  var b = window.APP_BASE || '/';
+  if(b !== '/'){
+    ['pushState','replaceState'].forEach(function(m){
+      var orig = history[m];
+      history[m] = function(s, t, u){
+        if(typeof u === 'string' && u.charAt(0) === '/' && u.indexOf('//') !== 0 && u.indexOf(b) !== 0){ u = b.slice(0, -1) + u; }
+        return orig.call(history, s, t, u);
+      };
+    });
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      var mine = location.origin + b;
+      var foreign = regs.filter(function(r){ return r.scope !== mine; });
+      if(!foreign.length) return;
+      Promise.all(foreign.map(function(r){ return r.unregister(); }))
+        .then(function(){ return caches.keys(); })
+        .then(function(keys){ return Promise.all(keys.filter(function(k){ return k.indexOf('agrinesia-') !== 0; }).map(function(k){ return caches.delete(k); })); })
+        .then(function(){
+          try{ if(!sessionStorage.getItem('ag_sw_cleaned')){ sessionStorage.setItem('ag_sw_cleaned','1'); location.reload(); } }catch(e){}
+        });
+    }).catch(function(){});
+  }
+})();
+
 /* api-bridge.js — shim google.script.run -> POST ke Apps Script /exec (doPost/handleRpc_ di Code.gs).
  * Fitur: chain withSuccessHandler/withFailureHandler/withUserObject, batching, antrian prioritas
  * (window.__BG_LOW_PRIORITY__ = low), retry untuk gagal-jaringan/429/5xx, reset antrian saat logout.
