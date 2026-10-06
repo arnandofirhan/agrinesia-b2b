@@ -6912,9 +6912,9 @@
     // — jadi tidak ada lagi langkah "sembunyikan footer default" setelah render, sekalian
     // supaya string HTML-nya bisa di-cache utuh oleh openCachedDetailModal_ tanpa perlu
     // langkah DOM manipulation susulan.
-    return '<div class="modal-header"><span class="modal-title">Review PO '+escapeHtml(poId)+'</span>' +
+    return '<div class="modal-header po-review-head"><span class="modal-title">Review PO '+escapeHtml(poId)+'</span>' +
       '<button class="modal-close" onclick="closeModal()">'+CLOSE_ICON+'</button></div>' +
-      '<div class="modal-body">'+body+'</div>';
+      '<div class="modal-body po-review-body">'+body+'</div>';
   }
 
   function approvePOPrompt(poId){
@@ -9765,6 +9765,11 @@
     if(STATE.dashboardTab === 'EB'){
       return renderEbAdminDashboard();
     }
+    if(STATE.dashboardTab !== 'EB' && !DASH_DATA_CACHE_ && STATE.currentPage === 'dashboard'){
+      paintDashB2bSkeleton_();
+      startDashboardClock_();
+      unlockContentNow_();
+    }
     if(DASH_DATA_CACHE_){
       // Instant paint from what we already have — feels immediate, no spinner flash.
       paintDashboardKpis_(DASH_DATA_CACHE_.kpiData);
@@ -11254,6 +11259,35 @@
   /** Kerangka dashboard EB yang dilukis SEKETIKA (tanpa menunggu server): banner sapaan +
       tab (yang sudah bisa diklik) + kartu KPI/panel berbentuk skeleton shimmer. Memakai
       class skeleton yang sudah ada di Stylesheet (.kpi-skeleton, .skeleton-line). */
+  /** Kerangka dashboard B2B / Internal — dilukis SEKETIKA saat tab dibuka & data belum ada,
+      supaya tab langsung bisa diklik (tidak menunggu loading), sama seperti tab Employee Benefit. */
+  function paintDashB2bSkeleton_(){
+    if(STATE.currentPage !== 'dashboard' || STATE.dashboardTab === 'EB') return;
+    function kpiSk_(){
+      return '<div class="kpi-card kpi-skeleton"><div class="skeleton-line" style="width:55%;height:11px;"></div>' +
+             '<div class="skeleton-line" style="width:38%;height:22px;margin-top:10px;"></div>' +
+             '<div class="skeleton-line" style="width:70%;height:10px;margin-top:10px;"></div></div>';
+    }
+    function panelSk_(title, h){
+      return '<div class="dash-panel" style="margin-bottom:16px;">' +
+        '<div class="dash-panel-head"><span class="dash-section-title" style="margin:0;">'+title+'</span></div>' +
+        '<div class="skeleton-line" style="width:100%;height:'+h+'px;border-radius:10px;"></div></div>';
+    }
+    var html =
+      '<div class="welcome-banner">' +
+        '<span class="welcome-banner-icon" id="dashGreetIcon"></span>' +
+        '<div style="flex:1;min-width:0;"><div class="welcome-banner-title" id="dashGreetTitle"></div>' +
+        '<div class="welcome-banner-sub">Ringkasan aktivitas terbaru Anda</div></div>' +
+        '<div class="welcome-banner-clock"><div class="welcome-banner-clock-time" id="dashClockTime"></div></div>' +
+      '</div>' +
+      dashboardTabsHtml_() +
+      '<div class="kpi-grid">' + kpiSk_() + kpiSk_() + kpiSk_() + '</div>' +
+      panelSk_('Tren PO 7 Hari Terakhir', 130) +
+      '<div class="dash-grid-2">' + panelSk_('Ringkasan Status PO', 90) + panelSk_('PO Terbaru', 90) + '</div>';
+    var c = document.getElementById('content');
+    if(c){ c.innerHTML = html; LAST_PAINTED_PAGE_ = 'dashboard'; } // sengaja tidak lewat paintPage_ (jangan masuk cache)
+  }
+
   function paintEbDashboardSkeleton_(){
     if(STATE.currentPage !== 'dashboard' || STATE.dashboardTab !== 'EB') return;
     function kpiSk_(){
