@@ -13709,45 +13709,23 @@
       : '<div class="empty-state"><div class="empty-state-icon">'+ICONS.cart+'</div>' +
         '<div class="empty-state-title">Belum ada transaksi</div>' +
         '<div class="empty-state-sub">Riwayat belanja Anda akan muncul di sini.</div></div>';
-
     var monthOptsHtml = ebMonthOptions_().map(function(m){
       return '<option value="'+m.value+'"'+(m.value===d.yearMonth?' selected':'')+'>'+escapeHtml(m.label)+'</option>';
     }).join('');
-
     return '<div class="eb-dash">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">' +
-        '<div class="eb-dash-greet" style="margin-bottom:0;">Halo, <strong>'+escapeHtml(name)+'</strong> &mdash; ringkasan benefit Anda.</div>' +
+      '<div class="eb-dash-head">' +
+        '<div class="eb-dash-greet">Halo, <strong>'+escapeHtml(name)+'</strong><span>Ringkasan benefit Anda</span></div>' +
         '<div class="filter-select-wrap"><select class="filter-select" onchange="ebChangeDashboardMonth_(this.value)">'+monthOptsHtml+'</select></div>' +
       '</div>' +
-      // TAMBAHAN: kartu "Transaksi Bulan Ini" dikembalikan lagi jadi kartu terpisah (bukan
-      // cuma keterangan kecil di bawah Total Belanja) — disamakan gayanya dgn kartu pertama
-      // milik Dashboard Store (kpi-green + ICONS.transactions), supaya kedua Dashboard
-      // konsisten.
-      '<div class="kpi-grid">' +
-        '<div class="kpi-card kpi-green">' +
-          '<div class="kpi-icon">'+ICONS.transactions+'</div>' +
-          '<div class="kpi-value">'+d.monthTrxCount+'</div>' +
-          '<div class="kpi-label">Transaksi Bulan Ini</div>' +
-        '</div>' +
-        '<div class="kpi-card kpi-blue">' +
-          '<div class="kpi-icon">'+ICONS.reports+'</div>' +
-          '<div class="kpi-value">'+formatRupiah(d.monthTotalAmount)+'</div>' +
-          '<div class="kpi-label">Total Belanja Bulan Ini</div>' +
-        '</div>' +
-        '<div class="kpi-card kpi-purple">' +
-          '<div class="kpi-icon">'+ICONS.cart+'</div>' +
-          '<div class="kpi-value">'+formatRupiah(d.avgPerTrx)+'</div>' +
-          '<div class="kpi-label">Rata-rata / Transaksi</div>' +
-        '</div>' +
-        '<div class="kpi-card kpi-orange">' +
-          '<div class="kpi-icon">'+ICONS.calendar+'</div>' +
-          '<div class="kpi-value">'+d.allTimeTrxCount+'</div>' +
-          '<div class="kpi-label">Total Transaksi (Semua)</div>' +
-        '</div>' +
+      '<div class="kpi-grid-sm eb-kpi-compact">' +
+        '<div class="kpi-card kpi-green"><div class="kpi-icon">'+ICONS.transactions+'</div><div class="kpi-value">'+d.monthTrxCount+'</div><div class="kpi-label">Transaksi Bulan Ini</div></div>' +
+        '<div class="kpi-card kpi-blue"><div class="kpi-icon">'+ICONS.reports+'</div><div class="kpi-value">'+formatRupiah(d.monthTotalAmount)+'</div><div class="kpi-label">Total Belanja Bulan Ini</div></div>' +
+        '<div class="kpi-card kpi-purple"><div class="kpi-icon">'+ICONS.cart+'</div><div class="kpi-value">'+formatRupiah(d.avgPerTrx)+'</div><div class="kpi-label">Rata-rata / Transaksi</div></div>' +
+        '<div class="kpi-card kpi-orange"><div class="kpi-icon">'+ICONS.calendar+'</div><div class="kpi-value">'+d.allTimeTrxCount+'</div><div class="kpi-label">Total Transaksi (Semua)</div></div>' +
       '</div>' +
       '<div class="card">' +
         '<div class="section-title">Tren 6 Bulan Terakhir</div>' +
-        '<div class="eb-chart-wrap"><canvas id="ebEmpTrendChart" height="180"></canvas></div>' +
+        '<div class="eb-chart-wrap"><canvas id="ebEmpTrendChart" height="170"></canvas></div>' +
       '</div>' +
       '<div class="card">' +
         '<div class="section-title-row">' +
@@ -13840,24 +13818,34 @@
     content.innerHTML =
       '<div class="eb-qr-page">' +
         '<div class="eb-qr-card">' +
-          '<div class="eb-qr-card-header">' +
-            '<div class="eb-qr-logo">'+ICONS.dashboard+'</div>' +
-            '<div class="eb-qr-brand">CORPORATE MEMBER</div>' +
+          '<div class="eb-qr-top">' +
+            '<div class="eb-qr-brandwrap"><div class="eb-qr-logo">'+ICONS.dashboard+'</div><div class="eb-qr-brand">CORPORATE MEMBER</div></div>' +
+            '<span class="eb-qr-status"><i></i>Aktif</span>' +
           '</div>' +
-          '<div class="eb-qr-box" id="ebQrBox"></div>' +
-          '<div class="eb-qr-name">'+escapeHtml(res.fullName)+'</div>' +
-          '<div class="eb-qr-sub">'+escapeHtml(res.companyName)+'</div>' +
-          '<div class="eb-qr-idcard">ID: '+escapeHtml(res.idCardNumber)+'</div>' +
+          '<div class="eb-qr-body">' +
+            '<div class="eb-qr-box" id="ebQrBox"></div>' +
+            '<div class="eb-qr-scanhint">Arahkan QR ke scanner kasir</div>' +
+            '<div class="eb-qr-name">'+escapeHtml(res.fullName)+'</div>' +
+            '<div class="eb-qr-sub">'+escapeHtml(res.companyName)+'</div>' +
+            '<div class="eb-qr-idcard">ID: '+escapeHtml(res.idCardNumber)+'</div>' +
+          '</div>' +
         '</div>' +
-        '<div class="eb-qr-hint">Tunjukkan QR ini ke kasir saat berbelanja untuk mendapatkan potongan Corporate Benefit.</div>' +
+        '<div class="eb-qr-howto">' +
+          '<div class="eb-qr-howto-title">Cara menggunakan</div>' +
+          '<div class="eb-qr-step"><b>1</b><span>Tunjukkan QR ini ke kasir saat berbelanja.</span></div>' +
+          '<div class="eb-qr-step"><b>2</b><span>Kasir memindai QR untuk memverifikasi keanggotaan Anda.</span></div>' +
+          '<div class="eb-qr-step"><b>3</b><span>Dapatkan potongan Corporate Benefit, transaksi tercatat di Riwayat.</span></div>' +
+          '<div class="eb-qr-tip">'+ICONS.info+'<span>Naikkan kecerahan layar agar QR lebih mudah terbaca.</span></div>' +
+        '</div>' +
       '</div>';
     ensureQrCodeJsLoaded_(function(){
       var box = document.getElementById('ebQrBox');
       if(!box) return;
       box.innerHTML = '';
+      var sz = Math.max(160, Math.min(220, (window.innerWidth || 360) - 120));
       new QRCode(box, {
         text: res.qrPayload,
-        width: 220, height: 220,
+        width: sz, height: sz,
         colorDark: '#0B3D2E', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
       });
@@ -13923,8 +13911,8 @@
         return '<option value="'+m.value+'"'+(m.value===EB_EMP_TRX_YM_?' selected':'')+'>'+escapeHtml(m.label)+'</option>';
       }).join('');
     var filterHtml =
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">' +
-        '<div class="section-title" style="margin-bottom:0;">Riwayat Transaksi ('+rows.length+')</div>' +
+      '<div class="eb-trx-head">' +
+        '<div class="section-title">Riwayat Transaksi <span class="eb-count-pill">'+rows.length+'</span></div>' +
         '<div class="filter-select-wrap"><select class="filter-select" onchange="ebChangeTrxMonth_(this.value)">'+monthOptsHtml+'</select></div>' +
       '</div>';
     if(!rows.length){
@@ -13933,12 +13921,20 @@
         '<div class="empty-state-title">Belum ada transaksi</div>' +
         '<div class="empty-state-sub">'+(EB_EMP_TRX_YM_ ? 'Tidak ada transaksi pada bulan yang dipilih.' : 'Riwayat belanja Anda akan tampil di sini setelah kasir mencatat transaksi.')+'</div></div></div>';
     }
+    var total = 0;
+    rows.forEach(function(t){ total += Number(t.amount) || 0; });
+    var statsHtml =
+      '<div class="eb-trx-stats">' +
+        '<div class="eb-trx-stat s1"><span>Jumlah Transaksi</span><strong>'+rows.length+'</strong></div>' +
+        '<div class="eb-trx-stat s2"><span>Total Belanja</span><strong>'+formatRupiah(total)+'</strong></div>' +
+      '</div>';
     var rowsHtml = rows.map(function(t){
       return '<div class="eb-trx-item" onclick="openEbTrxDetail_(\''+escapeHtml(t.trxId)+'\')">' +
         '<div class="eb-trx-icon">'+ICONS.cart+'</div>' +
         '<div class="eb-trx-item-left">' +
           '<div class="eb-trx-store">'+escapeHtml(t.storeName||'-')+'</div>' +
-          '<div class="eb-trx-meta">No. '+escapeHtml(t.trxNumber||'-')+' &middot; '+formatDateTimeDMY_(t.createdAt)+'</div>' +
+          '<div class="eb-trx-no">No. '+escapeHtml(t.trxNumber||'-')+'</div>' +
+          '<div class="eb-trx-date">'+ICONS.calendar+'<span>'+formatDateTimeDMY_(t.createdAt)+'</span></div>' +
         '</div>' +
         '<div class="eb-trx-item-right">' +
           '<div class="eb-trx-amount">'+formatRupiah(t.amount)+'</div>' +
@@ -13946,7 +13942,7 @@
         '</div>' +
       '</div>';
     }).join('');
-    return '<div class="card">' + filterHtml +
+    return '<div class="card">' + filterHtml + statsHtml +
       '<div class="eb-trx-list">'+rowsHtml+'</div></div>';
   }
 
@@ -13973,26 +13969,34 @@
           docPreviewCard_({ label: 'Struk', url: t.receiptUrl, fileId: t.receiptFileId||'', isPdf: /\.pdf(\?|$)/i.test(t.receiptUrl||'') }, null) +
         '</div>'
       : '<div class="eb-receipt-fallback">'+ICONS.reports+'<span>Tidak ada foto struk.</span></div>';
+    function row(ic, label, val){
+      return '<div class="eb-info-row"><div class="eb-info-ic">'+ic+'</div>' +
+        '<div class="eb-info-txt"><small>'+label+'</small><strong>'+val+'</strong></div></div>';
+    }
     return (
       '<div class="modal-header eb-trx-modal-header"><span class="modal-title">Detail Transaksi</span>' +
       '<button class="modal-close" onclick="closeModal()">'+CLOSE_ICON+'</button></div>' +
       '<div class="modal-body eb-trx-modal-body">' +
-        '<div class="eb-trx-modal-amount-wrap">' +
-          '<div class="eb-trx-modal-amount">'+formatRupiah(t.amount)+'</div>' +
-          '<div class="eb-trx-modal-sub">'+escapeHtml(t.trxNumber||'-')+'</div>' +
+        '<div class="eb-trx-hero">' +
+          '<div class="eb-trx-hero-ic">'+ICONS.check+'</div>' +
+          '<div class="eb-trx-hero-label">Total Belanja</div>' +
+          '<div class="eb-trx-hero-amount">'+formatRupiah(t.amount)+'</div>' +
+          '<div class="eb-trx-hero-no">'+escapeHtml(t.trxNumber||'-')+'</div>' +
         '</div>' +
-        (t.employeeName ? '<div class="eb-detail-row"><span>Karyawan</span><strong>'+escapeHtml(t.employeeName)+'</strong></div>' : '') +
-        (t.companyName ? '<div class="eb-detail-row"><span>Perusahaan</span><strong>'+escapeHtml(t.companyName)+'</strong></div>' : '') +
-        '<div class="eb-detail-row"><span>Store</span><strong>'+escapeHtml(t.storeName||'-')+'</strong></div>' +
-        '<div class="eb-detail-row"><span>Tanggal</span><strong>'+formatDateTimeDMY_(t.createdAt)+'</strong></div>' +
-        '<div class="eb-detail-label">Foto Struk</div>' +
+        '<div class="eb-info-list">' +
+          (t.employeeName ? row(ICONS.users, 'Karyawan', escapeHtml(t.employeeName)) : '') +
+          (t.companyName ? row(ICONS.dashboard, 'Perusahaan', escapeHtml(t.companyName)) : '') +
+          row(ICONS.stores, 'Store', escapeHtml(t.storeName||'-')) +
+          row(ICONS.calendar, 'Tanggal', formatDateTimeDMY_(t.createdAt)) +
+        '</div>' +
+        '<div class="eb-receipt-title">'+ICONS.fileDoc+'<span>Foto Struk</span></div>' +
         receiptHtml +
       '</div>' +
       '<div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Tutup</button></div>'
     );
   }
 
-  // =============================================================================
+    // =============================================================================
   // ROLE EMPLOYEE — PROFILE
   // =============================================================================
   // TAMBAHAN: menu 'eb-profile' sekarang juga dibuka untuk role STORE (kasir), bukan cuma
@@ -14058,66 +14062,48 @@
 
   function ebProfileHtml_(p){
     var initials = (p.fullName||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
-
-    // FIX BUG NYATA: sebelumnya "Foto KTP"/"Foto ID Card" ditampilkan sebagai kartu <a> polos
-    // berisi ikon generik (ICONS.reports, ikon bar-chart) + link — BUKAN foto sungguhan. Itu
-    // sebabnya terlihat seperti "kolom kosong untuk upload ulang", padahal filenya sendiri
-    // sudah tersimpan benar di backend (ebGetMyProfile sudah mengembalikan fileId & url-nya).
-    // FIX: pakai docPreviewCard_ yang sama seperti di Profil Agent — ini me-render THUMBNAIL
-    // foto sungguhan lewat lh3.googleusercontent.com/d/{fileId}, dengan fallback ikon hanya
-    // kalau gambarnya benar-benar gagal dimuat (onerror), dan bisa diklik utk lihat ukuran
-    // penuh (openDocLightbox). editableAgentId di-null-kan (mode lihat saja) karena belum ada
-    // endpoint ganti-dokumen utk Employee yang sedang login (yang ada baru jalur publik lewat
-    // ebPublicReplaceDocument, dipakai di halaman "Cek Status Pendaftaran" saat status ditolak).
-    // Foto KTP DIHAPUS dari Profil Employee Benefit (KTP tidak lagi diminta saat registrasi).
-    // Cukup Foto ID Card. Kolom KTPFileID/KTPFileURL di sheet tetap ada untuk data lama,
-    // tapi TIDAK ditampilkan lagi di UI mana pun untuk Employee Benefit.
     var docs = [
       { label:'Foto ID Card', fileId:(p.docs&&p.docs.IDCARD&&p.docs.IDCARD.fileId)||'', url:(p.docs&&p.docs.IDCARD&&p.docs.IDCARD.url)||'' }
     ].filter(function(d){ return !!d.url; });
     var docsHtml = !docs.length
       ? '<div class="doc-preview-empty">Belum ada dokumen diunggah</div>'
       : '<div class="doc-preview-grid">' + docs.map(function(d){ return docPreviewCard_(d, null); }).join('') + '</div>';
-
-    // UI/UX dibuat SAMA PERSIS dengan "Profil Saya" milik Agent (profile-hero hijau + tombol
-    // Ganti Password menempel di header, Data Diri 2-kolom via agent-detail-grid, Dokumen pakai
-    // doc-preview-grid) — pakai ulang komponen/class yang sama, jadi konsisten & lebih ringkas
-    // (sebelumnya masing-masing card di halaman ini punya padding+jarak sendiri yang lebih
-    // longgar, itu yang bikin terasa "memakan banyak tempat").
-    var html = '<div class="profile-hero">' +
-      '<div class="profile-hero-avatar">'+escapeHtml(initials)+'</div>' +
-      '<div class="profile-hero-info">' +
-        '<div class="profile-hero-name">'+escapeHtml(p.fullName||'-')+'</div>' +
-        '<div class="profile-hero-id">'+escapeHtml(p.idCardNumber||'-')+' &middot; '+escapeHtml(p.companyName||'-')+'</div>' +
-        '<div class="profile-hero-badges">' +
-          statusBadge(p.registrationStatus) + statusBadge(p.employeeStatus) +
-        '</div>' +
+    function row(ic, label, val){
+      return '<div class="ebp-row"><div class="ebp-ic">'+ic+'</div>' +
+        '<div class="ebp-txt"><small>'+label+'</small><strong>'+val+'</strong></div></div>';
+    }
+    var lockIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    return '<div class="ebp">' +
+      '<div class="ebp-hero">' +
+        '<div class="ebp-avatar">'+escapeHtml(initials)+'</div>' +
+        '<div class="ebp-name">'+escapeHtml(p.fullName||'-')+'</div>' +
+        '<div class="ebp-company">'+escapeHtml(p.companyName||'-')+'</div>' +
+        '<div class="ebp-badges">'+statusBadge(p.registrationStatus)+statusBadge(p.employeeStatus)+'</div>' +
+        '<div class="ebp-idchip">ID Card: '+escapeHtml(p.idCardNumber||'-')+'</div>' +
       '</div>' +
-      '<button type="button" class="profile-hero-pw-btn" onclick="openChangePasswordModal()">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-        '<span>Ganti Password</span>' +
-      '</button>' +
-    '</div>';
-
-    html += '<div class="card">' +
-      '<div class="card-header"><span class="card-title">Data Diri</span></div>' +
-      '<div class="agent-detail-grid">' +
-        detailField_('Nomor ID Card', escapeHtml(p.idCardNumber)) +
-        detailField_('Email', escapeHtml(p.email)) +
-        detailField_('No. Telepon / WhatsApp', escapeHtml(p.phone||'-')) +
-        detailField_('Perusahaan', escapeHtml(p.companyName), true) +
+      '<div class="ebp-card">' +
+        '<div class="ebp-card-title"><span class="ebp-dot"></span>Data Diri</div>' +
+        row(ICONS.users, 'Nomor ID Card', escapeHtml(p.idCardNumber||'-')) +
+        row(ICONS.mail, 'Email', escapeHtml(p.email||'-')) +
+        row(ICONS.phone, 'No. Telepon / WhatsApp', escapeHtml(p.phone||'-')) +
+        row(ICONS.dashboard, 'Perusahaan', escapeHtml(p.companyName||'-')) +
+      '</div>' +
+      '<div class="ebp-card">' +
+        '<div class="ebp-card-title"><span class="ebp-dot"></span>Dokumen Registrasi</div>' +
+        docsHtml +
+      '</div>' +
+      '<div class="ebp-card">' +
+        '<div class="ebp-card-title"><span class="ebp-dot"></span>Keamanan Akun</div>' +
+        '<button type="button" class="ebp-pw-btn" onclick="openChangePasswordModal()">' +
+          '<span class="ebp-ic">'+lockIc+'</span>' +
+          '<span class="ebp-pw-txt"><strong>Ganti Password</strong><small>Perbarui kata sandi akun Anda</small></span>' +
+          '<span class="ebp-chev">'+ICONS.chevronDown+'</span>' +
+        '</button>' +
       '</div>' +
     '</div>';
-
-    html += '<div class="card">' +
-      '<div class="card-header"><span class="card-title">Dokumen Registrasi</span></div>' +
-      docsHtml +
-    '</div>';
-
-    return html;
   }
 
-  function ebStatusBadge_(status){
+    function ebStatusBadge_(status){
     var map = {
       APPROVED: ['badge badge-green', 'Terverifikasi'],
       PENDING: ['badge badge-orange', 'Menunggu Verifikasi'],
