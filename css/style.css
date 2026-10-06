@@ -4249,6 +4249,9 @@
   .modal-box.no-enter-anim{animation:none !important;}
   @keyframes modal-in{from{opacity:0;transform:translateY(8px) scale(.985);}to{opacity:1;transform:none;}}
   #content > *{animation:none;}
+  /* FIX SPINNER DIAM: spinner loading sering jadi ANAK LANGSUNG #content, sehingga kena aturan di atas
+     (specificity #id lebih kuat dari .spinner) -> animasi putarnya mati. Kembalikan khusus spinner. */
+  #content > .spinner,#content > * > .spinner{animation:spin .7s linear infinite !important;}
   .card,.kpi-card,.table-wrap,tbody tr{contain:layout style;}
   #content table tbody tr{content-visibility:auto;contain-intrinsic-size:auto 48px;}
   .nav-item,.btn,.icon-btn,.kpi-card,.dash-tab-btn{transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s,transform .12s !important;}
