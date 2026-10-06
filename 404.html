@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"><title>Memuat…</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // GitHub Pages tidak kenal URL seperti /nama-repo/dashboard (itu route SPA) -> 404.
+  // Alihkan ke index.html dengan path disimpan di query; index.html memulihkannya.
+  (function(){
+    var b = '/', segs = 1;
+    if(/\.github\.io$/.test(location.hostname)){ b = '/' + location.pathname.split('/')[1] + '/'; }
+    var rest = location.pathname.slice(b.length);
+    var q = location.search ? '&' + location.search.slice(1).replace(/&/g, '~and~') : '';
+    location.replace(b + '?/' + rest.replace(/&/g, '~and~') + q + location.hash);
+  })();
+</script></head><body style="font-family:sans-serif;background:#0F4A38;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">Memuat…</body></html>
