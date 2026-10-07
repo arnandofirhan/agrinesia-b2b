@@ -6505,3 +6505,102 @@
   .ad-list .agent-detail-field-value{min-width:0;text-align:right;font-size:13px;overflow-wrap:anywhere;word-break:normal;}
   .ad-list .ad-nowrap{display:block;white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(11px,3.3vw,13px);}
   .ad-list .badge{white-space:nowrap;}
+
+  /* =========================================================
+     REGISTRASI INTERNAL — v4 ONE-SCREEN (tanpa scroll, rapat & informatif)
+     Hanya menyentuh #intRegisterModal.int-onescreen. Logic JS tidak berubah.
+     ========================================================= */
+  #intRegisterModal.int-onescreen{padding:10px;align-items:center;}
+  #intRegisterModal.int-onescreen .reg-card{max-width:560px;max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);border-radius:22px;}
+  #intRegisterModal.int-onescreen .reg-card-scroll{display:flex;flex-direction:column;}
+
+  /* Hero ringkas */
+  #intRegisterModal.int-onescreen .reg-hero{padding:16px 18px 14px;}
+  #intRegisterModal.int-onescreen .int-hero-main{gap:12px;align-items:center;}
+  #intRegisterModal.int-onescreen .int-hero-icon{display:grid;width:40px;height:40px;border-radius:12px;}
+  #intRegisterModal.int-onescreen .int-hero-icon svg{width:21px;height:21px;}
+  #intRegisterModal.int-onescreen .reg-hero-title{font-size:19px;margin:0 0 3px;line-height:1.2;}
+  #intRegisterModal.int-onescreen .reg-hero-sub{font-size:12px;line-height:1.4;max-width:none;}
+  #intRegisterModal.int-onescreen .reg-close{flex:none;}
+
+  /* Body */
+  #intRegisterModal.int-onescreen .reg-body{padding:14px 18px 2px;flex:1 1 auto;}
+
+  /* NIK: label kiri, hitungan digit kanan (satu baris) */
+  #intRegisterModal.int-onescreen .int-nik-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  #intRegisterModal.int-onescreen .int-nik-head label{margin:0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ag-gray-700);}
+  #intRegisterModal.int-onescreen .int-nik-head .field-hint{margin:0;font-size:11.5px;text-align:right;transition:color .2s;}
+  #intRegisterModal.int-onescreen .int-nik-head .field-hint.ok{color:var(--ag-green);font-weight:700;}
+  #intRegisterModal.int-onescreen .int-nik-head .field-hint.warn{color:#dc2626;font-weight:600;}
+  #intRegisterModal.int-onescreen .int-nik-wrap input,
+  #intRegisterModal.int-onescreen .int-nik-wrap input:focus{height:54px;padding:0 52px 0 54px;font-size:22px;letter-spacing:.2em;border-radius:16px;}
+  #intRegisterModal.int-onescreen .int-nik-lead{left:12px;width:32px;height:32px;padding:6px;}
+  #intRegisterModal.int-onescreen .int-nik-state{right:14px;width:24px;height:24px;font-size:13px;}
+
+  /* Pesan status: slot tetap (tidak loncat), ada petunjuk default saat kosong */
+  #intRegisterModal.int-onescreen .int-msg{display:flex;align-items:center;gap:8px;min-height:40px;margin-top:8px;padding:8px 12px;border-radius:12px;
+    font-size:12.5px;line-height:1.35;font-weight:600;background:var(--ag-gray-100);color:var(--ag-gray-600);border:1px dashed var(--ag-gray-200);}
+  #intRegisterModal.int-onescreen .int-msg:not(.show)::before{content:"Masukkan 10 digit NIK, data karyawan terisi otomatis.";font-weight:500;}
+  #intRegisterModal.int-onescreen .int-msg.show.ok{background:var(--ag-green-soft);color:var(--ag-green);border:1px solid rgba(22,163,74,.28);}
+  #intRegisterModal.int-onescreen .int-msg.show.err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+  html[data-theme="dark"] #intRegisterModal.int-onescreen .int-msg.show.err{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.35);}
+
+  /* Judul seksi */
+  #intRegisterModal.int-onescreen .int-section-head{margin:12px 0 8px;padding-top:0;border-top:0;}
+  #intRegisterModal.int-onescreen .int-section-title{font-size:12.5px;}
+
+  /* Kartu data: grid 12 kolom, nama penuh, sisanya berpasangan */
+  #intRegisterModal.int-onescreen .int-profile{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px 10px;padding:12px;border-radius:16px;box-shadow:none;}
+  #intRegisterModal.int-onescreen .int-profile .int-f{margin:0;min-width:0;}
+  #intRegisterModal.int-onescreen .int-f-name{grid-column:1 / -1;}
+  #intRegisterModal.int-onescreen .int-f-dept,
+  #intRegisterModal.int-onescreen .int-f-site{grid-column:span 6;}
+  #intRegisterModal.int-onescreen .int-f-email{grid-column:span 7;}
+  #intRegisterModal.int-onescreen .int-f-phone{grid-column:span 5;}
+  #intRegisterModal.int-onescreen .int-profile .int-f>label{margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--ag-gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #intRegisterModal.int-onescreen .int-profile .int-field input[readonly]{height:38px;padding:0 10px 0 34px;border-radius:11px;font-size:13px;font-weight:600;}
+  #intRegisterModal.int-onescreen .int-field svg{left:10px;width:16px;height:16px;}
+  #intRegisterModal.int-onescreen .int-profile.int-verified .int-field input[readonly]{animation:intFill .35s ease-out;}
+  @keyframes intFill{from{opacity:.3;transform:translateY(3px);}to{opacity:1;transform:none;}}
+
+  /* Catatan */
+  #intRegisterModal.int-onescreen .int-note{margin:10px 0 2px;padding:9px 12px;border-radius:12px;font-size:11px;line-height:1.45;gap:8px;}
+  #intRegisterModal.int-onescreen .int-note svg{width:16px;height:16px;}
+  #intRegisterModal.int-onescreen .int-note-short{display:none;}
+  #intRegisterModal.int-onescreen #intRegError{margin:8px 0 0;font-size:12px;}
+
+  /* Footer */
+  #intRegisterModal.int-onescreen .reg-footer{padding:10px 18px 14px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));}
+  #intRegisterModal.int-onescreen .reg-footer .btn{height:46px;padding:0 16px;font-size:14px;border-radius:14px !important;}
+
+  /* HP lebar sempit: email & telepon masing-masing satu baris penuh */
+  @media (max-width:480px){
+    #intRegisterModal.int-onescreen{padding:8px;}
+    #intRegisterModal.int-onescreen .reg-card{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);border-radius:20px;}
+    #intRegisterModal.int-onescreen .reg-hero{padding:14px 16px 12px;}
+    #intRegisterModal.int-onescreen .reg-hero-title{font-size:17.5px;}
+    #intRegisterModal.int-onescreen .int-hero-icon{display:none;}
+    #intRegisterModal.int-onescreen .reg-body{padding:12px 16px 2px;}
+    #intRegisterModal.int-onescreen .int-f-email,
+    #intRegisterModal.int-onescreen .int-f-phone{grid-column:1 / -1;}
+    #intRegisterModal.int-onescreen .reg-footer{padding:10px 16px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));}
+  }
+  /* Layar pendek: catatan jadi singkat, elemen dirapatkan */
+  @media (max-height:760px){
+    #intRegisterModal.int-onescreen .int-note-long{display:none;}
+    #intRegisterModal.int-onescreen .int-note-short{display:inline;}
+    #intRegisterModal.int-onescreen .int-nik-wrap input,
+    #intRegisterModal.int-onescreen .int-nik-wrap input:focus{height:50px;font-size:20px;}
+    #intRegisterModal.int-onescreen .int-msg{min-height:36px;}
+  }
+  @media (max-height:660px){
+    #intRegisterModal.int-onescreen .reg-hero-sub{display:none;}
+    #intRegisterModal.int-onescreen .reg-body{padding-top:10px;}
+    #intRegisterModal.int-onescreen .int-section-head{margin:8px 0 6px;}
+    #intRegisterModal.int-onescreen .int-profile{padding:10px;gap:6px 8px;}
+    #intRegisterModal.int-onescreen .int-profile .int-field input[readonly]{height:34px;}
+    #intRegisterModal.int-onescreen .reg-footer .btn{height:42px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #intRegisterModal.int-onescreen .int-profile.int-verified .int-field input[readonly]{animation:none;}
+  }
