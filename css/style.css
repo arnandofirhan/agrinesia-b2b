@@ -6060,3 +6060,139 @@
     #loginScreen .btn-block.login-submit-btn{ height:46px !important; }
     #loginScreen .login-heading{ font-size:20px !important; }
   }
+  /* ===== DASHBOARD: RINGKAS, MODERN, TANPA TEKS TERPOTONG =====
+     Banner/tab/KPI dipadatkan, panel lebih tipis, Tren PO jadi 2 kolom + grafik pendek,
+     deskripsi KPI (redundan dengan label) disembunyikan di HP, daftar PO Terbaru & Leaderboard
+     dirapatkan. Semua teks boleh wrap (tidak ada ellipsis) supaya tidak ada yang terpotong. */
+  #content:has(.dash-tabs) .dash-panel{padding:12px 14px !important;border-radius:16px !important;margin:0 0 10px !important;}
+  #content:has(.dash-tabs) .dash-grid-2{gap:0 !important;}
+  #content:has(.dash-tabs) .dash-panel-head{margin-bottom:8px !important;gap:8px;}
+  #content:has(.dash-tabs) .dash-section-title{font-size:11.5px !important;letter-spacing:.06em !important;color:var(--ag-gray-600) !important;line-height:1.3;}
+  #content:has(.dash-tabs) .dash-panel-link{font-size:11.5px !important;white-space:nowrap;flex-shrink:0;}
+
+  /* Tren PO: 2 kolom (Jumlah | Nilai), grafik pendek */
+  #content:has(.dash-tabs) .dash-trend-summary{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px !important;}
+  #content:has(.dash-tabs) .dash-trend-summary-item{gap:1px !important;min-width:0;}
+  #content:has(.dash-tabs) .dash-trend-summary-label{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ag-gray-500);}
+  #content:has(.dash-tabs) .dash-trend-summary-value{font-size:clamp(16px,4.8vw,21px) !important;line-height:1.15;overflow-wrap:anywhere;letter-spacing:-.01em;}
+  #content:has(.dash-tabs) .dash-trend-delta{font-size:11px !important;line-height:1.3;}
+
+  /* Ringkasan Status PO */
+  #content:has(.dash-tabs) .po-status-row{padding:5px 10px !important;margin:0 -10px !important;}
+  #content:has(.dash-tabs) .po-status-row-top{margin-bottom:3px !important;gap:8px;}
+  #content:has(.dash-tabs) .po-status-row-label{line-height:1.25;overflow-wrap:anywhere;}
+  #content:has(.dash-tabs) .po-status-bar-track{height:5px !important;}
+
+  /* PO Terbaru */
+  #content:has(.dash-tabs) .po-recent-row{padding:7px 10px !important;margin:0 -10px !important;gap:8px !important;}
+  #content:has(.dash-tabs) .po-recent-main{gap:2px !important;}
+  #content:has(.dash-tabs) .po-recent-store{overflow-wrap:anywhere;line-height:1.25;}
+  #content:has(.dash-tabs) .po-recent-side{gap:3px !important;}
+  #content:has(.dash-tabs) .po-recent-amount{font-size:12.5px !important;white-space:nowrap;}
+  #content:has(.dash-tabs) .po-recent-row .badge{padding:2px 8px 2px 7px !important;font-size:10.5px !important;}
+  #content:has(.dash-tabs) .po-recent-row .id-chip{font-size:10.5px;padding:1px 6px;}
+
+  /* Leaderboard */
+  #content:has(.dash-tabs) .dash-leaderboard-row{padding:6px 10px !important;margin:0 -10px !important;gap:9px !important;}
+  #content:has(.dash-tabs) .dash-leaderboard-rank{width:16px !important;font-size:12px !important;flex-shrink:0;}
+  #content:has(.dash-tabs) .dash-leaderboard-avatar{width:28px !important;height:28px !important;font-size:10.5px !important;}
+  #content:has(.dash-tabs) .dash-leaderboard-name{min-width:0;font-size:12.5px !important;line-height:1.25;overflow-wrap:anywhere;}
+  #content:has(.dash-tabs) .dash-leaderboard-sub{font-size:10.5px !important;margin-top:0 !important;}
+  #content:has(.dash-tabs) .dash-leaderboard-value{font-size:12.5px !important;white-space:nowrap;flex-shrink:0;}
+  #content:has(.dash-tabs) .dash-leaderboard-row:nth-child(1) .dash-leaderboard-rank{color:#D99A1E;}
+
+  @media (max-width:760px){
+    #content:has(.dash-tabs) .welcome-banner{padding:10px 12px !important;gap:9px !important;margin-bottom:10px !important;border-radius:16px !important;}
+    #content:has(.dash-tabs) .welcome-banner-icon{width:32px !important;height:32px !important;border-radius:10px !important;flex-shrink:0;}
+    #content:has(.dash-tabs) .welcome-banner-icon svg{width:18px !important;height:18px !important;}
+    #content:has(.dash-tabs) .welcome-banner-title{font-size:14px !important;line-height:1.25 !important;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere;}
+    #content:has(.dash-tabs) .welcome-banner-sub{font-size:11px !important;line-height:1.3;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;}
+    #content:has(.dash-tabs) .welcome-banner-clock-time{font-size:15px !important;}
+    #content:has(.dash-tabs) .dash-tabs{margin:0 0 10px !important;padding:3px !important;}
+    #content:has(.dash-tabs) .dash-tab-btn{padding:7px 4px !important;}
+
+    /* KPI: kartu horizontal ringkas (ikon kiri, label + nilai kanan); deskripsi disembunyikan */
+    #content:has(.dash-tabs) .kpi-grid{gap:8px !important;margin-bottom:10px !important;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-card:not(.kpi-skeleton){
+      display:grid !important;grid-template-columns:30px minmax(0,1fr) !important;
+      grid-template-areas:"ic lb" "ic vl" !important;column-gap:9px !important;row-gap:1px !important;
+      align-items:center;padding:9px 11px !important;border-radius:14px !important;min-height:0 !important;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-icon{grid-area:ic !important;width:30px !important;height:30px !important;border-radius:9px !important;margin:0 !important;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-icon svg{width:15px !important;height:15px !important;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-label{grid-area:lb !important;font-size:9.5px !important;line-height:1.25 !important;margin:0 !important;align-self:end;overflow-wrap:anywhere;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-value{grid-area:vl !important;font-size:clamp(15px,4.8vw,18px) !important;line-height:1.15 !important;white-space:normal !important;overflow-wrap:anywhere;align-self:start;}
+    #content:has(.dash-tabs) .kpi-grid .kpi-desc{display:none !important;}
+    #content:has(.dash-tabs) .kpi-card.kpi-skeleton{min-height:56px !important;}
+    #content:has(.dash-tabs) .dash-trend-chart{height:90px !important;}
+  }
+  /* ===== DASHBOARD EMPLOYEE BENEFIT: kartu "Ringkasan Bulan Ini" (kpi-grid-sm) ikut ringkas ===== */
+  #content:has(.dash-tabs) .dash-panel-head .filter-select{height:34px !important;font-size:12.5px !important;}
+  @media (max-width:760px){
+    #content:has(.dash-tabs) .kpi-grid-sm{grid-template-columns:1fr 1fr !important;gap:8px !important;margin-bottom:8px !important;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-card:not(.kpi-skeleton){
+      display:grid !important;grid-template-columns:30px minmax(0,1fr) !important;
+      grid-template-areas:"ic lb" "ic vl" !important;column-gap:9px !important;row-gap:1px !important;
+      align-items:center;padding:9px 11px !important;border-radius:14px !important;min-height:0 !important;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-icon{grid-area:ic !important;width:30px !important;height:30px !important;border-radius:9px !important;margin:0 !important;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-icon svg{width:15px !important;height:15px !important;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-label{grid-area:lb !important;font-size:9.5px !important;line-height:1.25 !important;margin:0 !important;align-self:end;overflow-wrap:anywhere;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-value{grid-area:vl !important;font-size:clamp(15px,4.8vw,18px) !important;line-height:1.15 !important;white-space:normal !important;overflow-wrap:anywhere;align-self:start;}
+    #content:has(.dash-tabs) .kpi-grid-sm .kpi-desc{display:none !important;}
+    #content:has(.dash-tabs) .kpi-grid-sm > .kpi-card:last-child:nth-child(odd){grid-column:1 / -1;}
+  }
+
+  /* ===== TOPBAR MODERN: gradient hijau brand, tombol kaca (glass), teks putih ===== */
+  html .topbar{
+    background:radial-gradient(160px 70px at 88% 0,rgba(255,255,255,.16),transparent 70%),
+               linear-gradient(135deg,#0B3D2E 0%,#145B38 55%,#1E7A4C 100%) !important;
+    border-bottom:0 !important;border-radius:0 0 20px 20px;
+    box-shadow:0 10px 24px -12px rgba(11,61,46,.6);
+  }
+  html[data-theme="dark"] .topbar{
+    background:radial-gradient(160px 70px at 88% 0,rgba(52,211,153,.16),transparent 70%),
+               linear-gradient(135deg,#0A1713 0%,#0F2A20 55%,#14402F 100%) !important;
+    box-shadow:0 10px 24px -12px rgba(0,0,0,.7);
+  }
+  html .topbar .topbar-title{color:#fff !important;}
+  html .topbar .topbar-date{color:rgba(255,255,255,.72) !important;}
+  html .topbar .user-menu-trigger .user-name{color:#fff !important;}
+  html .topbar .user-menu-trigger .user-greeting,
+  html .topbar .user-menu-trigger .user-agentid,
+  html .topbar .user-menu-trigger .user-role{color:rgba(255,255,255,.75) !important;}
+  html .topbar .user-menu-trigger:hover{background:rgba(255,255,255,.12) !important;border-color:rgba(255,255,255,.2) !important;}
+  html .topbar .user-menu-caret{color:rgba(255,255,255,.88) !important;}
+  html .topbar .icon-btn:not(.notif-bell-btn){
+    background:rgba(255,255,255,.14) !important;border:1px solid rgba(255,255,255,.22) !important;color:#fff !important;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:none !important;
+  }
+  html .topbar .icon-btn:not(.notif-bell-btn):hover{background:rgba(255,255,255,.24) !important;border-color:rgba(255,255,255,.36) !important;}
+  html .topbar .theme-toggle-btn svg,
+  html .topbar .sidebar-toggle-topbar svg{color:#fff !important;stroke:#fff !important;}
+  html .topbar .notif-bell-btn{box-shadow:0 0 0 2px rgba(255,255,255,.28),0 6px 14px -4px rgba(239,68,68,.55) !important;}
+  html .topbar .avatar,html .topbar .user-menu-trigger .avatar{box-shadow:0 0 0 2px rgba(255,255,255,.9),0 0 0 4px rgba(52,211,153,.5) !important;}
+  /* ===== TOPBAR = SATU TEMA DENGAN BOTTOM NAV =====
+     Warna/gradasi/radius/bayangan topbar disamakan persis dengan #bottomNav (hijau terang
+     #17b37c > #0a7552). Di HP keduanya sama-sama "kapsul melayang": header jadi lapisan
+     transparan (memudar ke warna latar halaman supaya konten yang di-scroll tidak tembus di
+     celah atas), kapsul hijaunya digambar oleh ::before. */
+  html .topbar{
+    background:radial-gradient(240px 120px at 0% 0%,rgba(110,231,183,.45),transparent 70%),linear-gradient(135deg,#17b37c 0%,#0c8f63 55%,#0a7552 100%) !important;
+    box-shadow:0 12px 28px -14px rgba(12,143,99,.5) !important;
+  }
+  html[data-theme="dark"] .topbar{
+    background:linear-gradient(135deg,#12a070,#095c42) !important;
+    box-shadow:0 12px 28px -14px rgba(0,0,0,.7) !important;
+  }
+  @media (max-width:860px){
+    html .topbar, html[data-theme="dark"] .topbar{
+      background:linear-gradient(to bottom,var(--ag-gray-50) 0,var(--ag-gray-50) 78%,transparent 100%) !important;
+      box-shadow:none !important;border-radius:0 !important;border:0 !important;
+      padding:0 22px !important;
+    }
+    html .topbar::before{
+      content:'';position:absolute;z-index:-1;pointer-events:none;
+      left:10px;right:10px;top:6px;bottom:6px;border-radius:24px;
+      background:radial-gradient(240px 120px at 0% 0%,rgba(110,231,183,.45),transparent 70%),linear-gradient(135deg,#17b37c 0%,#0c8f63 55%,#0a7552 100%);box-shadow:0 12px 28px rgba(12,143,99,.38);
+    }
+    html[data-theme="dark"] .topbar::before{background:linear-gradient(135deg,#12a070,#095c42);box-shadow:0 12px 28px rgba(0,0,0,.45);}
+  }
