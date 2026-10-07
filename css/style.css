@@ -5492,3 +5492,108 @@
   .ebp-chev svg{width:16px;height:16px;}
   .ebp-pw-btn:active .ebp-ic{background:var(--ag-green);color:#fff;}
   @media (min-width:861px){.ebp{max-width:560px;margin:0 auto;padding-bottom:24px;}}
+
+  /* ===== FIX: filter tanggal, header kartu PO, tanggal kartu, kartu Order ===== */
+  /* 1) Filter tanggal: rapi, sejajar tinggi dgn filter lain, 1 ikon saja */
+  .filter-daterange{align-items:center !important;}
+  .filter-daterange .date-field-wrap{height:40px;box-sizing:border-box;border-radius:12px !important;overflow:hidden;
+    border:1px solid var(--ag-gray-200) !important;background:var(--ag-surface) !important;box-shadow:none !important;}
+  .filter-daterange .date-field-wrap::after{display:none !important;}
+  .filter-daterange .date-field-wrap:focus-within{border-color:var(--ag-green) !important;box-shadow:0 0 0 3px var(--ag-green-soft) !important;}
+  .filter-daterange .date-field-wrap svg{width:15px;height:15px;margin-left:11px;flex:none;}
+  .filter-daterange .date-field-wrap input[type=date]{height:100% !important;width:100%;min-width:0;border:0 !important;border-radius:0 !important;
+    background:transparent !important;box-shadow:none !important;outline:0 !important;padding:0 10px 0 8px !important;font-size:12.5px !important;font-weight:600;color:var(--ag-gray-900);}
+  .filter-daterange .date-field-ghost{left:35px !important;font-size:12.5px !important;font-weight:500;}
+  .filter-daterange-sep{color:var(--ag-gray-400);font-weight:700;text-align:center;}
+  @media (max-width:860px){
+    .filter-bar .filter-daterange,.filter-bar--c .filter-daterange{display:grid !important;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) !important;gap:6px !important;width:100%;grid-column:1 / -1;}
+  }
+
+  /* 2) Kartu PO: No PO + Status dalam 1 baris */
+  .po-card-headline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;flex-wrap:nowrap;padding-bottom:8px;border-bottom:1px dashed var(--ag-gray-200);margin-bottom:6px;}
+  .po-card-headline .po-card-id{flex:0 1 auto;min-width:0;font-size:12px !important;padding:4px 9px;background:var(--ag-green-soft);border-radius:999px;color:var(--ag-green) !important;}
+  .po-card-headline .po-card-status-row{margin:0 !important;flex:0 0 auto;min-width:0;}
+  .po-card-headline .badge{font-size:10.5px !important;padding:4px 9px !important;white-space:nowrap !important;}
+  @media (max-width:360px){.po-card-headline{flex-wrap:wrap;}}
+
+  /* 3) Tanggal / nominal di kartu: 1 baris, font kecil */
+  .data-card-field.dc-nowrap b{white-space:nowrap !important;overflow-wrap:normal !important;word-break:keep-all !important;font-size:12px !important;letter-spacing:-.01em;}
+  .data-card-field.dc-nowrap .dc-ico{flex:0 0 26px !important;width:26px !important;height:26px !important;border-radius:8px !important;}
+  .data-card-field.dc-nowrap .dc-ico svg{width:13px !important;height:13px !important;}
+  .data-card-field.dc-nowrap{gap:7px !important;padding-left:8px !important;padding-right:8px !important;}
+  .dc-docs{display:flex;gap:6px;flex-wrap:wrap;}
+  .dc-docs .badge{white-space:nowrap !important;}
+
+  /* ===== Commission: nama lengkap bold seperti kartu lain ===== */
+  .data-card .dc-main-text{font-weight:800 !important;font-size:15px;line-height:1.25;color:var(--ag-gray-900);overflow-wrap:anywhere;letter-spacing:-.005em;}
+
+  /* ===== Menu Lainnya: modern 2 kolom, ikon tile ===== */
+  #bottomMoreSheetNav{display:grid !important;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px 22px !important;align-content:start;}
+  #bottomMoreSheetNav .bottom-sheet-group-label{grid-column:1 / -1;margin:10px 2px 0 !important;padding:0 !important;font-size:10.5px !important;font-weight:800;letter-spacing:.09em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+  #bottomMoreSheetNav .bottom-sheet-group-label::after{content:'';flex:1;height:1px;background:var(--ag-gray-100);}
+  #bottomMoreSheetNav .bottom-sheet-group-label:first-child{margin-top:0 !important;}
+  #bottomMoreSheetNav .nav-item{position:relative;margin:0 !important;padding:10px !important;gap:10px !important;border-radius:16px !important;min-width:0;
+    background:var(--ag-surface) !important;border:1px solid var(--ag-gray-100);box-shadow:0 2px 8px rgba(16,24,32,.04);transition:transform .12s ease,box-shadow .12s ease;}
+  #bottomMoreSheetNav .nav-item:active{transform:scale(.97);}
+  #bottomMoreSheetNav .nav-item .nav-icon{flex:0 0 34px;width:34px !important;height:34px !important;border-radius:11px;display:flex !important;align-items:center;justify-content:center;
+    background:var(--ag-green-soft);color:var(--ag-green) !important;}
+  #bottomMoreSheetNav .nav-item .nav-icon svg{width:17px !important;height:17px !important;}
+  #bottomMoreSheetNav .nav-label-wrap{min-width:0;}
+  #bottomMoreSheetNav .nav-item .nav-label{font-size:12.5px !important;font-weight:700 !important;line-height:1.25;white-space:normal !important;overflow-wrap:anywhere;}
+  #bottomMoreSheetNav .nav-item .nav-badge,#bottomMoreSheetNav .nav-item .badge-count{position:absolute;top:-5px;right:-3px;min-width:18px;height:18px;border-radius:9px;font-size:10px;}
+  #bottomMoreSheetNav .nav-item.active{background:linear-gradient(135deg,#1E7A4C 0%,#0B3D2E 100%) !important;border-color:transparent;box-shadow:0 8px 18px rgba(11,61,46,.28);}
+  #bottomMoreSheetNav .nav-item.active .nav-label,#bottomMoreSheetNav .nav-item.active .nav-icon{color:#fff !important;}
+  #bottomMoreSheetNav .nav-item.active .nav-icon{background:rgba(255,255,255,.2);}
+
+  /* ===== Pilih jenis pendaftaran / cek status: ringkas & modern (mobile) ===== */
+  @media (max-width:760px){
+    .reg-hero{padding:16px 18px 14px !important;}
+    .reg-hero-title{font-size:18px !important;margin-bottom:3px !important;}
+    .reg-hero-sub{font-size:12.5px !important;line-height:1.4;margin:0 !important;}
+    .reg-body:has(.reg-choice-grid){padding:14px 14px 18px !important;}
+    .reg-choice-grid{gap:10px !important;}
+    .reg-choice-card{display:grid !important;grid-template-columns:46px minmax(0,1fr) 30px;grid-template-areas:"ic ti ar" "ic de ar";
+      column-gap:12px;row-gap:2px;align-items:center;text-align:left;padding:12px 14px !important;min-height:0 !important;border-radius:18px !important;
+      border-top-width:1px !important;border-left:4px solid var(--accent) !important;}
+    .reg-choice-card::before{display:none !important;}
+    .reg-choice-card .reg-choice-icon{grid-area:ic;width:46px !important;height:46px !important;margin:0 !important;border-radius:14px !important;align-self:center;}
+    .reg-choice-card .reg-choice-icon svg{width:22px !important;height:22px !important;max-width:22px;max-height:22px;}
+    .reg-choice-card .reg-choice-title{grid-area:ti;font-size:14.5px !important;margin:0 !important;line-height:1.25;}
+    .reg-choice-card .reg-choice-desc{grid-area:de;font-size:11.5px !important;line-height:1.4 !important;padding:0 !important;margin:0 !important;color:var(--ag-gray-500);}
+    .reg-choice-card .reg-choice-arrow{grid-area:ar;position:static !important;width:30px !important;height:30px !important;margin:0 !important;align-self:center;}
+    .reg-choice-card .reg-choice-arrow svg{width:15px !important;height:15px !important;}
+    .reg-choice-card > span:nth-child(2){width:auto;}
+  }
+
+  /* ===== Menu Lainnya v2: cerah, modern, ikon warna-warni (tema terang) ===== */
+  html:not([data-theme="dark"]) .bottom-more-sheet{background:linear-gradient(180deg,#FFFFFF 0%,#F3F8F5 100%) !important;}
+  .bottom-more-sheet{border-radius:26px 26px 0 0 !important;box-shadow:0 -12px 40px rgba(16,24,32,.18) !important;}
+  .bottom-sheet-head{padding:6px 18px 12px !important;}
+  .bottom-sheet-title{font-size:17px !important;letter-spacing:-.01em;}
+  #bottomMoreSheetNav{gap:10px !important;padding:6px 16px 28px !important;}
+  #bottomMoreSheetNav .bottom-sheet-group-label{margin:12px 2px 0 !important;color:var(--ag-gray-500) !important;font-size:10.5px !important;}
+  #bottomMoreSheetNav .bottom-sheet-group-label::after{background:linear-gradient(90deg,var(--ag-gray-200),transparent) !important;}
+  #bottomMoreSheetNav .nav-item{--tint:#E7F3EC;--ink:#1E7A4C;
+    padding:11px 12px !important;border-radius:18px !important;border:1px solid rgba(16,24,32,.06) !important;
+    background:#fff !important;box-shadow:0 4px 14px rgba(16,24,32,.06) !important;}
+  #bottomMoreSheetNav .nav-item:nth-child(6n+2){--tint:#E8F0FE;--ink:#2F80ED;}
+  #bottomMoreSheetNav .nav-item:nth-child(6n+3){--tint:#FDEEDC;--ink:#E0801F;}
+  #bottomMoreSheetNav .nav-item:nth-child(6n+4){--tint:#F0E9FD;--ink:#7C4DDB;}
+  #bottomMoreSheetNav .nav-item:nth-child(6n+5){--tint:#DDF5F1;--ink:#0F9C8E;}
+  #bottomMoreSheetNav .nav-item:nth-child(6n+6){--tint:#FCE7F1;--ink:#D6336C;}
+  #bottomMoreSheetNav .nav-item .nav-icon{width:38px !important;height:38px !important;flex:0 0 38px !important;border-radius:13px !important;
+    background:var(--tint) !important;color:var(--ink) !important;}
+  #bottomMoreSheetNav .nav-item .nav-icon svg{width:19px !important;height:19px !important;stroke:var(--ink) !important;}
+  #bottomMoreSheetNav .nav-item .nav-label{color:var(--ag-gray-900,#1f2d27) !important;font-size:13px !important;font-weight:700 !important;}
+  /* aktif: terang, bukan hijau gelap */
+  #bottomMoreSheetNav .nav-item.active{background:linear-gradient(135deg,#EAF7F0 0%,#FFFFFF 100%) !important;
+    border:1.5px solid #34A56F !important;box-shadow:0 8px 20px rgba(30,122,76,.16) !important;}
+  #bottomMoreSheetNav .nav-item.active .nav-icon{background:linear-gradient(135deg,#34B27B,#1E7A4C) !important;color:#fff !important;box-shadow:0 4px 10px rgba(30,122,76,.3);}
+  #bottomMoreSheetNav .nav-item.active .nav-icon svg{stroke:#fff !important;}
+  #bottomMoreSheetNav .nav-item.active .nav-label{color:#1E7A4C !important;font-weight:800 !important;}
+  #bottomMoreSheetNav .nav-item.active::after{content:'';position:absolute;right:10px;bottom:10px;width:7px;height:7px;border-radius:50%;background:#34A56F;box-shadow:0 0 0 3px rgba(52,165,111,.2);}
+  #bottomMoreSheetNav .nav-item .nav-badge{top:-6px !important;right:-4px !important;background:linear-gradient(135deg,#F2994A,#E0701A) !important;color:#fff !important;border:2px solid #fff;box-shadow:0 2px 6px rgba(224,112,26,.4);}
+  html[data-theme="dark"] #bottomMoreSheetNav .nav-item{background:#18221D !important;border-color:rgba(255,255,255,.08) !important;}
+  html[data-theme="dark"] #bottomMoreSheetNav .nav-item .nav-label{color:#F1F6F3 !important;}
+  html[data-theme="dark"] #bottomMoreSheetNav .nav-item.active{background:linear-gradient(135deg,#1F3A2D,#18221D) !important;}
+  html[data-theme="dark"] #bottomMoreSheetNav .nav-item.active .nav-label{color:#6BE0A6 !important;}
