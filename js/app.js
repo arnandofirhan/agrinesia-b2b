@@ -7217,6 +7217,16 @@
     '</div>';
   }
 
+  /** Badge Role user (Kelola User) — warna beda per role supaya cepat dibedakan. */
+  function userRoleBadge_(role){
+    var tone = {ADMIN:'badge-purple', SUPERVISOR:'badge-blue', MANAGER:'badge-orange', AGENT:'badge-green'}[role] || 'badge-neutral';
+    return '<span class="badge '+tone+'">'+escapeHtml(role||'-')+'</span>';
+  }
+  function initials_(name){
+    return String(name||'?').trim().split(/\s+/).slice(0,2).map(function(w){ return w.charAt(0).toUpperCase(); }).join('') || '?';
+  }
+  var CLOCK_ICO_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
   /** Pilih kartu mobile (gaya Order) berdasarkan kolom tabel — dipakai Data Agent, Master Item,
    *  Store Management, Area Pendaftaran & Departemen tanpa mengubah tiap pemanggil. */
   function mobileCardFor_(columns, actionsFn){
@@ -7233,6 +7243,66 @@
     var stat = function(l, v){ return '<div><span>'+l+'</span><b>'+v+'</b></div>'; };
     var dash = '<span class="oc-muted">-</span>';
 
+    if(has('Employee ID') && has('Approval By')){
+      return function(r){
+        var apprName = r.ApprovedByName ? escapeHtml(r.ApprovedByName) : '';
+        var apprWhen = (r.ApprovedByName && r.ApprovedAt) ? '<small class="oc-stat-sub">'+escapeHtml(formatDateTime_(r.ApprovedAt))+'</small>' : '';
+        var regBadge = (typeof ebStatusBadge_ === 'function') ? ebStatusBadge_(r.RegistrationStatus) : statusBadge(r.RegistrationStatus);
+        return '<div class="oc oc-emp">' +
+          '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.EmployeeID||'-')+'</span>'+regBadge+'</div>' +
+          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(initials_(r.FullName))+'</div><div class="oc-person-txt">' +
+            '<span class="oc-agent-name">'+escapeHtml(r.FullName||'-')+'</span>' +
+            '<div class="oc-sub oc-mail">'+ICONS.mail+'<span>'+escapeHtml(r.Email||'-')+'</span></div></div></div>' +
+          (r.CompanyName ? box(ICONS.stores, escapeHtml(r.CompanyName), 'Perusahaan') : '') +
+          '<div class="oc-stats wrap">' +
+            '<div><span>No. ID Card</span><b>'+(r.IDCardNumber ? escapeHtml(r.IDCardNumber) : dash)+'</b></div>' +
+            '<div><span>Approval By</span><b>'+(apprName ? apprName+apprWhen : dash)+'</b></div>' +
+          '</div>' +
+          foot(kv('Karyawan', statusBadge(r.EmployeeStatus)), r) +
+        '</div>';
+      };
+    }
+    if(has('Trx ID') && has('Karyawan')){
+      return function(r){
+        return '<div class="oc oc-trx">' +
+          '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.trxId||'-')+'</span>' +
+            '<span class="oc-date">'+ICONS.calendar+'<span>'+escapeHtml(formatDateTime_(r.createdAt))+'</span></span></div>' +
+          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(initials_(r.employeeName))+'</div><div class="oc-person-txt">' +
+            '<span class="oc-agent-name">'+escapeHtml(r.employeeName||'-')+'</span>' +
+            '<div class="oc-sub">ID Card '+escapeHtml(r.idCardNumber||'-')+'</div></div></div>' +
+          box(ICONS.stores, escapeHtml(r.storeName||'-'), r.companyName ? escapeHtml(r.companyName) : '') +
+          '<div class="oc-amount"><div><span>Nominal</span><b>'+formatRupiah(r.amount)+'</b></div>' +
+            '<div class="oc-amount-r"><span>No. Transaksi</span><b>'+escapeHtml(r.trxNumber||'-')+'</b></div></div>' +
+          foot('', r) +
+        '</div>';
+      };
+    }
+    if(has('Company ID') && has('Nama Perusahaan')){
+      return function(r){
+        return '<div class="oc oc-company">' +
+          '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.CompanyID||'-')+'</span>'+statusBadge(r.Status)+'</div>' +
+          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.CompanyName||'-')+'</span></div>' +
+          (r.Address ? box(ICONS.location, 'Alamat', escapeHtml(r.Address)) : '') +
+          '<div class="oc-stats wrap">' +
+            '<div><span>PIC</span><b>'+(r.PIC ? escapeHtml(r.PIC) : dash)+'</b></div>' +
+            '<div><span>Catatan Benefit</span><b>'+(r.BenefitNote ? escapeHtml(r.BenefitNote) : dash)+'</b></div>' +
+          '</div>' +
+          foot('', r) +
+        '</div>';
+      };
+    }
+    if(has('User ID') && has('Nama Store')){
+      return function(r){
+        return '<div class="oc oc-storeuser">' +
+          '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.UserID||'-')+'</span>' +
+            '<span class="oc-date">'+ICONS.calendar+'<span>'+(r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-')+'</span></span></div>' +
+          '<div class="oc-person"><div class="oc-avatar oc-avatar-ic">'+ICONS.stores+'</div><div class="oc-person-txt">' +
+            '<span class="oc-agent-name">'+escapeHtml(r.StoreName||'-')+'</span>' +
+            '<div class="oc-sub oc-mail">'+ICONS.mail+'<span>'+escapeHtml(r.Email||'-')+'</span></div></div></div>' +
+          foot(statusBadge(r.Status), r) +
+        '</div>';
+      };
+    }
     if(has('NIK / Divisi') && has('Agent')){
       return function(r){
         var ini = (r.FullName||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
@@ -7290,27 +7360,41 @@
     }
     if(has('Jabatan') && has('Tipe Agent')){
       return function(r){
-        var ini = (r.Name||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
-        return '<div class="oc">' + head(r.Role || 'USER', statusBadge(r.Status)) +
-          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(ini)+'</div><div class="oc-person-txt">' +
-            '<span class="oc-agent-name">'+escapeHtml(r.Name||'-')+'</span>' +
-            '<div class="oc-sub">'+escapeHtml(r.Email||'-')+'</div></div></div>' +
-          '<div class="oc-stats wrap">' + stat('Jabatan', r.Jabatan ? escapeHtml(r.Jabatan) : dash) +
-            '<div><span>Tipe Agent</span><b>'+(r.Role==='AGENT' ? agentTypePill_({AgentType:r.AgentType}) : dash)+'</b></div></div>' +
-          foot('', r) + '</div>';
+        var isSelf = !!(STATE.user && r.UserID === STATE.user.userId);
+        var created = r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-';
+        var off = String(r.Status||'').toUpperCase() !== 'ACTIVE';
+        return '<div class="oc oc-user'+(off?' is-off':'')+'">' +
+          '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.UserID||'-')+'</span>' +
+            '<span class="oc-date">'+ICONS.calendar+'<span>'+created+'</span></span></div>' +
+          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(initials_(r.Name))+'</div><div class="oc-person-txt">' +
+            '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.Name||'-')+'</span>'+(isSelf ? '<span class="badge badge-blue">Anda</span>' : '')+'</div>' +
+            '<div class="oc-sub oc-mail">'+ICONS.mail+'<span>'+escapeHtml(r.Email||'-')+'</span></div></div></div>' +
+          (r.Jabatan ? box(ICONS.agent, escapeHtml(r.Jabatan), 'Jabatan') : '') +
+          '<div class="oc-stats wrap">' +
+            '<div><span>Role</span><b>'+userRoleBadge_(r.Role)+'</b></div>' +
+            '<div><span>Tipe Agent</span><b>'+(r.Role==='AGENT' ? agentTypePill_({AgentType:r.AgentType}) : dash)+'</b></div>' +
+          '</div>' +
+          foot(statusBadge(r.Status), r) +
+        '</div>';
       };
     }
     if(has('Action') && has('Entity') && has('Detail')){
       return function(r){
         var d = new Date(r.Timestamp), p2 = function(n){ return (n<10?'0':'')+n; };
-        var when = isNaN(d.getTime()) ? escapeHtml(String(r.Timestamp)) :
-          p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear()+' &middot; '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
-        return '<div class="oc">' +
-          '<div class="oc-head">'+auditLogActionBadge_(r.Action)+'<span class="oc-date">'+ICONS.calendar+'<span>'+when+'</span></span></div>' +
-          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.UserName||r.UserID||'-')+'</span>' +
-            (r.Role ? '<span class="badge badge-neutral">'+escapeHtml(r.Role)+'</span>' : '') + '</div>' +
-          '<div class="oc-sub">'+escapeHtml(r.UserID||'')+' &middot; '+escapeHtml((r.Entity||'-')+(r.EntityID ? ' ('+r.EntityID+')' : ''))+'</div>' +
+        var tgl = isNaN(d.getTime()) ? escapeHtml(String(r.Timestamp)) : p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear();
+        var jam = isNaN(d.getTime()) ? '' : p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+        var who = r.UserName || r.UserID || '-';
+        return '<div class="oc oc-audit">' +
+          '<div class="oc-head">'+auditLogActionBadge_(r.Action)+'<span class="oc-date">'+ICONS.calendar+'<span>'+tgl+'</span></span></div>' +
+          '<div class="oc-person"><div class="oc-avatar oc-avatar-sm">'+escapeHtml(initials_(who))+'</div><div class="oc-person-txt">' +
+            '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(who)+'</span>'+(r.Role ? '<span class="badge badge-neutral">'+escapeHtml(r.Role)+'</span>' : '')+'</div>' +
+            '<div class="oc-sub">'+escapeHtml(r.UserID||'-')+'</div></div></div>' +
+          '<div class="oc-stats wrap">' +
+            '<div><span>Entity</span><b>'+escapeHtml(r.Entity||'-')+'</b></div>' +
+            '<div><span>ID Entity</span><b>'+(r.EntityID ? '<span class="mono-id">'+escapeHtml(r.EntityID)+'</span>' : dash)+'</b></div>' +
+          '</div>' +
           (r.Detail ? '<div class="oc-detail">'+escapeHtml(r.Detail)+'</div>' : '') +
+          (jam ? '<div class="oc-foot"><div class="oc-badges"><span class="oc-time">'+CLOCK_ICO_+'<span>'+jam+'</span></span></div></div>' : '') +
         '</div>';
       };
     }
@@ -8555,8 +8639,16 @@
       var mail = r.Email ? 'resendUserCredentialsPrompt(\''+r.UserID+'\',\''+escapeHtml(r.Name||'').replace(/'/g,"\\'")+'\')' : null;
       return rowActionButtons(view, edit, del, mail);
     };
-    return '<div class="card"><div class="table-toolbar"><span class="card-title">Kelola User</span>' +
-      '<button class="btn btn-primary btn-add btn-sm" onclick="editUser(null)">'+ICONS.plus+' Tambah User</button></div>' +
+    var activeCnt_ = rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length;
+    var roleCnt_ = function(k){ return rows.filter(function(r){ return r.Role===k; }).length; };
+    var summary_ = '<div class="pg-stats">' +
+      '<div><span>Total User</span><b>'+rows.length+'</b></div>' +
+      '<div class="pg-hl"><span>Aktif</span><b>'+activeCnt_+'</b></div>' +
+      '<div><span>Staff</span><b>'+(roleCnt_('ADMIN')+roleCnt_('SUPERVISOR')+roleCnt_('MANAGER'))+'</b></div>' +
+      '<div><span>Agent</span><b>'+roleCnt_('AGENT')+'</b></div></div>';
+    return '<div class="card users-page"><div class="list-header"><span class="card-title">Kelola User</span>' +
+      '<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editUser(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah User</span></button></div>' +
+      summary_ +
       filterHtml +
       renderTableOrCards_(cols, filtered, actions, rows.length ? 'Tidak ada user yang cocok' : 'Belum ada user', rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan user pertama untuk mengelola akses sistem.', ICONS.users) + '</div>';
   }
@@ -8831,8 +8923,15 @@
         '</div>';
     }
 
-    return '<div class="card"><div class="card-header"><span class="card-title">Audit Log</span></div>' +
-      filterHtml + tableHtml + pagerHtml + '</div>';
+    var uniqUsers_ = {}; rows.forEach(function(r){ uniqUsers_[r.UserID] = 1; });
+    var todayStr_ = new Date().toDateString();
+    var todayCnt_ = rows.filter(function(r){ var d = new Date(r.Timestamp); return !isNaN(d.getTime()) && d.toDateString() === todayStr_; }).length;
+    var summary_ = '<div class="pg-stats pg-3">' +
+      '<div><span>Aktivitas</span><b>'+rows.length+'</b></div>' +
+      '<div class="pg-hl"><span>Hari Ini</span><b>'+todayCnt_+'</b></div>' +
+      '<div><span>User Unik</span><b>'+Object.keys(uniqUsers_).length+'</b></div></div>';
+    return '<div class="card audit-page"><div class="list-header"><span class="card-title">Audit Log</span></div>' +
+      summary_ + filterHtml + tableHtml + pagerHtml + '</div>';
   }
 
   function changeAuditLogPageSize_(val){
@@ -10968,7 +11067,12 @@
       { type:'TRENDING', label:'Sedang Banyak Dipesan', desc:'Produk yang ditonjolkan sebagai paling laris.', ico:ICONS.transactions },
       { type:'PRODUCT', label:'Produk Unggulan', desc:'Produk pilihan yang ingin dipromosikan.', ico:ICONS.commission }
     ];
-    var html = '<div class="dset-intro"><span class="dset-intro-ico">'+ICONS.info+'</span><div><b>Pengaturan Dashboard Agent</b>'
+    var tiles_ = groups.map(function(g){
+      var rs = DASHBOARD_CONFIG_CACHE_.filter(function(r){ return r.ItemType === g.type; });
+      var on = rs.filter(function(r){ return r.IsActive === true || r.IsActive === 'TRUE'; }).length;
+      return '<div class="dset-tile dset-tile-'+g.type.toLowerCase()+'"><i>'+(g.ico||'')+'</i><div><span>'+g.label+'</span><b>'+on+'<small>/'+rs.length+' aktif</small></b></div></div>';
+    }).join('');
+    var html = '<div class="dset-tiles">'+tiles_+'</div><div class="dset-intro"><span class="dset-intro-ico">'+ICONS.info+'</span><div><b>Pengaturan Dashboard Agent</b>'
       + '<span>Atur konten untuk tampilan mobile &amp; desktop. Perubahan langsung berlaku ke semua Agent begitu disimpan. Urutan kecil tampil lebih dulu.</span></div></div><div class="dset-grid">';
     groups.forEach(function(g){
       var rows = DASHBOARD_CONFIG_CACHE_.filter(function(r){ return r.ItemType === g.type; });
@@ -11004,7 +11108,7 @@
         ? ('Produk: '+escapeHtml(product ? product.ProductName : r.ProductID))
         : escapeHtml(r.Title || '(tanpa judul)');
       out += '<div class="dash-config-row dset-row'+(isActive?'':' is-off')+'">'
-        + '<span class="dset-num">'+(idx+1)+'</span>'
+        + '<span class="dset-num" title="Urutan tampil">#'+(idx+1)+'</span>'
         + thumb
         + '<div class="dash-config-row-info">'
           + '<div class="dash-config-row-title">'+titleText+'</div>'
@@ -12658,6 +12762,7 @@
     var isCurMonth = (today.getFullYear()===y && today.getMonth()===m);
 
     var cells = '';
+    var monthHolidays_ = [];
     for(var i=0;i<firstDow;i++){ cells += '<div class="cal-cell cal-cell-empty"></div>'; }
     for(var d=1; d<=daysInMonth; d++){
       var items = calendarFilterItems_(byDay[String(d)]);
@@ -12665,6 +12770,7 @@
       var dow = (firstDow + d - 1) % 7;
       var isWeekend = (dow === 0 || dow === 6);
       var holidayName = calendarHolidayName_(y, m, d);
+      if(holidayName) monthHolidays_.push({d:d, name:holidayName});
       var isRedDate = isWeekend || !!holidayName; // tanggal merah = akhir pekan ATAU libur nasional
       var hasRejected = items.some(function(it){ return it.status === 'REJECTED'; });
       var undeliveredCount = items.filter(function(it){ return it.deliveryStatus === 'PENDING_DELIVERY'; }).length;
@@ -12691,6 +12797,11 @@
       ? '<div class="cal-no-data-note">Jadwal libur nasional resmi (SKB 3 Menteri) untuk tahun '+y+' belum diterbitkan pemerintah &mdash; hanya libur bertanggal tetap yang ditampilkan.</div>'
       : '';
 
+    var holidayListHtml_ = monthHolidays_.length
+      ? '<div class="cal-holiday-list"><div class="cal-holiday-title">Libur bulan ini</div>' + monthHolidays_.map(function(h){
+          return '<div class="cal-holiday-row"><span class="cal-holiday-date">'+h.d+'</span><span class="cal-holiday-name">'+escapeHtml(h.name)+'</span></div>';
+        }).join('') + '</div>'
+      : '';
     body.innerHTML =
       headerHtml +
       '<div class="cal-grid cal-grid-dow">' + CALENDAR_DOW_.map(function(d,i){ return '<div class="cal-dow'+((i===0)?' cal-dow-sun':'')+'">'+d+'</div>'; }).join('') + '</div>' +
@@ -12700,7 +12811,7 @@
         '<span class="cal-legend-item"><span class="cal-legend-dot"></span>Tanggal dengan jadwal pengambilan &mdash; klik untuk lihat detail</span>' +
         '<span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-orange"></span>Ada order yang belum terkirim</span>' +
         '<span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-red"></span>Tanggal merah &mdash; akhir pekan / libur nasional</span>' +
-      '</div>';
+      '</div>' + holidayListHtml_;
   }
 
   function openCalendarDayModal_(day){
@@ -14948,9 +15059,13 @@
       var del = canEdit ? 'deleteEbCompanyConfirm_(\''+r.CompanyID+'\',\''+escapeHtml(r.CompanyName||'').replace(/'/g,"\\'")+'\')' : null;
       return rowActionButtons(view, edit, del);
     };
-    return '<div class="card"><div class="table-toolbar"><span class="card-title">Master Company</span>' +
-      (canEdit?'<button class="btn btn-primary btn-add btn-sm" onclick="editEbCompany_(null)">'+ICONS.plus+' Tambah Company</button>':'') +
-      '</div>' + filterHtml +
+    var summary_ = '<div class="pg-stats pg-3">' +
+      '<div><span>Perusahaan</span><b>'+rows.length+'</b></div>' +
+      '<div class="pg-hl"><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length+'</b></div>' +
+      '<div><span>Hasil Filter</span><b>'+filtered.length+'</b></div></div>';
+    return '<div class="card eb-page"><div class="list-header"><span class="card-title">Master Company</span>' +
+      (canEdit?'<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editEbCompany_(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah Company</span></button>':'') +
+      '</div>' + summary_ + filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada perusahaan yang cocok' : 'Belum ada perusahaan',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan perusahaan mitra pertama Anda — akan muncul otomatis di dropdown Company pada form Registrasi Employee Benefit.',
@@ -15123,8 +15238,14 @@
       html += '</div>';
       return html;
     };
-    return '<div class="card eb-emp-page"><div class="card-header"><span class="card-title">Daftar Karyawan (Employee Benefit)</span></div>' +
-      filterHtml +
+    var pendingCnt_ = rows.filter(function(r){ return ['PENDING','SUBMITTED','UNDER_REVIEW'].indexOf(r.RegistrationStatus) !== -1; }).length;
+    var summary_ = '<div class="pg-stats">' +
+      '<div><span>Karyawan</span><b>'+rows.length+'</b></div>' +
+      '<div class="pg-hl"><span>Terverifikasi</span><b>'+rows.filter(function(r){ return r.RegistrationStatus==='APPROVED'; }).length+'</b></div>' +
+      '<div><span>Menunggu</span><b>'+pendingCnt_+'</b></div>' +
+      '<div><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.EmployeeStatus||'').toUpperCase()==='ACTIVE'; }).length+'</b></div></div>';
+    return '<div class="card eb-page eb-emp-page"><div class="list-header"><span class="card-title">Daftar Karyawan (Employee Benefit)</span></div>' +
+      summary_ + filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada karyawan yang cocok' : 'Belum ada pendaftaran',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Karyawan yang mendaftar lewat halaman publik akan muncul di sini untuk direview.',
@@ -15206,9 +15327,15 @@
       html += '</div>';
       return html;
     };
-    return '<div class="card"><div class="card-header"><span class="card-title">Transaksi Employee Benefit</span>' +
+    var sumAmt_ = filtered.reduce(function(a, r){ return a + (Number(r.amount) || 0); }, 0);
+    var uniqEmp_ = {}; filtered.forEach(function(r){ uniqEmp_[r.employeeName || r.idCardNumber || r.trxId] = 1; });
+    var summary_ = '<div class="pg-stats pg-3">' +
+      '<div><span>Transaksi</span><b>'+filtered.length+'</b></div>' +
+      '<div class="pg-hl pg-money"><span>Total Nominal</span><b>'+formatRupiah(sumAmt_)+'</b></div>' +
+      '<div><span>Karyawan</span><b>'+Object.keys(uniqEmp_).length+'</b></div></div>';
+    return '<div class="card eb-page"><div class="list-header"><span class="card-title">Transaksi Employee Benefit</span>' +
         ebTrxExportMenuHtml_(filtered.length, rows.length) + '</div>' +
-      filterHtml +
+      summary_ + filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada transaksi yang cocok' : 'Belum ada transaksi',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Transaksi hasil scan QR di store akan muncul di sini.',
@@ -15699,9 +15826,13 @@
       var del = canEdit ? 'deleteEbStoreUserConfirm_(\''+r.UserID+'\',\''+escapeHtml(r.StoreName||'').replace(/'/g,"\\'")+'\')' : null;
       return rowActionButtons(view, edit, del);
     };
-    return '<div class="card"><div class="table-toolbar"><span class="card-title">Kelola Store User</span>' +
-      (canEdit?'<button class="btn btn-primary btn-add btn-sm" onclick="editEbStoreUser_(null)">'+ICONS.plus+' Tambah Store User</button>':'') +
-      '</div>' + filterHtml +
+    var summary_ = '<div class="pg-stats pg-3">' +
+      '<div><span>Store User</span><b>'+rows.length+'</b></div>' +
+      '<div class="pg-hl"><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length+'</b></div>' +
+      '<div><span>Nonaktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()!=='ACTIVE'; }).length+'</b></div></div>';
+    return '<div class="card eb-page"><div class="list-header"><span class="card-title">Kelola Store User</span>' +
+      (canEdit?'<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editEbStoreUser_(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah Store User</span></button>':'') +
+      '</div>' + summary_ + filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada store user yang cocok' : 'Belum ada store user',
         rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan akun kasir pertama — kredensial login akan otomatis dikirim ke email store.',
