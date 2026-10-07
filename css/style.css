@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap');
   /* =========================================================
      AGRINESIA DESIGN TOKENS
      Colors sourced from reference screenshots: dark green header
@@ -6316,3 +6317,151 @@
   html[data-theme="dark"] body .topbar .theme-toggle-btn svg{color:#a5b4fc !important;stroke:#a5b4fc !important;}
   html[data-theme="dark"] body .topbar .notif-bell-btn svg{color:#6ee7b7 !important;stroke:#6ee7b7 !important;}
   html[data-theme="dark"] body .topbar .signature-btn svg{color:#fcd34d !important;stroke:#fcd34d !important;}
+
+
+  /* ===== REGISTRASI INTERNAL: verifikasi NIK + auto-isi ===== */
+  .int-nik-wrap{position:relative;}
+  #intRegisterModal .int-nik-wrap input{padding-right:46px;font-weight:700;font-size:16px;letter-spacing:.14em;}
+  .int-nik-state{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;pointer-events:none;}
+  .int-nik-state.ok{background:#16a34a;}.int-nik-state.ok::before{content:"\2713";}
+  .int-nik-state.err{background:#ef4444;}.int-nik-state.err::before{content:"!";}
+  .int-nik-state.loading{border:2.5px solid var(--ag-gray-200);border-top-color:var(--ag-green);animation:intSpin .7s linear infinite;}
+  @keyframes intSpin{to{transform:translateY(-50%) rotate(360deg);}}
+  .int-msg{display:none;margin-top:8px;padding:10px 12px;border-radius:12px;font-size:12.5px;font-weight:600;line-height:1.4;}
+  .int-msg.show{display:block;}
+  .int-msg.ok{background:var(--ag-green-soft);color:var(--ag-green);border:1px solid rgba(22,163,74,.25);}
+  .int-msg.err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+  html[data-theme="dark"] .int-msg.err{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.35);}
+  .int-auto-pill{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;
+    border-radius:999px;background:var(--ag-green-soft);color:var(--ag-green);}
+  #intRegisterModal .int-profile input[readonly]{background:var(--ag-gray-100);color:var(--ag-gray-700);cursor:default;font-weight:600;}
+  #intRegisterModal .int-profile.int-verified input[readonly]{background:var(--ag-green-soft);border-color:rgba(22,163,74,.35);color:var(--ag-gray-900);}
+
+  /* =========================================================
+     REGISTRASI INTERNAL AGRINESIA — tampilan v2
+     (stepper, input NIK 10 digit, kartu data karyawan)
+     ========================================================= */
+  #intRegisterModal .reg-card{max-width:580px;}
+  #intRegisterModal .int-hero-main{display:flex;gap:14px;align-items:flex-start;position:relative;z-index:1;padding-right:8px;}
+  #intRegisterModal .int-hero-icon{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(4px);}
+  #intRegisterModal .int-hero-icon svg{width:24px;height:24px;}
+  #intRegisterModal .reg-hero-title{margin-bottom:5px;}
+
+  /* Stepper */
+  .int-steps{display:flex;align-items:center;gap:8px;margin:0 0 24px;padding:0;list-style:none;}
+  .int-steps li{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ag-gray-500);white-space:nowrap;}
+  .int-steps li:not(:last-child){flex:1;}
+  .int-steps li:not(:last-child)::after{content:"";flex:1;height:2px;min-width:12px;border-radius:2px;background:var(--ag-gray-200);transition:background .3s;}
+  .int-steps .dot{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;
+    background:var(--ag-gray-100);color:var(--ag-gray-500);transition:background .25s,color .25s,box-shadow .25s;}
+  #intRegisterModal[data-step="1"] .int-steps li:nth-child(1),
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(2),
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(1){color:var(--ag-gray-900);}
+  #intRegisterModal[data-step="1"] .int-steps li:nth-child(1) .dot,
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(2) .dot{background:var(--ag-green);color:#fff;box-shadow:0 0 0 4px var(--ag-green-soft);}
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(1) .dot{background:var(--ag-green-soft);color:var(--ag-green);font-size:0;}
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(1) .dot::before{content:"\2713";font-size:13px;}
+  #intRegisterModal[data-step="2"] .int-steps li:nth-child(1)::after{background:var(--ag-green);}
+
+  /* Input NIK */
+  #intRegisterModal .int-nik-wrap{position:relative;}
+  #intRegisterModal .int-nik-wrap input{height:58px;padding:0 52px 0 50px;border-radius:16px;border:1.5px solid var(--ag-gray-200);
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;font-weight:600;font-size:23px;letter-spacing:.2em;
+    font-variant-numeric:tabular-nums;color:var(--ag-gray-900);background:var(--ag-surface);transition:border-color .2s,box-shadow .2s;}
+  #intRegisterModal .int-nik-wrap input::placeholder{color:var(--ag-gray-200);font-weight:500;letter-spacing:.2em;}
+  #intRegisterModal .int-nik-wrap input:focus{outline:none;border-color:var(--ag-green);box-shadow:0 0 0 4px var(--ag-green-soft);}
+  .int-nik-lead{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:22px;height:22px;color:var(--ag-gray-500);pointer-events:none;}
+  #intRegisterModal .int-nik-wrap:focus-within .int-nik-lead{color:var(--ag-green);}
+  .int-nik-wrap.int-shake{animation:intShake .32s;}
+  .int-nik-wrap.int-shake input{border-color:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.14);}
+  .int-nik-meter{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px;}
+  .int-nik-meter i{display:block;height:4px;border-radius:4px;background:var(--ag-gray-200);transition:background .18s;}
+  .int-nik-meter i.on{background:var(--ag-green);}
+  .int-nik-help{display:flex;justify-content:space-between;margin-top:7px;}
+  .int-nik-help .field-hint{margin:0;text-align:left;transition:color .2s;}
+  .int-nik-help .field-hint.ok{color:var(--ag-green);font-weight:600;}
+  .int-nik-help .field-hint.warn{color:#dc2626;font-weight:600;}
+  #intRegisterModal .int-msg{display:none;align-items:center;gap:8px;margin-top:12px;padding:11px 14px;border-radius:12px;}
+  #intRegisterModal .int-msg.show{display:flex;}
+
+  /* Kepala seksi data */
+  .int-section-head{display:flex;align-items:center;gap:10px;margin:26px 0 12px;padding-top:20px;border-top:1px dashed var(--ag-gray-200);}
+  .int-section-title{font-size:13px;font-weight:700;color:var(--ag-gray-900);}
+  #intRegisterModal .int-auto-pill{margin-left:auto;}
+
+  /* Kartu data karyawan */
+  #intRegisterModal .int-profile{padding:16px 16px 4px;border:1.5px dashed var(--ag-gray-200);border-radius:18px;background:transparent;transition:border-color .25s,background .25s;}
+  #intRegisterModal .int-profile.int-verified{border-style:solid;border-color:rgba(22,163,74,.35);background:var(--ag-green-soft);}
+  .int-row-contact{grid-template-columns:1.3fr 1fr;}
+  .int-field{position:relative;}
+  .int-field svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--ag-gray-500);pointer-events:none;}
+  #intRegisterModal .int-profile .int-field input[readonly]{padding-left:38px;text-overflow:ellipsis;font-size:13.5px;font-weight:600;
+    background:var(--ag-surface);border:1px solid var(--ag-gray-200);color:var(--ag-gray-900);}
+  #intRegisterModal .int-profile.int-verified .int-field input[readonly]{background:var(--ag-surface);border-color:rgba(22,163,74,.3);}
+  #intRegisterModal .int-profile.int-verified .int-field svg{color:var(--ag-green);}
+  #intRegisterModal .int-profile.is-loading .int-field input{color:transparent;animation:intPulse 1.1s ease-in-out infinite;}
+
+  .int-note{display:flex;gap:10px;align-items:flex-start;margin:16px 0 4px;padding:12px 14px;border-radius:14px;background:var(--ag-gray-100);
+    font-size:12px;line-height:1.55;color:var(--ag-gray-700);}
+  .int-note svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--ag-green);}
+
+  @keyframes intShake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+  @keyframes intPulse{50%{background:var(--ag-gray-100);}}
+  @media (max-width:560px){
+    #intRegisterModal .int-hero-icon{display:none;}
+    .int-steps{gap:6px;}
+    .int-steps li{font-size:11.5px;gap:6px;}
+    .int-steps li:not(:last-child)::after{min-width:6px;}
+    #intRegisterModal .int-nik-wrap input{font-size:20px;letter-spacing:.16em;}
+    .int-row-contact{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .int-nik-wrap.int-shake,#intRegisterModal .int-profile.is-loading .int-field input{animation:none;}
+  }
+
+  /* =========================================================
+     REGISTRASI INTERNAL — v3 (rapi, bersih, tanpa stepper & garis meter)
+     ========================================================= */
+  #intRegisterModal .int-steps,#intRegisterModal .int-nik-meter{display:none!important;}
+  #intRegisterModal .reg-body{padding-top:26px;}
+  #intRegisterModal .int-nik-group{margin-bottom:0;}
+  #intRegisterModal .int-nik-group>label{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11.5px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ag-gray-700);}
+  #intRegisterModal .int-nik-wrap{border-radius:18px;background:linear-gradient(180deg,var(--ag-surface),var(--ag-gray-100));
+    border:1.5px solid var(--ag-gray-200);box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px -8px rgba(16,24,40,.10);
+    transition:border-color .2s,box-shadow .2s,transform .2s;}
+  #intRegisterModal .int-nik-wrap:hover{border-color:rgba(22,163,74,.45);}
+  #intRegisterModal .int-nik-wrap:focus-within{border-color:var(--ag-green);box-shadow:0 0 0 4px var(--ag-green-soft),0 10px 24px -10px rgba(22,163,74,.35);}
+  #intRegisterModal .int-nik-wrap input,#intRegisterModal .int-nik-wrap input:focus{height:64px;padding:0 60px 0 58px;border:0!important;
+    border-radius:18px;background:transparent!important;box-shadow:none!important;font-size:24px;letter-spacing:.22em;font-weight:700;}
+  #intRegisterModal .int-nik-wrap input::placeholder{color:var(--ag-gray-300,#cbd5e1);letter-spacing:.22em;font-weight:500;}
+  #intRegisterModal .int-nik-lead{left:14px;width:34px;height:34px;padding:6px;border-radius:11px;background:var(--ag-green-soft);color:var(--ag-green);}
+  #intRegisterModal .int-nik-state{right:16px;width:26px;height:26px;font-size:14px;}
+  #intRegisterModal .int-nik-help{margin-top:10px;padding:0 4px;}
+  #intRegisterModal .int-nik-help .field-hint{font-size:12px;}
+  #intRegisterModal .int-msg{margin-top:12px;border-radius:14px;padding:12px 14px;font-size:13px;}
+  #intRegisterModal .int-section-head{margin-top:22px;}
+  #intRegisterModal .int-profile{border-radius:20px;padding:18px;gap:14px;box-shadow:0 8px 24px -14px rgba(22,163,74,.35);}
+  #intRegisterModal .int-profile .int-field input{height:46px;border-radius:12px;}
+  @media (max-width:520px){
+    #intRegisterModal .int-nik-wrap input{height:58px;font-size:20px;letter-spacing:.16em;padding-left:54px;}
+  }
+
+  /* =========================================================
+     PROFIL SAYA — v3 (kartu data diri modern, tile rapi)
+     ========================================================= */
+  .profile-hero ~ .card{border-radius:22px;padding:24px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px -18px rgba(16,24,40,.18);}
+  .profile-hero ~ .card .card-header{margin-bottom:18px;}
+  .profile-hero ~ .card .card-title{font-size:16px;font-weight:700;letter-spacing:.01em;}
+  .profile-hero ~ .card .agent-detail-grid{gap:12px;}
+  .profile-hero ~ .card .agent-detail-field{padding:14px 16px;border:1px solid var(--ag-gray-100);border-bottom:1px solid var(--ag-gray-100);
+    border-radius:14px;background:var(--ag-gray-100);transition:border-color .2s,background .2s,transform .2s;}
+  .profile-hero ~ .card .agent-detail-field:hover{border-color:rgba(22,163,74,.35);background:var(--ag-surface);transform:translateY(-1px);}
+  .profile-hero ~ .card .agent-detail-field-label{font-size:10.5px;letter-spacing:.08em;color:var(--ag-gray-500,var(--ag-gray-600));margin-bottom:6px;}
+  .profile-hero ~ .card .agent-detail-field-value{font-size:14.5px;font-weight:600;}
+  @media (min-width:721px){
+    .profile-hero ~ .card .agent-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .profile-hero ~ .card .agent-detail-field:last-child:nth-child(odd){grid-column:1 / -1;}
+  }
