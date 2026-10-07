@@ -2829,44 +2829,46 @@
     // ---- Hero header: avatar, name, id, status pills, + tombol Ganti Password (khusus
     // self-view Agent — supaya Agent tidak perlu buka dropdown user-menu terpisah lagi
     // untuk ganti password, semua ada di satu tempat "Profil Saya"). ----
-    var html = '<div class="profile-hero">' +
-      '<div class="profile-hero-avatar">'+escapeHtml(initials)+'</div>' +
-      '<div class="profile-hero-info">' +
-        '<div class="profile-hero-name">'+escapeHtml(agent.FullName||'-')+'</div>' +
-        '<div class="profile-hero-id">'+escapeHtml(agent.AgentID||'-')+'</div>' +
-        '<div class="profile-hero-badges">' +
-          statusBadge(agent.RegistrationStatus) + statusBadge(agent.MOUStatus) + statusBadge(agent.AgentStatus) +
-        '</div>' +
-      '</div>' +
-      '<button type="button" class="profile-hero-pw-btn" onclick="openChangePasswordModal()">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-        '<span>Ganti Password</span>' +
-      '</button>' +
+    var isInt_ = agentTypeOf_(agent)==='INTERNAL';
+    function row_(ic, label, val){
+      return '<div class="ebp-row"><div class="ebp-ic">'+(ICONS[ic]||ICONS.users)+'</div>' +
+        '<div class="ebp-txt"><small>'+label+'</small><strong>'+(val==null||val===''?'-':val)+'</strong></div></div>';
+    }
+    var lockIc_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    var html = '<div class="ebp-hero">' +
+      '<div class="ebp-avatar">'+escapeHtml(initials)+'</div>' +
+      '<div class="ebp-name">'+escapeHtml(agent.FullName||'-')+'</div>' +
+      '<div class="ebp-company">'+escapeHtml(isInt_ ? (agent.Department||'Internal Agrinesia') : (agent.Email||'-'))+'</div>' +
+      '<div class="ebp-idchip">ID Agent: '+escapeHtml(agent.AgentID||'-')+'</div>' +
     '</div>';
 
-    // ---- Data diri card ----
-    html += '<div class="card">' +
-      '<div class="card-header"><span class="card-title">Data Diri</span></div>' +
-      '<div class="agent-detail-grid">' +
-        detailField_('Email', escapeHtml(agent.Email)) +
-        detailField_('No. Telepon / WhatsApp', escapeHtml(agent.Phone)) +
-        detailField_(agentTypeOf_(agent)==='INTERNAL' ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(agent.KTPNumber)) +
-        (agentTypeOf_(agent)==='INTERNAL' ? detailField_('Departemen / Divisi', escapeHtml(agent.Department||'-')) : '') +
-        detailField_('Tipe Agent', agentTypeBadge_(agent)) +
-        detailField_('Status Akun', statusBadge(agent.AgentStatus)) +
-        detailField_('Status Registrasi', statusBadge(agent.RegistrationStatus)) +
-        detailField_('Status MOU', statusBadge(agent.MOUStatus)) +
-        detailField_('Tanggal Daftar', escapeHtml(formatDateDMY_(agent.CreatedAt))) +
-        detailField_('Disetujui Pada', agent.ApprovedAt ? escapeHtml(formatDateDMY_(agent.ApprovedAt)) : '-') +
-        detailField_('Terakhir Diperbarui', escapeHtml(formatDateDMY_(agent.UpdatedAt))) +
-        (agentTypeOf_(agent)==='INTERNAL' ? '' : detailField_('Alamat KTP', escapeHtml(agent.AddressKTP), true)) +
+    html += '<div class="ebp-card">' +
+      '<div class="ebp-card-title"><span class="ebp-dot"></span>Data Diri</div>' +
+      '<div class="ebp-grid">' +
+        row_('users', isInt_ ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(agent.KTPNumber)) +
+        row_('mail', 'Email', escapeHtml(agent.Email)) +
+        row_('phone', 'No. Telepon / WhatsApp', escapeHtml(agent.Phone)) +
+        (isInt_ ? row_('dashboard', 'Departemen / Divisi', escapeHtml(agent.Department||'-')) : row_('dashboard', 'Alamat KTP', escapeHtml(agent.AddressKTP))) +
+      '</div>' +
+    '</div>';
+
+    html += '<div class="ebp-card">' +
+      '<div class="ebp-card-title"><span class="ebp-dot"></span>Informasi Akun</div>' +
+      '<div class="ebp-grid ebp-grid-compact">' +
+        row_('user', 'Tipe Agent', agentTypeBadge_(agent)) +
+        row_('check', 'Status Akun', statusBadge(agent.AgentStatus)) +
+        row_('check', 'Status Registrasi', statusBadge(agent.RegistrationStatus)) +
+        row_('check', 'Status MOU', statusBadge(agent.MOUStatus)) +
+        row_('calendar', 'Tanggal Daftar', escapeHtml(formatDateDMY_(agent.CreatedAt))) +
+        row_('calendar', 'Disetujui Pada', agent.ApprovedAt ? escapeHtml(formatDateDMY_(agent.ApprovedAt)) : '-') +
+        row_('calendar', 'Terakhir Diperbarui', escapeHtml(formatDateDMY_(agent.UpdatedAt))) +
       '</div>' +
     '</div>';
 
     if(agent.RejectionNote){
-      html += '<div class="card">' +
-        '<div class="card-header"><span class="card-title">Catatan Penolakan</span></div>' +
-        '<div style="font-size:13px;color:var(--ag-red);background:#FDECEC;padding:10px 12px;border-radius:var(--radius-sm);">'+escapeHtml(agent.RejectionNote)+'</div>' +
+      html += '<div class="ebp-card">' +
+        '<div class="ebp-card-title"><span class="ebp-dot"></span>Catatan Penolakan</div>' +
+        '<div class="ebp-reject">'+escapeHtml(agent.RejectionNote)+'</div>' +
       '</div>';
     }
 
@@ -2891,8 +2893,8 @@
         /*editMode=*/'self'
       );
     }).join('') + sigDocHtml_;
-    if(agentTypeOf_(agent)!=='INTERNAL') html += '<div class="card">' +
-      '<div class="card-header"><span class="card-title">Dokumen Registrasi</span></div>' +
+    if(agentTypeOf_(agent)!=='INTERNAL') html += '<div class="ebp-card">' +
+      '<div class="ebp-card-title"><span class="ebp-dot"></span>Dokumen Registrasi</div>' +
       '<div class="doc-preview-grid">' + docsHtml + '</div>' +
       (isRejected
         ? '<div class="form-hint" style="margin-top:10px;">Klik ikon pensil pada dokumen untuk mengganti, lalu klik "Ajukan Ulang" di bawah setelah semua dokumen diperbaiki.</div>' +
@@ -2943,13 +2945,22 @@
       mouBody += '<p style="font-size:12.5px;color:var(--ag-gray-600);margin:0;">MOU akan otomatis dibuat setelah registrasi Anda disetujui.</p>';
     }
     if(mouBody){
-      html += '<div class="card">' +
-        '<div class="card-header"><span class="card-title">MOU &amp; Tanda Tangan</span></div>' +
+      html += '<div class="ebp-card">' +
+        '<div class="ebp-card-title"><span class="ebp-dot"></span>MOU &amp; Tanda Tangan</div>' +
         mouBody +
       '</div>';
     }
 
-    return html;
+    html += '<div class="ebp-card">' +
+      '<div class="ebp-card-title"><span class="ebp-dot"></span>Keamanan Akun</div>' +
+      '<button type="button" class="ebp-pw-btn" onclick="openChangePasswordModal()">' +
+        '<span class="ebp-ic">'+lockIc_+'</span>' +
+        '<span class="ebp-pw-txt"><strong>Ganti Password</strong><small>Perbarui kata sandi akun Anda</small></span>' +
+        '<span class="ebp-chev">'+ICONS.chevronDown+'</span>' +
+      '</button>' +
+    '</div>';
+
+    return '<div class="ebp ebp-agent">'+html+'</div>';
   }
 
   var PROFILE_SIG_FILE_ = null;
@@ -3071,8 +3082,8 @@
 
     var infoGrid =
       '<div class="agent-detail-section-title">Data Diri</div>' +
-      '<div class="agent-detail-grid">' +
-        detailField_('Email', escapeHtml(a.Email)) +
+      '<div class="agent-detail-grid ad-list">' +
+        detailField_('Email', '<span class="ad-nowrap">'+escapeHtml(a.Email)+'</span>') +
         detailField_('Telepon / WhatsApp', escapeHtml(a.Phone)) +
         detailField_('Tipe', agentTypeBadge_(a)) +
         detailField_(agentTypeOf_(a)==='INTERNAL' ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(a.KTPNumber)) +
