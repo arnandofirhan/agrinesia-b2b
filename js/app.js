@@ -13880,6 +13880,16 @@
     var vh = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--app-vvh', vh + 'px');
 
+    // FIX TOPBAR STUCK: saat keyboard HP terbuka, Chrome "menggeser" visual viewport ke atas
+    // supaya input kelihatan, dan topbar ikut hilang dari layar. Offset itu dipakai untuk
+    // menurunkan topbar lagi (translateY) sehingga selalu menempel di tepi atas yang terlihat.
+    try{
+      var pinTop_ = (vv && vv.offsetTop > 1) ? Math.round(vv.offsetTop) : 0;
+      var tb_ = document.querySelector('.topbar');
+      if(tb_) tb_.style.transform = pinTop_ ? ('translateY(' + pinTop_ + 'px)') : ''; // kosong = tidak bikin containing block
+      if(window.scrollY !== 0) window.scrollTo(0, 0);
+    }catch(e_){}
+
     // Deteksi keyboard terbuka: viewport visual jauh lebih pendek dari layout viewport
     // (window.innerHeight relatif stabil, tidak ikut mengecil saat keyboard muncul di
     // kebanyakan browser modern yang mendukung visualViewport). Ambang 120px dipakai
