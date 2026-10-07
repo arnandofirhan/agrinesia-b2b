@@ -2548,6 +2548,8 @@
     opts = opts || {};
     var tableHtml = renderTable(columns, rows, rowActionsFn, emptyTitle, emptySub, emptyIcon)
       .replace('class="table-scroll"', 'class="table-scroll table-scroll-has-cards"');
+    var autoCard_ = opts.cardRenderer || mobileCardFor_(columns, rowActionsFn);
+    if(autoCard_){ return tableHtml + '<div class="data-card-list">' + rows.map(autoCard_).join('') + '</div>'; }
     var titleCol = null, imageCol = null, statusCol = null, mainCol = null, fieldCols = [];
     columns.forEach(function(c){
       if(c.imageCol && !imageCol){ imageCol = c; return; }
@@ -2568,7 +2570,7 @@
         var rawVal = c.field ? (row[c.field]==null?'':String(row[c.field])) : '';
         var titleAttr = (!c.render && rawVal) ? ' title="'+escapeHtml(rawVal)+'"' : '';
         var ic = (DC_ICON_[c.label] && ICONS[DC_ICON_[c.label]]) ? '<i class="dc-ico">'+ICONS[DC_ICON_[c.label]]+'</i>' : '';
-        return '<div class="data-card-field'+(c.fullWidth?' full-w':'')+(ic?' has-ico':'')+((c.label==='Tanggal'||c.label==='Total'||c.label==='Nominal'||c.label==='Tgl Pengambilan')?' dc-nowrap':'')+'">'+ic+'<div class="dc-fb"><span>'+c.label+'</span><b'+titleAttr+'>'+val+'</b></div></div>';
+        return '<div class="data-card-field'+(c.fullWidth?' full-w':'')+(ic?' has-ico':'')+((c.label==='Tanggal'||c.label==='Total'||c.label==='Nominal'||c.label==='Tgl Pengambilan')?' dc-nowrap':'')+(c.label==='Pengiriman'?' dc-st-a':'')+(c.label==='Penyelesaian'?' dc-st-b':'')+'">'+ic+'<div class="dc-fb"><span>'+c.label+'</span><b'+titleAttr+'>'+val+'</b></div></div>';
       }).join('');
       var actionsInner = rowActionsFn ? rowActionsFn(row) : '';
       var mainHtml = mainCol
@@ -2706,6 +2708,12 @@
   function isStaffUser_(){ var r = STATE.user && STATE.user.role; return r === 'ADMIN' || r === 'SUPERVISOR' || r === 'MANAGER'; }
   /** Tipe awal untuk drill-down dari Dashboard (tab B2B/Internal) supaya angka yang diklik = isi tabel. */
   function dashDrillAgentType_(){ return STATE.dashboardTab === 'INT' ? 'INTERNAL' : (STATE.dashboardTab === 'EB' ? '__ALL__' : 'B2B'); }
+  /** Pill tipe agent yang jelas utk admin: "Agent B2B" (biru) / "Internal Agrinesia" (oranye). */
+  function agentTypePill_(a){
+    return agentTypeOf_(a) === 'INTERNAL'
+      ? '<span class="badge badge-orange agent-type-pill">Internal Agrinesia</span>'
+      : '<span class="badge badge-blue agent-type-pill">Agent B2B</span>';
+  }
   function agentTypeBadge_(r){
     return agentTypeOf_(r) === 'INTERNAL'
       ? '<span class="badge badge-orange">Internal</span>'
@@ -5107,6 +5115,13 @@
       {label:'Periode', render:function(r){ return formatDateDMY_(r.StartDate)+' &ndash; '+formatDateDMY_(r.EndDate); }},
       {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.EffectiveStatus); }}
     ];
+    if(isStaffUser_()){
+      cols.splice(1, 0, {label:'Tipe Agent', render:function(r){
+        var t = r.AudienceTypes || [];
+        if(!t.length) return '<span style="color:var(--ag-gray-400)">-</span>';
+        return '<span class="dc-docs">' + t.map(function(x){ return agentTypePill_({AgentType:x}); }).join('') + '</span>';
+      }});
+    }
     var actions = function(r){
       var view = 'viewPromo(\''+r.PromoID+'\')';
       var edit = canEdit ? 'editPromo(\''+r.PromoID+'\')' : null;
@@ -5602,7 +5617,7 @@
     if(agentMap){
       var a = agentMap[r.AgentID];
       agentBlock = a
-        ? '<div class="po-card-agent-name">'+escapeHtml(a.FullName||r.AgentID)+'</div><div class="po-card-agent-sub">'+escapeHtml(r.AgentID)+' &middot; '+escapeHtml(a.Phone||a.Email||'-')+'</div>'
+        ? '<div class="po-card-agent-name">'+escapeHtml(a.FullName||r.AgentID)+'</div><div class="po-card-agent-sub">'+escapeHtml(r.AgentID)+' &middot; '+escapeHtml(a.Phone||a.Email||'-')+'</div><div class="po-card-agent-type">'+agentTypePill_(a)+'</div>'
         : '<div class="po-card-agent-name">'+escapeHtml(r.AgentID)+'</div>';
     } else {
       agentBlock = '<div class="po-card-agent-name">'+escapeHtml(r.AgentID)+'</div>';
@@ -5660,6 +5675,7 @@
             '<div class="cell-agent-sub" title="'+escapeHtml(subFull)+'">'+escapeHtml(subShort)+'</div>' +
           '</div>';
         }});
+        cols.push({label:'Tipe', render:function(r){ var a = agentMap[r.AgentID]; return a ? agentTypePill_(a) : '-'; }});
       } else {
         cols.push({label:'Agent', field:'AgentID'});
       }
@@ -5775,7 +5791,7 @@
       // / .data-card-list) — bukan kartu terus-menerus di semua ukuran layar.
       var emptyTitlePO_ = rows.length ? 'Tidak ada PO yang cocok' : 'Belum ada transaksi';
       var emptySubPO_ = rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'PO yang dibuat Agent akan muncul di sini.';
-      var listHtml = renderTableOrCards_(cols, filtered, actions, emptyTitlePO_, emptySubPO_, ICONS.transactions);
+      var listHtml = renderTableOrCards_(cols, filtered, actions, emptyTitlePO_, emptySubPO_, ICONS.transactions, {cardRenderer:function(r){ return poMobileCard_(r, agentMap, actions); }});
       var html =
         '<div class="card"><div class="list-header"><span class="card-title">Transaksi / PO</span>' + buatPOBtn +
         '</div>' + lockedNotice + filterHtml + listHtml + '</div>';
@@ -7087,6 +7103,10 @@
             '<div class="cell-agent-sub">'+escapeHtml(agentId)+'</div>' +
           '</div>';
         }});
+        cols.push({label:'Tipe', render:function(r){
+          var po = findPO_(r.POID); var a = po ? agentMap[po.AgentID] : null;
+          return a ? agentTypePill_(a) : '-';
+        }});
       }
       cols.push({label:'Promo', render:function(r){
         var po = findPO_(r.POID);
@@ -7101,7 +7121,7 @@
       // TransactionStatus SENGAJA tidak ditampilkan sebagai kolom terpisah: nilainya selalu
       // 1:1 mengikuti CustomerPaymentStatus (IN_PROGRESS<->UNPAID, COMPLETE<->PAID), jadi
       // badge "Penyelesaian" di bawah sudah mewakili keduanya.
-      cols.push({label:'Penyelesaian', fullWidth:true, render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
+      cols.push({label:'Penyelesaian', render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
       (function(){ var iS=-1,iP=-1; cols.forEach(function(c,i){ if(c.label==='Store') iS=i; if(c.label==='Promo') iP=i; }); if(iS>-1 && iP>iS){ var pr=cols.splice(iP,1)[0]; cols.splice(iS,0,pr); } })();
       var isStaffAction = (STATE.user.role==='SUPERVISOR'||STATE.user.role==='ADMIN');
       var actions = function(r){
@@ -7132,9 +7152,201 @@
       var html =
         '<div class="card orders-page"><div class="list-header"><span class="card-title">Order</span></div>' +
         filterHtml +
-        renderTableOrCards_(cols, filtered, actions, emptyTitleOrder_, emptySubOrder_, ICONS.orders) +
+        renderTableOrCards_(cols, filtered, actions, emptyTitleOrder_, emptySubOrder_, ICONS.orders, {cardRenderer:function(r){ return orderMobileCard_(r, storeMap, agentMap, actions); }}) +
         '</div>';
       paintPage_('orders', html);
+  }
+
+  /** Kartu mobile PO (Transaksi / PO) — gaya sama dgn kartu Order. */
+  function poMobileCard_(r, agentMap, actionsFn){
+    var a = agentMap ? agentMap[r.AgentID] : null;
+    var created = r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-';
+    var req = (r.RequestedDiscount != null && r.RequestedDiscount !== '') ? r.RequestedDiscount + '%' : '-';
+    var hasAppr = (r.ApprovedDiscount !== '' && r.ApprovedDiscount != null);
+    var disc = req + (hasAppr ? ' &rarr; ' + r.ApprovedDiscount + '%' : '');
+    var promo = r.PromoName ? escapeHtml(r.PromoName) : '';
+    var who = a
+      ? '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(a.FullName||r.AgentID)+'</span>'+agentTypePill_(a)+'</div>' +
+        '<div class="oc-sub">'+escapeHtml(r.AgentID)+(a.Phone ? ' &middot; '+escapeHtml(a.Phone) : '')+'</div>'
+      : '';
+    return '<div class="oc">' +
+      '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.POID)+'</span>'+statusBadge(poDisplayStatus_(r))+'</div>' +
+      who +
+      '<div class="oc-stats c3">' +
+        '<div><span>Total</span><b>'+formatRupiah(r.GrandTotal)+'</b></div>' +
+        '<div><span>Tanggal</span><b>'+created+'</b></div>' +
+        '<div><span>Diskon</span><b>'+disc+'</b></div>' +
+      '</div>' +
+      (promo ? '<div class="oc-promo" title="'+promo+'"><span class="oc-promo-ic">'+ICONS.promo+'</span><span class="oc-promo-txt">'+promo+'</span></div>' : '') +
+      '<div class="oc-foot"><div class="oc-badges"></div><div class="oc-actions">'+(actionsFn ? actionsFn(r) : '')+'</div></div>' +
+    '</div>';
+  }
+
+  /** Kartu mobile Commission. */
+  function commissionMobileCard_(r, actionsFn){
+    var isAgent = STATE.user.role === 'AGENT';
+    var a = (!isAgent && typeof AGENTS_CACHE !== 'undefined') ? findAgentInList_(r.AgentID) : null;
+    var who = isAgent ? '' :
+      '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(a ? a.FullName : r.AgentID)+'</span>'+agentTypePill_(r)+'</div>';
+    return '<div class="oc">' +
+      '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.CommissionID)+'</span>'+statusBadge(r.Status)+'</div>' +
+      who +
+      '<div class="oc-sub">Order <span class="mono-id">'+escapeHtml(r.OrderID)+'</span></div>' +
+      '<div class="oc-stats c3">' +
+        '<div><span>Net Invoice</span><b>'+formatRupiah(r.NetInvoiceValue)+'</b></div>' +
+        '<div><span>Diskon</span><b>'+r.ApprovedDiscount+'%</b></div>' +
+        '<div><span>Komisi</span><b>'+r.CommissionPct+'%</b></div>' +
+      '</div>' +
+      '<div class="oc-amount"><div><span>Nominal Komisi</span><b>'+formatRupiah(r.CommissionAmount)+'</b></div>' +
+        '<span class="oc-date">'+ICONS.calendar+'<span>'+(r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-')+'</span></span></div>' +
+      '<div class="oc-foot"><div class="oc-badges"></div><div class="oc-actions">'+(actionsFn ? actionsFn(r) : '')+'</div></div>' +
+    '</div>';
+  }
+
+  /** Kartu mobile Skema Komisi. */
+  function schemeMobileCard_(r, actionsFn){
+    var act = actionsFn ? actionsFn(r) : '';
+    return '<div class="oc">' +
+      '<div class="oc-head"><span class="oc-id oc-id-text">'+escapeHtml(r.Label||'-')+'</span>'+statusBadge(r.Status)+'</div>' +
+      '<div class="oc-stats c3">' +
+        '<div><span>Min Diskon</span><b>'+r.MinDiscountPct+'%</b></div>' +
+        '<div><span>Maks Diskon</span><b>'+r.MaxDiscountPct+'%</b></div>' +
+        '<div class="oc-hl"><span>Komisi</span><b>'+r.CommissionPct+'%</b></div>' +
+      '</div>' +
+      (act ? '<div class="oc-foot"><div class="oc-badges"></div><div class="oc-actions">'+act+'</div></div>' : '') +
+    '</div>';
+  }
+
+  /** Pilih kartu mobile (gaya Order) berdasarkan kolom tabel — dipakai Data Agent, Master Item,
+   *  Store Management, Area Pendaftaran & Departemen tanpa mengubah tiap pemanggil. */
+  function mobileCardFor_(columns, actionsFn){
+    var has = function(l){ return columns.some(function(c){ return c.label === l; }); };
+    var act = function(r){ return actionsFn ? actionsFn(r) : ''; };
+    var foot = function(badges, r){
+      var a = act(r);
+      if(!badges && !a) return '';
+      return '<div class="oc-foot"><div class="oc-badges">'+(badges||'')+'</div><div class="oc-actions">'+a+'</div></div>';
+    };
+    var head = function(id, st){ return '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(id||'-')+'</span>'+(st||'')+'</div>'; };
+    var box = function(ic, t1, t2){ return '<div class="oc-store"><span class="oc-store-ic">'+ic+'</span><div class="oc-store-txt"><b>'+t1+'</b>'+(t2?'<small>'+t2+'</small>':'')+'</div></div>'; };
+    var kv = function(l, v){ return '<span class="oc-kv"><i>'+l+'</i>'+v+'</span>'; };
+    var stat = function(l, v){ return '<div><span>'+l+'</span><b>'+v+'</b></div>'; };
+    var dash = '<span class="oc-muted">-</span>';
+
+    if(has('NIK / Divisi') && has('Agent')){
+      return function(r){
+        var ini = (r.FullName||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
+        var where = (r.RegistrationArea || r.Department)
+          ? box(ICONS.location, escapeHtml(r.RegistrationArea || '-'), r.Department ? 'Dept: '+escapeHtml(r.Department) : '') : '';
+        return '<div class="oc">' + head(r.AgentID, statusBadge(r.AgentStatus)) +
+          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(ini)+'</div><div class="oc-person-txt">' +
+            '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.FullName||'-')+'</span>'+agentTypePill_(r)+'</div>' +
+            '<div class="oc-sub">'+escapeHtml(r.Email||'-')+'</div>' +
+            '<div class="oc-sub">'+escapeHtml(r.Phone||'-')+'</div></div></div>' +
+          where +
+          foot(kv('Registrasi', statusBadge(r.RegistrationStatus)) + kv('MOU', statusBadge(r.MOUStatus)), r) +
+        '</div>';
+      };
+    }
+    if(has('Product Item')){
+      return function(r){
+        var img = r.ImageURL
+          ? '<img class="oc-thumb" src="'+escapeHtml(r.ImageURL)+'" alt="">'
+          : '<div class="oc-thumb oc-thumb-ph">'+ICONS.products+'</div>';
+        var sub = [r.Packaging, r.ShelfLife ? r.ShelfLife+' hari' : ''].filter(Boolean).map(escapeHtml).join(' &middot; ');
+        return '<div class="oc">' + head(r.Category || 'Produk', statusBadge(r.Status)) +
+          '<div class="oc-person">'+img+'<div class="oc-person-txt"><span class="oc-agent-name">'+escapeHtml(r.ProductName||'-')+'</span>' +
+            (sub ? '<div class="oc-sub">'+sub+'</div>' : '') + '</div></div>' +
+          '<div class="oc-amount"><div><span>Harga</span>'+priceHtml_(r.RegularPrice, r.StrikePrice)+'</div></div>' +
+          foot('', r) + '</div>';
+      };
+    }
+    if(has('Nama Store')){
+      return function(r){
+        return '<div class="oc">' + head(r.StoreID, statusBadge(r.Status)) +
+          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.StoreName||'-')+'</span></div>' +
+          (r.Address ? box(ICONS.location, 'Alamat', escapeHtml(r.Address)) : '') +
+          '<div class="oc-stats wrap">'+stat('PIC', r.PIC ? escapeHtml(r.PIC) : dash)+stat('Telepon', r.Phone ? escapeHtml(r.Phone) : dash)+'</div>' +
+          foot('', r) + '</div>';
+      };
+    }
+    if(has('Nama Area / Site')){
+      return function(r){
+        var fa = r.FactoryAddress ? escapeHtml(String(r.FactoryAddress).split('\n')[0]) : '';
+        return '<div class="oc">' + head(r.AreaID, statusBadge(r.Status)) +
+          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.AreaName||'-')+'</span>'+agentTypePill_({AgentType:r.AreaType})+'</div>' +
+          (r.Brand ? '<div class="oc-stats wrap">'+stat('Brand', escapeHtml(r.Brand))+'</div>' : '') +
+          (fa ? box(ICONS.location, 'Alamat Pabrik', fa) : '') +
+          foot('', r) + '</div>';
+      };
+    }
+    if(has('Nama Departemen / Divisi')){
+      return function(r){
+        return '<div class="oc">' + head(r.DepartmentID, statusBadge(r.Status)) +
+          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.DepartmentName||'-')+'</span></div>' +
+          '<div class="oc-sub">'+(r.AgentCount ? 'Dipakai '+r.AgentCount+' agent' : 'Belum dipakai agent')+'</div>' +
+          foot('', r) + '</div>';
+      };
+    }
+    if(has('Jabatan') && has('Tipe Agent')){
+      return function(r){
+        var ini = (r.Name||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
+        return '<div class="oc">' + head(r.Role || 'USER', statusBadge(r.Status)) +
+          '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(ini)+'</div><div class="oc-person-txt">' +
+            '<span class="oc-agent-name">'+escapeHtml(r.Name||'-')+'</span>' +
+            '<div class="oc-sub">'+escapeHtml(r.Email||'-')+'</div></div></div>' +
+          '<div class="oc-stats wrap">' + stat('Jabatan', r.Jabatan ? escapeHtml(r.Jabatan) : dash) +
+            '<div><span>Tipe Agent</span><b>'+(r.Role==='AGENT' ? agentTypePill_({AgentType:r.AgentType}) : dash)+'</b></div></div>' +
+          foot('', r) + '</div>';
+      };
+    }
+    if(has('Action') && has('Entity') && has('Detail')){
+      return function(r){
+        var d = new Date(r.Timestamp), p2 = function(n){ return (n<10?'0':'')+n; };
+        var when = isNaN(d.getTime()) ? escapeHtml(String(r.Timestamp)) :
+          p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear()+' &middot; '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+        return '<div class="oc">' +
+          '<div class="oc-head">'+auditLogActionBadge_(r.Action)+'<span class="oc-date">'+ICONS.calendar+'<span>'+when+'</span></span></div>' +
+          '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.UserName||r.UserID||'-')+'</span>' +
+            (r.Role ? '<span class="badge badge-neutral">'+escapeHtml(r.Role)+'</span>' : '') + '</div>' +
+          '<div class="oc-sub">'+escapeHtml(r.UserID||'')+' &middot; '+escapeHtml((r.Entity||'-')+(r.EntityID ? ' ('+r.EntityID+')' : ''))+'</div>' +
+          (r.Detail ? '<div class="oc-detail">'+escapeHtml(r.Detail)+'</div>' : '') +
+        '</div>';
+      };
+    }
+    return null;
+  }
+
+  function orderMobileCard_(r, storeMap, agentMap, actionsFn){
+    var po = findPO_(r.POID);
+    var a = (po && agentMap) ? agentMap[po.AgentID] : null;
+    var s = (storeMap && r.StoreID) ? storeMap[r.StoreID] : null;
+    var total = (po && po.GrandTotal != null && po.GrandTotal !== '') ? formatRupiah(po.GrandTotal) : '-';
+    var promo = (po && po.PromoName) ? escapeHtml(po.PromoName) : '';
+    var pickup = (po && po.PickupDate) ? formatDateDMY_(po.PickupDate) : '-';
+    var created = r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-';
+    var who = a
+      ? '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(a.FullName||po.AgentID)+'</span>'+agentTypePill_(a)+'</div>' +
+        '<div class="oc-sub">'+escapeHtml(po.AgentID)+' &middot; '+escapeHtml(r.POID)+'</div>'
+      : '<div class="oc-sub">PO <span class="mono-id">'+escapeHtml(r.POID)+'</span></div>';
+    var storeHtml = s
+      ? '<div class="oc-store"><span class="oc-store-ic">'+ICONS.stores+'</span><div class="oc-store-txt"><b>'+escapeHtml(s.StoreName||'-')+'</b>' +
+        (s.Address ? '<small>'+escapeHtml(s.Address)+'</small>' : '') + '</div></div>'
+      : '';
+    return '<div class="oc">' +
+      '<div class="oc-head"><span class="mono-id oc-id">'+escapeHtml(r.OrderID)+'</span>' +
+        '<span class="oc-date">'+ICONS.calendar+'<span>'+created+'</span></span></div>' +
+      who + storeHtml +
+      '<div class="oc-stats">' +
+        '<div><span>Total</span><b>'+total+'</b></div>' +
+        '<div><span>Pengambilan</span><b>'+pickup+'</b></div>' +
+      '</div>' +
+      (promo ? '<div class="oc-promo" title="'+promo+'"><span class="oc-promo-ic">'+ICONS.promo+'</span><span class="oc-promo-txt">'+promo+'</span></div>' : '') +
+      '<div class="oc-foot">' +
+        '<div class="oc-badges">'+deliveryBadge_(r)+settlementBadge_(r.CustomerPaymentStatus)+'</div>' +
+        '<div class="oc-actions">'+(actionsFn ? actionsFn(r) : '')+'</div>' +
+      '</div>' +
+    '</div>';
   }
 
   function orderCardHtml_(r, storeMap, agentMap, actionsFn){
@@ -7860,12 +8072,13 @@
         var a = (typeof AGENTS_CACHE!=='undefined') ? findAgentInList_(r.AgentID) : null;
         return a ? escapeHtml(a.FullName) : '<span class="mono-id">'+escapeHtml(r.AgentID)+'</span>';
       }});
+      cols.push({label:'Tipe', render:function(r){ return agentTypePill_(r); }});
     }
     cols.push(
       {label:'Net Invoice', render:function(r){return formatRupiah(r.NetInvoiceValue);}},
       {label:'Discount', render:function(r){return r.ApprovedDiscount+'%';}},
       {label:'Komisi %', render:function(r){return r.CommissionPct+'%';}},
-      {label:'Nominal', render:function(r){return '<strong>'+formatRupiah(r.CommissionAmount)+'</strong>' + (agentTypeOf_(r)==='INTERNAL' ? ' <span class="badge badge-orange" title="Dibayar via payroll perusahaan">Payroll</span>' : '');}},
+      {label:'Nominal', render:function(r){return '<strong>'+formatRupiah(r.CommissionAmount)+'</strong>' + ((STATE.user.role==='AGENT' && agentTypeOf_(r)==='INTERNAL') ? ' <span class="badge badge-orange" title="Dibayar via payroll perusahaan">Payroll</span>' : '');}},
       {label:'Tanggal', render:function(r){return r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-';}},
       {label:'Status', fullWidth:true, render:function(r){return statusBadge(r.Status);}}
     );
@@ -7910,7 +8123,7 @@
       (isAgentRole_ ? '<p style="font-size:12px;color:var(--ag-gray-600);margin-top:-8px;">Klaim komisi cut-off setiap tanggal 15.</p>' : '') +
       payrollNote_ +
       filterHtml +
-      renderTableOrCards_(cols, filtered, actions, rows.length ? 'Tidak ada komisi yang cocok' : 'Belum ada komisi', rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Komisi muncul otomatis setelah pembayaran pelanggan tercatat.', ICONS.commission) + '</div>';
+      renderTableOrCards_(cols, filtered, actions, rows.length ? 'Tidak ada komisi yang cocok' : 'Belum ada komisi', rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Komisi muncul otomatis setelah pembayaran pelanggan tercatat.', ICONS.commission, {cardRenderer:function(r){ return commissionMobileCard_(r, actions); }}) + '</div>';
   }
 
   function renderCommissions(){
@@ -8246,7 +8459,7 @@
       var html =
         '<div class="card"><div class="table-toolbar"><span class="card-title">Skema Komisi (Commercial Scheme)</span>' +
         (canEdit ? '<button class="btn btn-primary btn-add btn-sm" onclick="editScheme(null)">'+ICONS.plus+' Tambah Skema</button>' : '') +
-        '</div>' + renderTableOrCards_(cols, rows, actions, 'Belum ada skema komisi', 'Tambahkan skema sesuai rentang diskon pada MOU Pasal 4.', ICONS.scheme) +
+        '</div>' + renderTableOrCards_(cols, rows, actions, 'Belum ada skema komisi', 'Tambahkan skema sesuai rentang diskon pada MOU Pasal 4.', ICONS.scheme, {cardRenderer:function(r){ return schemeMobileCard_(r, actions); }}) +
         '<p style="font-size:11.5px;color:var(--ag-gray-400);margin:14px 2px 0;">Referensi MOU Pasal 4: Full Price 10%, Diskon &le;3% &rarr; 7%, &gt;3-5% &rarr; 5%, &gt;5-10% &rarr; 3%.</p>' +
         '</div>';
       paintPage_('commission-scheme', html);
@@ -8329,7 +8542,8 @@
     var filtered = applyListFilters_(rows, FILTER_STATE_USERS_, ['Name','Email'], fieldConfigs);
     var filterHtml = filterBarHtml_('onFilterChangeUsers_', 'Cari nama atau email...', fieldConfigs, FILTER_STATE_USERS_, filtered.length, rows.length);
     var cols = [
-      {label:'Nama', titleCol:true, field:'Name'}, {label:'Email', field:'Email', fullWidth:true}, {label:'Role', render:function(r){ return escapeHtml(r.Role||'-') + (r.Role==='AGENT' && String(r.AgentType||'').toUpperCase()==='INTERNAL' ? ' <span class="badge badge-orange">Internal</span>' : ''); }},
+      {label:'Nama', titleCol:true, field:'Name'}, {label:'Email', field:'Email', fullWidth:true}, {label:'Role', render:function(r){ return escapeHtml(r.Role||'-'); }},
+      {label:'Tipe Agent', render:function(r){ return r.Role==='AGENT' ? agentTypePill_({AgentType:r.AgentType}) : '<span style="color:var(--ag-gray-400)">-</span>'; }},
       {label:'Jabatan', render:function(r){ return r.Jabatan ? escapeHtml(r.Jabatan) : '<span style="color:var(--ag-gray-400)">-</span>'; }},
       {label:'Status', fullWidth:true, render:function(r){return statusBadge(r.Status);}}
     ];
