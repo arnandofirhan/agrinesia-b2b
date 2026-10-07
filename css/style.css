@@ -6021,3 +6021,42 @@
     *{ scrollbar-width:none !important; -ms-overflow-style:none; }
     *::-webkit-scrollbar{ display:none !important; width:0 !important; height:0 !important; }
   }
+  /* ===== LOGIN MOBILE: STATIS, TIDAK BISA SCROLL ATAS-BAWAH =====
+     AKAR MASALAH: margin-top kartu (180-200px) + min-height kartu (100dvh-180px) + min-height
+     layar 100vh membuat total tinggi > layar, jadi halaman login bisa di-scroll. Sekarang layar
+     login dikunci ke viewport (position:fixed), tinggi strip foto & isi kartu disesuaikan tinggi
+     layar (--lg-top, dipadatkan di HP pendek). Saat mengetik (keyboard terbuka) scroll dibuka
+     sementara via :focus-within supaya kolom tidak tertutup keyboard. */
+  @media (max-width:860px){
+    html:not(.ag-has-session), html:not(.ag-has-session) body{ overflow:hidden; overscroll-behavior:none; }
+    #loginScreen{
+      --lg-top:clamp(104px,18dvh,180px);
+      position:fixed !important; top:0; left:0; right:0; bottom:0; width:100%;
+      height:auto !important; min-height:0 !important;
+      overflow:hidden !important; overscroll-behavior:none;
+    }
+    #loginScreen:focus-within{ overflow-y:auto !important; -webkit-overflow-scrolling:touch; }
+    #loginScreen::before{ height:var(--lg-top) !important; }
+    #loginScreen .login-card{
+      margin-top:var(--lg-top) !important; min-height:0 !important;
+      padding-top:52px !important; padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)) !important;
+    }
+    #loginScreen .login-logo{ top:-58px !important; }
+    #loginScreen .login-head{ margin-bottom:12px !important; }
+    #loginScreen .form-group{ margin-bottom:10px !important; }
+    #loginScreen .login-row-between{ margin:0 0 12px !important; }
+    #loginScreen .login-sep{ margin:14px 0 10px !important; }
+    #loginScreen .login-links{ gap:8px !important; }
+    #loginScreen .login-link-card{ padding-top:8px !important; padding-bottom:8px !important; }
+    #loginScreen .login-foot{ margin-top:10px !important; }
+  }
+  @media (max-width:860px) and (max-height:780px){
+    #loginScreen .login-subheading, #loginScreen .login-foot{ display:none !important; }
+    #loginScreen .login-logo .logo-mark{ width:78px !important; height:78px !important; }
+    #loginScreen .login-logo .logo-mark .brand-mark-img{ padding:15px !important; }
+    #loginScreen .login-logo{ top:-46px !important; }
+    #loginScreen .login-card{ padding-top:42px !important; }
+    #loginScreen .input-with-icon input{ height:44px !important; }
+    #loginScreen .btn-block.login-submit-btn{ height:46px !important; }
+    #loginScreen .login-heading{ font-size:20px !important; }
+  }
