@@ -1,5 +1,4 @@
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap');
   /* =========================================================
@@ -6215,8 +6214,6 @@
     .content > .card:has(> .data-card-list) > .data-card-list{ margin-top:0 !important; gap:10px !important; }
   }
 
-
-
   /* ===== FIX: kolom tidak menyempit saat hasil pencarian kosong =====
      Aturan transparan sebelumnya hanya aktif bila ada .data-card-list; saat kosong (empty-state)
      pembungkus .card balik berpadding+border = kolom menyempit. Sekarang aktif juga untuk filter-bar. */
@@ -6269,7 +6266,6 @@
     box-shadow:0 0 0 2px var(--ag-surface),0 0 0 3px var(--ag-green) !important;
   }
 
-
   /* ===== FIX DARK MODE TOPBAR (semua ukuran layar): ikut surface gelap, bukan gradasi hijau ===== */
   html[data-theme="dark"] .topbar{
     background:var(--ag-surface) !important;border:0 !important;border-bottom:1px solid var(--ag-gray-200) !important;
@@ -6290,7 +6286,6 @@
   html[data-theme="dark"] .topbar .icon-btn svg,
   html[data-theme="dark"] .topbar .notif-bell-btn svg{color:var(--ag-gray-700) !important;stroke:var(--ag-gray-700) !important;}
   html[data-theme="dark"] .topbar .user-menu-trigger:hover{background:var(--ag-gray-100) !important;}
-
 
   /* ===== TOPBAR: ikon Tema / Notifikasi / Tanda Tangan lebih modern (tombol bulat lembut, tint warna, hover halus) ===== */
   html body .topbar .icon-btn.theme-toggle-btn,
@@ -6324,7 +6319,6 @@
   html[data-theme="dark"] body .topbar .signature-btn svg{color:#fcd34d !important;stroke:#fcd34d !important;}
 
 
-
   /* ===== REGISTRASI INTERNAL: verifikasi NIK + auto-isi ===== */
   .int-nik-wrap{position:relative;}
   #intRegisterModal .int-nik-wrap input{padding-right:46px;font-weight:700;font-size:16px;letter-spacing:.14em;}
@@ -6343,7 +6337,6 @@
     border-radius:999px;background:var(--ag-green-soft);color:var(--ag-green);}
   #intRegisterModal .int-profile input[readonly]{background:var(--ag-gray-100);color:var(--ag-gray-700);cursor:default;font-weight:600;}
   #intRegisterModal .int-profile.int-verified input[readonly]{background:var(--ag-green-soft);border-color:rgba(22,163,74,.35);color:var(--ag-gray-900);}
-
 
   /* =========================================================
      REGISTRASI INTERNAL AGRINESIA — tampilan v2
@@ -6428,7 +6421,6 @@
     .int-nik-wrap.int-shake,#intRegisterModal .int-profile.is-loading .int-field input{animation:none;}
   }
 
-
   /* =========================================================
      REGISTRASI INTERNAL — v3 (rapi, bersih, tanpa stepper & garis meter)
      ========================================================= */
@@ -6457,7 +6449,6 @@
     #intRegisterModal .int-nik-wrap input{height:58px;font-size:20px;letter-spacing:.16em;padding-left:54px;}
   }
 
-
   /* =========================================================
      PROFIL SAYA — v3 (kartu data diri modern, tile rapi)
      ========================================================= */
@@ -6475,7 +6466,6 @@
     .profile-hero ~ .card .agent-detail-field:last-child:nth-child(odd){grid-column:1 / -1;}
   }
 
-
   /* ===== PROFIL AGENT (pakai gaya ebp, v4) ===== */
   .ebp.ebp-agent{max-width:980px;margin:0 auto;}
   .ebp-agent .ebp-card{padding:18px 18px 10px;}
@@ -6491,7 +6481,6 @@
     .ebp-agent .ebp-grid{grid-template-columns:1fr 1fr;column-gap:36px;}
     .ebp-agent .ebp-grid .ebp-row:nth-last-child(2):nth-child(odd){border-bottom:none;}
   }
-
 
   /* ===== v5: Informasi Akun 2 kolom (profil) + Detail Agent popup ringkas ===== */
   .ebp-agent .ebp-grid.ebp-grid-compact{grid-template-columns:1fr 1fr;column-gap:16px;}
@@ -6516,5 +6505,3 @@
   .ad-list .agent-detail-field-value{min-width:0;text-align:right;font-size:13px;overflow-wrap:anywhere;word-break:normal;}
   .ad-list .ad-nowrap{display:block;white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(11px,3.3vw,13px);}
   .ad-list .badge{white-space:nowrap;}
-
-</style>
