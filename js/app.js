@@ -11839,25 +11839,27 @@
     }
     function deltaHtml_(pct, label){
       if(pct === null || pct === undefined){
-        return '<span class="dash-trend-delta dash-trend-delta-neutral">'+label+': data baru</span>';
+        return '<span class="dash-trend-delta dash-trend-delta-neutral">Data baru</span>';
       }
       var up = pct >= 0;
       var arrow = up ? '&#8599;' : '&#8600;';
       var cls = up ? 'dash-trend-delta-up' : 'dash-trend-delta-down';
-      return '<span class="dash-trend-delta '+cls+'">'+arrow+' '+(up?'+':'')+pct+'% '+label+' vs minggu lalu</span>';
+      return '<span class="dash-trend-delta '+cls+'">'+arrow+' '+(up?'+':'')+pct+'% vs minggu lalu</span>';
     }
     box.innerHTML =
       '<div class="dash-trend-summary">' +
         '<div class="dash-trend-summary-item">' +
+          '<div class="dash-trend-summary-label">Jumlah Transaksi</div>' +
           '<div class="dash-trend-summary-value">'+trend.thisWeekCount+' Transaksi</div>' +
           deltaHtml_(trend.trxCountDeltaPct, 'jumlah') +
         '</div>' +
         '<div class="dash-trend-summary-item">' +
+          '<div class="dash-trend-summary-label">Nilai Transaksi</div>' +
           '<div class="dash-trend-summary-value">'+formatRupiah(trend.thisWeekValue)+'</div>' +
           deltaHtml_(trend.trxValueDeltaPct, 'nilai') +
         '</div>' +
       '</div>' +
-      '<div style="height:140px;position:relative;margin-top:12px;"><canvas id="ebDashTrendCanvas"></canvas></div>';
+      '<div class="dash-trend-chart" style="height:96px;position:relative;margin-top:8px;"><canvas id="ebDashTrendCanvas"></canvas></div>';
 
     ensureChartJsLoaded_(function(){
       var canvas = document.getElementById('ebDashTrendCanvas');
@@ -11876,15 +11878,15 @@
           datasets:[{
             data: trend.counts,
             borderColor:lineColor, backgroundColor:fillColor,
-            fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:lineColor
+            fill:true, tension:0.3, pointRadius:2, pointHoverRadius:4, borderWidth:2, pointBackgroundColor:lineColor
           }]
         },
         options:{
           responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{ display:false } },
           scales:{
-            x:{ grid:{ display:false }, ticks:{ color:axisColor } },
-            y:{ beginAtZero:true, ticks:{ precision:0, color:axisColor }, grid:{ color:gridColor } }
+            x:{ grid:{ display:false }, ticks:{ color:axisColor, font:{ size:10 } } },
+            y:{ beginAtZero:true, ticks:{ precision:0, color:axisColor, font:{ size:10 }, maxTicksLimit:3 }, grid:{ color:gridColor } }
           }
         }
       });
@@ -12038,26 +12040,28 @@
 
     function deltaHtml_(pct, label){
       if(pct === null || pct === undefined){
-        return '<span class="dash-trend-delta dash-trend-delta-neutral">'+label+': data baru</span>';
+        return '<span class="dash-trend-delta dash-trend-delta-neutral">Data baru</span>';
       }
       var up = pct >= 0;
       var arrow = up ? '&#8599;' : '&#8600;';
       var cls = up ? 'dash-trend-delta-up' : 'dash-trend-delta-down';
-      return '<span class="dash-trend-delta '+cls+'">'+arrow+' '+(up?'+':'')+pct+'% '+label+' vs minggu lalu</span>';
+      return '<span class="dash-trend-delta '+cls+'">'+arrow+' '+(up?'+':'')+pct+'% vs minggu lalu</span>';
     }
 
     box.innerHTML =
       '<div class="dash-trend-summary">' +
         '<div class="dash-trend-summary-item">' +
+          '<div class="dash-trend-summary-label">Jumlah PO</div>' +
           '<div class="dash-trend-summary-value">'+trend.thisWeekCount+' PO</div>' +
           deltaHtml_(trend.poCountDeltaPct, 'jumlah') +
         '</div>' +
         '<div class="dash-trend-summary-item">' +
+          '<div class="dash-trend-summary-label">Nilai PO</div>' +
           '<div class="dash-trend-summary-value">'+formatRupiah(trend.thisWeekValue)+'</div>' +
           deltaHtml_(trend.poValueDeltaPct, 'nilai') +
         '</div>' +
       '</div>' +
-      '<div style="height:140px;position:relative;margin-top:12px;"><canvas id="dashTrendCanvas"></canvas></div>';
+      '<div class="dash-trend-chart" style="height:96px;position:relative;margin-top:8px;"><canvas id="dashTrendCanvas"></canvas></div>';
 
     ensureChartJsLoaded_(function(){
       var canvas = document.getElementById('dashTrendCanvas');
@@ -12081,15 +12085,15 @@
             data: trend.counts,
             borderColor:lineColor,
             backgroundColor:fillColor,
-            fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:lineColor
+            fill:true, tension:0.3, pointRadius:2, pointHoverRadius:4, borderWidth:2, pointBackgroundColor:lineColor
           }]
         },
         options:{
           responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{ display:false } },
           scales:{
-            x:{ grid:{ display:false }, ticks:{ color:axisColor } },
-            y:{ beginAtZero:true, ticks:{ precision:0, color:axisColor }, grid:{ color:gridColor } }
+            x:{ grid:{ display:false }, ticks:{ color:axisColor, font:{ size:10 } } },
+            y:{ beginAtZero:true, ticks:{ precision:0, color:axisColor, font:{ size:10 }, maxTicksLimit:3 }, grid:{ color:gridColor } }
           }
         }
       });
@@ -12198,7 +12202,7 @@
     var box = document.getElementById('dashRecentPoBox');
     if(!box) return;
     if(!rows.length){ box.innerHTML = emptyState_('Belum ada PO', 'Data PO akan muncul di sini.', ICONS.transactions); return; }
-    var sorted = rows.slice().sort(function(a,b){ return new Date(b.CreatedAt) - new Date(a.CreatedAt); }).slice(0, 5);
+    var sorted = rows.slice().sort(function(a,b){ return new Date(b.CreatedAt) - new Date(a.CreatedAt); }).slice(0, 4);
     box.innerHTML = sorted.map(function(r){
       return '<div class="po-recent-row" onclick="goToPOWithIdFilter_(\''+escapeHtml(r.POID||'')+'\')">' +
         '<div class="po-recent-main">' +
