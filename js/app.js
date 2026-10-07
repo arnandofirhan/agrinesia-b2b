@@ -2568,7 +2568,7 @@
         var rawVal = c.field ? (row[c.field]==null?'':String(row[c.field])) : '';
         var titleAttr = (!c.render && rawVal) ? ' title="'+escapeHtml(rawVal)+'"' : '';
         var ic = (DC_ICON_[c.label] && ICONS[DC_ICON_[c.label]]) ? '<i class="dc-ico">'+ICONS[DC_ICON_[c.label]]+'</i>' : '';
-        return '<div class="data-card-field'+(c.fullWidth?' full-w':'')+(ic?' has-ico':'')+'">'+ic+'<div class="dc-fb"><span>'+c.label+'</span><b'+titleAttr+'>'+val+'</b></div></div>';
+        return '<div class="data-card-field'+(c.fullWidth?' full-w':'')+(ic?' has-ico':'')+((c.label==='Tanggal'||c.label==='Total'||c.label==='Nominal'||c.label==='Tgl Pengambilan')?' dc-nowrap':'')+'">'+ic+'<div class="dc-fb"><span>'+c.label+'</span><b'+titleAttr+'>'+val+'</b></div></div>';
       }).join('');
       var actionsInner = rowActionsFn ? rowActionsFn(row) : '';
       var mainHtml = mainCol
@@ -5614,9 +5614,11 @@
       ? '<span class="badge badge-green">'+r.ApprovedDiscount+'%</span>' : '<span class="badge badge-neutral">-</span>';
     return '<div class="po-card">' +
       '<div class="po-card-top">' +
-        '<div class="po-card-id">'+escapeHtml(r.POID)+'</div>' +
+        '<div class="po-card-headline">' +
+          '<div class="po-card-id">'+escapeHtml(r.POID)+'</div>' +
+          '<div class="po-card-status-row">'+statusBadge(poDisplayStatus_(r))+'</div>' +
+        '</div>' +
         '<div class="po-card-agent-block">'+agentBlock+'</div>' +
-        '<div class="po-card-status-row">'+statusBadge(poDisplayStatus_(r))+'</div>' +
       '</div>' +
       '<div class="po-card-grid">' +
         '<div class="po-card-field"><span>Tanggal</span><b>'+(r.CreatedAt?formatDateDMY_(r.CreatedAt):'-')+'</b></div>' +
@@ -7007,9 +7009,15 @@
   function renderOrders(){
     var isStaff = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
     if(!isStaff){
+      // Total & Tgl Pengambilan diambil dari data PO: pastikan PO_CACHE terisi (dulu kosong kalau Agent belum buka Transaksi).
       google.script.run.withSuccessHandler(function(rows){
         ORDER_CACHE_ = rows;
         renderOrdersTable_(rows, null, null);
+        if(!PO_CACHE.length){
+          google.script.run.withSuccessHandler(function(pos){
+            if(pos && pos.length){ PO_CACHE = pos; if(STATE.currentPage === 'orders' && ORDERS_LAST_RENDER_ARGS_) renderOrdersTable_(ORDERS_LAST_RENDER_ARGS_.rows, ORDERS_LAST_RENDER_ARGS_.storeMap, ORDERS_LAST_RENDER_ARGS_.agentMap); }
+          }).withFailureHandler(function(){}).listPO(STATE.token);
+        }
       }).withFailureHandler(function(e){ handleBackendError(e, pageErrorEl_('orders')); }).listOrders(STATE.token);
       return;
     }
@@ -7080,6 +7088,9 @@
         var short = po.PromoName.length > 22 ? escapeHtml(po.PromoName.slice(0,22)) + '…' : escapeHtml(po.PromoName);
         return '<span title="'+escapeHtml(po.PromoName)+'">'+short+'</span>';
       }});
+      cols.push({label:'Tanggal', render:function(r){return r.CreatedAt ? formatDateDMY_(r.CreatedAt) : '-';}});
+      cols.push({label:'Total', render:function(r){ var po = findPO_(r.POID); return (po && po.GrandTotal!=null && po.GrandTotal!=='') ? formatRupiah(po.GrandTotal) : '-'; }});
+      cols.push({label:'Tgl Pengambilan', render:function(r){ var po = findPO_(r.POID); return (po && po.PickupDate) ? formatDateDMY_(po.PickupDate) : '-'; }});
       cols.push({label:'Pengiriman', render:function(r){return deliveryBadge_(r);}});
       // TransactionStatus SENGAJA tidak ditampilkan sebagai kolom terpisah: nilainya selalu
       // 1:1 mengikuti CustomerPaymentStatus (IN_PROGRESS<->UNPAID, COMPLETE<->PAID), jadi
