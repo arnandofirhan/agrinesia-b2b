@@ -2859,7 +2859,7 @@
         detailField_('Tanggal Daftar', escapeHtml(formatDateDMY_(agent.CreatedAt))) +
         detailField_('Disetujui Pada', agent.ApprovedAt ? escapeHtml(formatDateDMY_(agent.ApprovedAt)) : '-') +
         detailField_('Terakhir Diperbarui', escapeHtml(formatDateDMY_(agent.UpdatedAt))) +
-        detailField_(agentTypeOf_(agent)==='INTERNAL' ? 'Alamat Karyawan' : 'Alamat KTP', escapeHtml(agent.AddressKTP), true) +
+        (agentTypeOf_(agent)==='INTERNAL' ? '' : detailField_('Alamat KTP', escapeHtml(agent.AddressKTP), true)) +
       '</div>' +
     '</div>';
 
@@ -2891,7 +2891,7 @@
         /*editMode=*/'self'
       );
     }).join('') + sigDocHtml_;
-    html += '<div class="card">' +
+    if(agentTypeOf_(agent)!=='INTERNAL') html += '<div class="card">' +
       '<div class="card-header"><span class="card-title">Dokumen Registrasi</span></div>' +
       '<div class="doc-preview-grid">' + docsHtml + '</div>' +
       (isRejected
@@ -3076,7 +3076,7 @@
         detailField_('Telepon / WhatsApp', escapeHtml(a.Phone)) +
         detailField_('Tipe', agentTypeBadge_(a)) +
         detailField_(agentTypeOf_(a)==='INTERNAL' ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(a.KTPNumber)) +
-        detailField_(agentTypeOf_(a)==='INTERNAL' ? 'Alamat Karyawan' : 'Alamat KTP', escapeHtml(a.AddressKTP)) +
+        (agentTypeOf_(a)==='INTERNAL' ? '' : detailField_('Alamat KTP', escapeHtml(a.AddressKTP))) +
         (agentTypeOf_(a)==='INTERNAL' ? detailField_('Departemen / Divisi', escapeHtml(a.Department||'-')) : '') +
         // Area Pendaftaran: HANYA muncul di sini (view Admin/Supervisor/Manager) — TIDAK
         // pernah dirender di renderAgentSelfCard (Profil Saya milik Agent sendiri), dan
@@ -9748,87 +9748,108 @@
   // REGISTRASI INTERNAL AGRINESIA (karyawan Agrinesia)
   // Backend: registerInternalAgent() — disimpan sebagai Agent bertipe INTERNAL.
   // =============================================================
-  var INT_FILES = {};
-  var INT_SITES_CACHE_ = null;
-  var INT_DOCS = [
-    { key:'idcard', fileId:'intIdCardFile', tileId:'intIdCardTile', label:'ID Card Karyawan', hint:'JPG, PNG atau PDF', changeHandler:'handleIntDocChange_' }
-  ];
+  var INT_VERIFIED_ = false, INT_LOOKUP_SEQ_ = 0;
+  var INT_FIELD_IDS_ = ['intFullName','intDept','intSite','intEmail','intPhone'];
+  function setIntNikState_(state, msg){
+    var st = document.getElementById('intNikState'), m = document.getElementById('intNikMsg');
+    st.className = 'int-nik-state' + (state ? ' ' + state : '');
+    m.className = 'int-msg' + (msg ? ' show ' + (state === 'ok' ? 'ok' : 'err') : '');
+    m.textContent = msg || '';
+    var prof = document.getElementById('intProfile');
+    prof.classList.toggle('int-verified', state === 'ok');
+    prof.classList.toggle('is-loading', state === 'loading');
+    document.getElementById('intRegisterModal').setAttribute('data-step', state === 'ok' ? '2' : '1');
+  }
+  function clearIntFields_(){ INT_FIELD_IDS_.forEach(function(id){ document.getElementById(id).value = ''; }); }
+  /** Meter + petunjuk 10 digit NIK. */
+  function setIntNikMeter_(len){
+    var hint = document.getElementById('intNikHint'), meter = document.getElementById('intNikMeter');
+    if(hint){
+      hint.textContent = len === 0 ? 'Hanya angka, tepat 10 digit' : (len < 10 ? len + '/10 digit, kurang ' + (10 - len) + ' lagi' : '10/10 digit');
+      hint.classList.remove('warn'); hint.classList.toggle('ok', len === 10);
+    }
+    if(meter){ for(var i = 0; i < meter.children.length; i++) meter.children[i].classList.toggle('on', i < len); }
+  }
+  /** Kolom NIK menolak huruf/simbol: tombol dibatalkan + peringatan singkat. */
+  function flashIntNikWarn_(){
+    var wrap = document.querySelector('#intRegisterModal .int-nik-wrap'), hint = document.getElementById('intNikHint');
+    if(wrap){ wrap.classList.remove('int-shake'); void wrap.offsetWidth; wrap.classList.add('int-shake'); setTimeout(function(){ wrap.classList.remove('int-shake'); }, 400); }
+    if(hint){ hint.textContent = 'NIK hanya boleh berisi angka 0-9'; hint.classList.remove('ok'); hint.classList.add('warn'); }
+    clearTimeout(flashIntNikWarn_.t);
+    flashIntNikWarn_.t = setTimeout(function(){ setIntNikMeter_((document.getElementById('intNik').value || '').length); }, 1600);
+  }
+  function onIntNikKey_(e){
+    if(e.ctrlKey || e.metaKey || e.altKey || !e.key || e.key.length !== 1) return;
+    if(!/[0-9]/.test(e.key)){ e.preventDefault(); flashIntNikWarn_(); }
+  }
+  function onIntNikPaste_(e){
+    e.preventDefault();
+    var raw = ((e.clipboardData || window.clipboardData).getData('text')) || '';
+    var digits = raw.replace(/[^0-9]/g, '');
+    if(digits.length !== raw.trim().length) flashIntNikWarn_();
+    var el = e.target, s = el.selectionStart || 0, en = el.selectionEnd || 0;
+    el.value = (el.value.slice(0, s) + digits + el.value.slice(en)).slice(0, 10);
+    onIntNikInput_(el);
+  }
   function openInternalRegisterModal(){
-    INT_FILES = {};
-    document.getElementById('intDocGrid').innerHTML = INT_DOCS.map(docTileEmptyHtml_).join('');
-    ['intFullName','intNik','intDept','intEmail','intPhone','intAddress'].forEach(function(id){ document.getElementById(id).value = ''; });
-    document.getElementById('intNikHint').textContent = '0/10 digit';
+    INT_VERIFIED_ = false; INT_LOOKUP_SEQ_++;
+    document.getElementById('intNik').value = '';
+    clearIntFields_();
+    setIntNikMeter_(0);
     document.getElementById('intRegError').style.display = 'none';
-    loadIntSiteOptions_();
-    loadIntDeptOptions_();
+    setIntNikState_('', '');
     updateIntRegFormState_();
     document.getElementById('intRegisterModal').classList.add('show');
   }
   function closeInternalRegisterModal(){ document.getElementById('intRegisterModal').classList.remove('show'); }
-  function loadIntSiteOptions_(){
-    var select = document.getElementById('intSite');
-    // Selalu ambil terbaru tiap modal dibuka (server sudah punya cache 5 menit yang di-invalidate saat Admin
-    // mengubah master), supaya Site yang baru ditambahkan Admin langsung muncul tanpa refresh halaman.
-    select.innerHTML = '<option value="">Memuat daftar site...</option>';
-    google.script.run.withSuccessHandler(function(list){
-      INT_SITES_CACHE_ = list || [];
-      renderIntSiteOptions_(INT_SITES_CACHE_);
-    }).withFailureHandler(function(){
-      select.innerHTML = '<option value="">Gagal memuat site — tutup & buka lagi</option>';
-    }).listAgentAreasPublic('INTERNAL');
-  }
-  function renderIntSiteOptions_(list){
-    var select = document.getElementById('intSite');
-    select.innerHTML = list.length
-      ? '<option value="">Pilih site</option>' + list.map(function(a){ return '<option value="'+escapeHtml(a.areaName)+'">'+escapeHtml(a.areaName)+'</option>'; }).join('')
-      : '<option value="">Belum ada site terdaftar — hubungi Admin</option>';
+  function onIntNikInput_(el){
+    el.value = el.value.replace(/[^0-9]/g, '').slice(0, 10);
+    var len = el.value.length;
+    setIntNikMeter_(len);
+    INT_VERIFIED_ = false; INT_LOOKUP_SEQ_++;
+    clearIntFields_();
+    document.getElementById('intRegError').style.display = 'none';
+    setIntNikState_('', '');
     updateIntRegFormState_();
+    if(len === 10) lookupIntNik_(el.value);
   }
-  function loadIntDeptOptions_(){
-    var select = document.getElementById('intDept');
-    select.innerHTML = '<option value="">Memuat daftar departemen...</option>';
-    google.script.run.withSuccessHandler(function(list){
-      renderIntDeptOptions_(list || []);
-    }).withFailureHandler(function(){
-      select.innerHTML = '<option value="">Gagal memuat departemen — tutup & buka lagi</option>';
-    }).listDepartmentsPublic();
-  }
-  function renderIntDeptOptions_(list){
-    var select = document.getElementById('intDept');
-    select.innerHTML = list.length
-      ? '<option value="">Pilih departemen / divisi</option>' + list.map(function(d){ return '<option value="'+escapeHtml(d.deptName)+'">'+escapeHtml(d.deptName)+'</option>'; }).join('')
-      : '<option value="">Belum ada departemen terdaftar — hubungi Admin</option>';
-    updateIntRegFormState_();
-  }
-  function handleIntDocChange_(key){
-    var d = INT_DOCS.filter(function(x){ return x.key === key; })[0];
-    var input = document.getElementById(d.fileId);
-    if(!input.files.length) return;
-    var file = input.files[0];
-    fileToBase64_(file, function(fileObj){
-      INT_FILES[key] = fileObj;
-      renderDocTilePreview_(d, file, fileObj);
+  function lookupIntNik_(nik){
+    var seq = ++INT_LOOKUP_SEQ_;
+    setIntNikState_('loading', '');
+    google.script.run.withSuccessHandler(function(res){
+      if(seq !== INT_LOOKUP_SEQ_) return; // NIK sudah berubah, abaikan hasil lama
+      if(res && res.success){
+        document.getElementById('intFullName').value = res.fullName || '';
+        document.getElementById('intDept').value = res.department || '';
+        document.getElementById('intSite').value = res.site || '';
+        document.getElementById('intEmail').value = res.email || '';
+        document.getElementById('intPhone').value = res.phone || '';
+        INT_FIELD_IDS_.forEach(function(id){ var el = document.getElementById(id); el.title = el.value; });
+        INT_VERIFIED_ = true;
+        setIntNikState_('ok', 'NIK ditemukan. Periksa data di bawah, lalu kirim registrasi.');
+      } else {
+        setIntNikState_('err', (res && res.message) || 'NIK tidak dapat diverifikasi.');
+      }
       updateIntRegFormState_();
-    });
+    }).withFailureHandler(function(e){
+      if(seq !== INT_LOOKUP_SEQ_) return;
+      setIntNikState_('err', 'Gagal memeriksa NIK: ' + ((e && e.message) || e));
+      updateIntRegFormState_();
+    }).lookupEmployeeByNik(nik);
   }
   function updateIntRegFormState_(){
     var btn = document.getElementById('intRegSubmitBtn');
     if(!btn) return;
-    var ok = !!(val_('intFullName') && val_('intNik') && val_('intDept') && val_('intEmail') && /^[0-9]{8,15}$/.test(val_('intPhone')) && /^[0-9]{10}$/.test(val_('intNik')) && val_('intAddress') && val_('intSite') && INT_FILES.idcard);
-    btn.disabled = !ok;
+    btn.disabled = !(INT_VERIFIED_ && /^[0-9]{10}$/.test(val_('intNik')));
   }
   function submitInternalRegistration(){
     var errEl = document.getElementById('intRegError');
     errEl.style.display = 'none';
-    if(!/^[0-9]{10}$/.test(val_('intNik'))){ errEl.textContent = 'NIK Karyawan harus tepat 10 digit angka.'; errEl.style.display = 'block'; return; }
+    if(!INT_VERIFIED_ || !/^[0-9]{10}$/.test(val_('intNik'))){ errEl.textContent = 'NIK Karyawan harus tepat 10 digit dan terverifikasi.'; errEl.style.display = 'block'; return; }
     var btn = document.getElementById('intRegSubmitBtn');
     btn.disabled = true; btn.textContent = 'Mengirim...';
     showRegSubmitSplash_(true);
-    var payload = {
-      fullName: val_('intFullName'), nik: val_('intNik'), department: val_('intDept'), email: val_('intEmail'),
-      phone: val_('intPhone'), addressKTP: val_('intAddress'), site: val_('intSite'), idCardFile: INT_FILES.idcard
-    };
-    function done(){ btn.disabled = false; btn.textContent = 'Kirim Registrasi'; showRegSubmitSplash_(false); }
+    function done(){ btn.textContent = 'Kirim Registrasi'; showRegSubmitSplash_(false); updateIntRegFormState_(); }
     google.script.run.withSuccessHandler(function(res){
       done();
       if(res && res.success){ closeInternalRegisterModal(); openRegisterSuccess(res.message); }
@@ -9837,7 +9858,7 @@
       done();
       errEl.textContent = 'Terjadi kesalahan: ' + (e.message || e);
       errEl.style.display = 'block';
-    }).registerInternalAgent(payload);
+    }).registerInternalAgent({ nik: val_('intNik') });
   }
 
   function closeRegisterModal(){ document.getElementById('registerModal').classList.remove('show'); }
