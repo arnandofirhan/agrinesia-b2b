@@ -6604,3 +6604,21 @@
   @media (prefers-reduced-motion:reduce){
     #intRegisterModal.int-onescreen .int-profile.int-verified .int-field input[readonly]{animation:none;}
   }
+
+  /* =========================================================
+     DETAIL AGENT — Data Diri v2: satu kartu, baris datar + garis pemisah
+     (menimpa aturan lama yang menjadikan tiap baris kotak sendiri / kotak dalam kotak)
+     Hanya berlaku untuk .agent-detail-grid.ad-list (popup Detail Agent).
+     ========================================================= */
+  html .modal-body .agent-detail-grid.ad-list{display:block !important;padding:0 !important;gap:0 !important;overflow:hidden;
+    background:var(--ag-surface) !important;border:1px solid rgba(127,127,127,.22);border-radius:16px !important;box-shadow:none;}
+  html .modal-body .agent-detail-grid.ad-list .agent-detail-field{display:flex !important;flex-direction:row !important;align-items:center;justify-content:space-between;
+    gap:16px;min-height:46px;padding:12px 16px !important;margin:0;background:transparent !important;border:0 !important;
+    border-bottom:1px solid rgba(127,127,127,.16) !important;border-radius:0 !important;box-shadow:none !important;transform:none;}
+  html .modal-body .agent-detail-grid.ad-list .agent-detail-field:last-child{border-bottom:0 !important;}
+  html .modal-body .agent-detail-grid.ad-list .agent-detail-field-label{flex:none;margin:0;font-size:10.5px !important;font-weight:600 !important;
+    letter-spacing:.06em !important;white-space:nowrap;}
+  html .modal-body .agent-detail-grid.ad-list .agent-detail-field-value{flex:1 1 auto;min-width:0;margin:0;text-align:right;font-size:13.5px;
+    line-height:1.4;overflow-wrap:anywhere;word-break:normal;}
+  html .modal-body .agent-detail-grid.ad-list .ad-nowrap{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(12px,3.4vw,13.5px);}
+  html .modal-body .agent-detail-grid.ad-list .badge{white-space:nowrap;}
