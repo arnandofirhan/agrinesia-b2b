@@ -1,5 +1,5 @@
 /* Agrinesia B2B — Service Worker. Naikkan VERSION tiap rilis agar cache lama dibuang. */
-const VERSION = 'v1-1791326048';
+const VERSION = 'v13-ordertbl2';
 const CACHE = 'agrinesia-' + VERSION;
 const SHELL = ['./','index.html','css/style.css','js/app.js','api-bridge.js','manifest.json','icon-192.png','icon-512.png'];
 
