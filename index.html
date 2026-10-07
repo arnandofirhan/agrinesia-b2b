@@ -892,6 +892,34 @@
        Apps Script templating, apa adanya, tanpa fetch/loader manual. -->
   <script src="api-bridge.js?v=1791358000"></script>
   <script src="js/app.js?v=1791358000"></script>
+  <style>
+    /* Tombol install PWA — muncul HANYA kalau Chrome menyatakan app ini bisa di-install. */
+    #agInstallPill{display:none;position:fixed;left:50%;transform:translateX(-50%);
+      bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:55;align-items:center;gap:8px;
+      background:#0B3D2E;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:600 13px Inter,sans-serif;
+      box-shadow:0 8px 22px rgba(0,0,0,.28);cursor:pointer;}
+    #agInstallPill.show{display:inline-flex;}
+    #agInstallPill .x{margin-left:4px;opacity:.7;padding:0 4px;}
+  </style>
+  <button id="agInstallPill" type="button">&#11015; Install Aplikasi<span class="x" id="agInstallClose">&#10005;</span></button>
+  <script>
+    // Tangkap prompt install Chrome/Android, tampilkan tombol sendiri.
+    (function(){
+      var dp = null, pill = document.getElementById('agInstallPill');
+      function standalone(){ return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+      window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault(); dp = e;
+        if(!standalone() && !sessionStorage.getItem('ag_install_dismissed')) pill.classList.add('show');
+      });
+      pill.addEventListener('click', function(ev){
+        if(ev.target && ev.target.id === 'agInstallClose'){ pill.classList.remove('show'); try{sessionStorage.setItem('ag_install_dismissed','1');}catch(e){} return; }
+        if(!dp) return;
+        dp.prompt();
+        dp.userChoice.then(function(){ dp = null; pill.classList.remove('show'); });
+      });
+      window.addEventListener('appinstalled', function(){ dp = null; pill.classList.remove('show'); });
+    })();
+  </script>
   <script>
     // Service Worker (PWA offline-shell + syarat install Android). Hanya di HTTPS/localhost.
     if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
