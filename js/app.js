@@ -7031,6 +7031,12 @@
       var agentMap = {};
       (data.agents||[]).forEach(function(a){ agentMap[a.AgentID] = a; });
       renderOrdersTable_(data.orders, storeMap, agentMap);
+      // Admin/Supervisor: Total, Agent & Tgl Pengambilan butuh data PO. Isi PO_CACHE di latar belakang kalau masih kosong.
+      if(!PO_CACHE.length){
+        google.script.run.withSuccessHandler(function(pos){
+          if(pos && pos.length){ PO_CACHE = pos; if(STATE.currentPage === 'orders' && ORDERS_LAST_RENDER_ARGS_) renderOrdersTable_(ORDERS_LAST_RENDER_ARGS_.rows, ORDERS_LAST_RENDER_ARGS_.storeMap, ORDERS_LAST_RENDER_ARGS_.agentMap); }
+        }).withFailureHandler(function(){}).listPO(STATE.token);
+      }
     }).withFailureHandler(function(e){ handleBackendError(e, pageErrorEl_('orders')); }).getOrdersPageData(STATE.token);
   }
 
@@ -7061,11 +7067,11 @@
         {label:'PO', render:function(r){return '<span class="mono-id">'+escapeHtml(r.POID)+'</span>';}}
       ];
       if(storeMap && agentMap){
-        cols.push({label:'Store', render:function(r){
+        cols.push({label:'Store', fullWidth:true, render:function(r){
           var s = storeMap[r.StoreID];
           if(!s) return r.StoreID ? escapeHtml(r.StoreID) : '-';
           var subFull = [s.Address, s.PIC, s.Phone].filter(Boolean).join(' \u00b7 ');
-          var subShort = subFull.length > 26 ? subFull.slice(0,26) + '…' : subFull;
+          var subShort = subFull.length > 60 ? subFull.slice(0,60) + '…' : subFull;
           return '<div class="cell-agent">' +
             '<div class="cell-agent-name">'+escapeHtml(s.StoreName)+'</div>' +
             (subFull ? '<div class="cell-agent-sub" title="'+escapeHtml(subFull)+'">'+escapeHtml(subShort)+'</div>' : '') +
@@ -7095,7 +7101,8 @@
       // TransactionStatus SENGAJA tidak ditampilkan sebagai kolom terpisah: nilainya selalu
       // 1:1 mengikuti CustomerPaymentStatus (IN_PROGRESS<->UNPAID, COMPLETE<->PAID), jadi
       // badge "Penyelesaian" di bawah sudah mewakili keduanya.
-      cols.push({label:'Penyelesaian', render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
+      cols.push({label:'Penyelesaian', fullWidth:true, render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
+      (function(){ var iS=-1,iP=-1; cols.forEach(function(c,i){ if(c.label==='Store') iS=i; if(c.label==='Promo') iP=i; }); if(iS>-1 && iP>iS){ var pr=cols.splice(iP,1)[0]; cols.splice(iS,0,pr); } })();
       var isStaffAction = (STATE.user.role==='SUPERVISOR'||STATE.user.role==='ADMIN');
       var actions = function(r){
         var btns = '<div class="row-actions">';
@@ -7123,7 +7130,7 @@
       var emptyTitleOrder_ = rows.length ? 'Tidak ada order yang cocok' : 'Belum ada order';
       var emptySubOrder_ = rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Order akan muncul setelah PO disetujui.';
       var html =
-        '<div class="card"><div class="list-header"><span class="card-title">Order</span></div>' +
+        '<div class="card orders-page"><div class="list-header"><span class="card-title">Order</span></div>' +
         filterHtml +
         renderTableOrCards_(cols, filtered, actions, emptyTitleOrder_, emptySubOrder_, ICONS.orders) +
         '</div>';
@@ -14874,11 +14881,11 @@
         return '<div class="cell-person"><div class="cell-person-avatar">'+escapeHtml(initials)+'</div>' +
           '<span class="cell-person-name">'+escapeHtml(r.FullName||'-')+'</span></div>';
       }},
-      {label:'Email', field:'Email', fullWidth:true},
       {label:'No. ID Card', field:'IDCardNumber'},
+      {label:'Email', field:'Email', fullWidth:true},
       {label:'Perusahaan', field:'CompanyName'},
-      {label:'Registrasi', render:function(r){return ebStatusBadge_(r.RegistrationStatus);}},
       {label:'Status Karyawan', render:function(r){return ebStatusBadge_(r.EmployeeStatus);}},
+      {label:'Registrasi', render:function(r){return ebStatusBadge_(r.RegistrationStatus);}},
       {label:'Approval By', render:function(r){ return approvalByCell_(r.ApprovedByName, r.ApprovedAt); }}
     ];
     var actions = function(r){
@@ -14900,7 +14907,7 @@
       html += '</div>';
       return html;
     };
-    return '<div class="card"><div class="card-header"><span class="card-title">Daftar Karyawan (Employee Benefit)</span></div>' +
+    return '<div class="card eb-emp-page"><div class="card-header"><span class="card-title">Daftar Karyawan (Employee Benefit)</span></div>' +
       filterHtml +
       renderTableOrCards_(cols, filtered, actions,
         rows.length ? 'Tidak ada karyawan yang cocok' : 'Belum ada pendaftaran',
