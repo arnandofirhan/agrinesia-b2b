@@ -11920,6 +11920,8 @@
   }
 
   function tickDashboardClock_(){
+    // Guard: jam tetap berjalan walau user sudah logout / login gagal (STATE.user null) -> jangan error.
+    if(!STATE.user || !document.getElementById('dashClockTime')){ return; }
     var now = new Date();
     var g = greetingByHour_(now);
     var titleEl = document.getElementById('dashGreetTitle');
