@@ -6212,3 +6212,55 @@
     .content > .card:has(> .data-card-list) > .list-header{ margin-bottom:8px !important; }
     .content > .card:has(> .data-card-list) > .data-card-list{ margin-top:0 !important; gap:10px !important; }
   }
+
+  /* ===== FIX: kolom tidak menyempit saat hasil pencarian kosong =====
+     Aturan transparan sebelumnya hanya aktif bila ada .data-card-list; saat kosong (empty-state)
+     pembungkus .card balik berpadding+border = kolom menyempit. Sekarang aktif juga untuk filter-bar. */
+  @media (max-width:760px){
+    .content > .card:has(> .filter-bar){
+      background:transparent !important; border:0 !important; box-shadow:none !important;
+      border-radius:0 !important; padding:0 !important; margin-bottom:12px !important;
+    }
+    .content > .card:has(> .filter-bar) > .filter-bar{ margin:0 0 10px !important; }
+    .content > .card:has(> .filter-bar) > .list-header{ margin-bottom:8px !important; }
+    .content > .card:has(> .filter-bar) > .empty-state{
+      background:var(--ag-surface);border:1px solid var(--ag-gray-200);border-radius:18px;padding:40px 16px;
+    }
+  }
+
+  /* ===== TOPBAR SIMPLE FLAT: menempel di atas, bukan kapsul melayang, beda tema dari bottom nav ===== */
+  html .topbar{
+    background:var(--ag-surface) !important;border:0 !important;border-bottom:1px solid var(--ag-gray-200) !important;
+    border-radius:0 !important;box-shadow:0 1px 0 rgba(15,23,42,.02) !important;
+  }
+  html .topbar::before{ display:none !important; content:none !important; }
+  @media (max-width:860px){
+    html .topbar, html[data-theme="dark"] .topbar{
+      background:var(--ag-surface) !important;border:0 !important;border-bottom:1px solid var(--ag-gray-200) !important;
+      border-radius:0 !important;box-shadow:none !important;padding:0 14px !important;
+    }
+    html .topbar::before, html[data-theme="dark"] .topbar::before{ display:none !important; content:none !important; }
+  }
+  html .topbar .topbar-title{color:var(--ag-gray-900) !important;font-weight:800;}
+  html .topbar .topbar-date{color:var(--ag-gray-500) !important;}
+  html .topbar .user-menu-trigger .user-name{color:var(--ag-gray-900) !important;}
+  html .topbar .user-menu-trigger .user-greeting,
+  html .topbar .user-menu-trigger .user-agentid,
+  html .topbar .user-menu-trigger .user-role{color:var(--ag-gray-500) !important;}
+  html .topbar .user-menu-trigger:hover{background:var(--ag-gray-100) !important;border-color:var(--ag-gray-200) !important;}
+  html .topbar .user-menu-caret{color:var(--ag-gray-500) !important;}
+  html .topbar .icon-btn:not(.notif-bell-btn){
+    background:var(--ag-gray-100) !important;border:1px solid transparent !important;color:var(--ag-gray-700) !important;
+    -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none !important;border-radius:12px !important;
+  }
+  html .topbar .icon-btn:not(.notif-bell-btn):hover{background:var(--ag-green-soft) !important;border-color:var(--ag-green) !important;}
+  html .topbar .theme-toggle-btn svg,
+  html .topbar .sidebar-toggle-topbar svg,
+  html .topbar .signature-btn svg{color:var(--ag-gray-700) !important;stroke:var(--ag-gray-700) !important;}
+  html .topbar .notif-bell-btn{
+    background:var(--ag-gray-100) !important;box-shadow:none !important;
+  }
+  html .topbar .notif-bell-btn svg{color:var(--ag-gray-700) !important;stroke:var(--ag-gray-700) !important;}
+  html .topbar .avatar, html .topbar .user-menu-trigger .avatar{
+    box-shadow:0 0 0 2px var(--ag-surface),0 0 0 3px var(--ag-green) !important;
+  }
