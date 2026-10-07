@@ -5993,3 +5993,31 @@
     #loginScreen .login-row-between{ flex-direction:column; align-items:flex-start; }
     #loginScreen .login-eyebrow{ font-size:10px; letter-spacing:.05em; }
   }
+
+  /* ===== FIX TOPBAR WAJIB STUCK (tidak boleh ikut ter-scroll) =====
+     AKAR MASALAH: .app-shell memakai height:100vh. Di Chrome HP, 100vh = tinggi layar TANPA
+     address-bar, lebih tinggi dari area yang kelihatan, jadi DOKUMEN ikut bisa di-scroll dan
+     topbar terbawa naik. Solusi: saat user login (html.ag-has-session) dokumen dikunci total
+     (position:fixed + overflow:hidden) dan shell ditempel ke viewport (top/bottom:0, bukan 100vh).
+     Yang boleh bergulir HANYA .main-area; topbar sticky di dalamnya tetap diam di atas.
+     Halaman login tidak terpengaruh (class ini hanya ada saat sudah login). */
+  html.ag-has-session,
+  html.ag-has-session body{
+    position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;
+    overflow:hidden;overscroll-behavior:none;
+  }
+  html.ag-has-session .app-shell{
+    position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:auto;overflow:hidden;
+  }
+  html.ag-has-session .main-area{ overscroll-behavior-y:contain; }
+  html.ag-has-session .topbar{ position:sticky;top:0; } /* z-index tetap bawaan (10) */
+  /* ===== SEMBUNYIKAN SCROLLBAR (tetap bisa di-scroll) =====
+     Scrollbar kanan datang dari .main-area (overflow-y:auto + scrollbar-gutter:stable).
+     Gutter dimatikan & scrollbar disembunyikan. Di layar HP (<=860px) berlaku untuk semua elemen. */
+  html.ag-has-session .main-area, html, body{ scrollbar-width:none !important; -ms-overflow-style:none; scrollbar-gutter:auto !important; }
+  html.ag-has-session .main-area::-webkit-scrollbar, html::-webkit-scrollbar, body::-webkit-scrollbar{ display:none !important; width:0 !important; height:0 !important; }
+  .main-area{ scrollbar-gutter:auto !important; }
+  @media (max-width:860px){
+    *{ scrollbar-width:none !important; -ms-overflow-style:none; }
+    *::-webkit-scrollbar{ display:none !important; width:0 !important; height:0 !important; }
+  }
