@@ -6264,3 +6264,55 @@
   html .topbar .avatar, html .topbar .user-menu-trigger .avatar{
     box-shadow:0 0 0 2px var(--ag-surface),0 0 0 3px var(--ag-green) !important;
   }
+
+  /* ===== FIX DARK MODE TOPBAR (semua ukuran layar): ikut surface gelap, bukan gradasi hijau ===== */
+  html[data-theme="dark"] .topbar{
+    background:var(--ag-surface) !important;border:0 !important;border-bottom:1px solid var(--ag-gray-200) !important;
+    border-radius:0 !important;box-shadow:none !important;
+  }
+  html[data-theme="dark"] .topbar::before{ display:none !important; content:none !important; }
+  html[data-theme="dark"] .topbar .topbar-title,
+  html[data-theme="dark"] .topbar .user-menu-trigger .user-name{color:var(--ag-gray-900) !important;}
+  html[data-theme="dark"] .topbar .topbar-date,
+  html[data-theme="dark"] .topbar .user-menu-trigger .user-greeting,
+  html[data-theme="dark"] .topbar .user-menu-trigger .user-agentid,
+  html[data-theme="dark"] .topbar .user-menu-trigger .user-role,
+  html[data-theme="dark"] .topbar .user-menu-caret{color:var(--ag-gray-500) !important;}
+  html[data-theme="dark"] .topbar .icon-btn:not(.notif-bell-btn),
+  html[data-theme="dark"] .topbar .notif-bell-btn{
+    background:var(--ag-gray-100) !important;border:1px solid var(--ag-gray-200) !important;box-shadow:none !important;color:var(--ag-gray-700) !important;
+  }
+  html[data-theme="dark"] .topbar .icon-btn svg,
+  html[data-theme="dark"] .topbar .notif-bell-btn svg{color:var(--ag-gray-700) !important;stroke:var(--ag-gray-700) !important;}
+  html[data-theme="dark"] .topbar .user-menu-trigger:hover{background:var(--ag-gray-100) !important;}
+
+  /* ===== TOPBAR: ikon Tema / Notifikasi / Tanda Tangan lebih modern (tombol bulat lembut, tint warna, hover halus) ===== */
+  html body .topbar .icon-btn.theme-toggle-btn,
+  html body .topbar .icon-btn.notif-bell-btn,
+  html body .topbar .icon-btn.signature-btn,
+  html body .topbar .signature-btn,
+  html body .topbar .notif-bell-btn{
+    width:40px !important;height:40px !important;border-radius:50% !important;border:0 !important;
+    display:inline-flex;align-items:center;justify-content:center;position:relative;
+    transition:transform .18s ease,box-shadow .18s ease,background .18s ease !important;
+  }
+  html body .topbar .theme-toggle-btn{background:linear-gradient(145deg,#eef2ff,#e0e7ff) !important;box-shadow:inset 0 0 0 1px rgba(99,102,241,.18),0 4px 10px -6px rgba(99,102,241,.5) !important;}
+  html body .topbar .notif-bell-btn{background:linear-gradient(145deg,#ecfdf5,#d1fae5) !important;box-shadow:inset 0 0 0 1px rgba(16,185,129,.22),0 4px 10px -6px rgba(16,185,129,.55) !important;}
+  html body .topbar .signature-btn{background:linear-gradient(145deg,#fffbeb,#fef3c7) !important;box-shadow:inset 0 0 0 1px rgba(245,158,11,.25),0 4px 10px -6px rgba(245,158,11,.55) !important;}
+  html body .topbar .theme-toggle-btn svg,html body .topbar .theme-toggle-btn:hover svg{color:#4f46e5 !important;stroke:#4f46e5 !important;width:19px;height:19px;}
+  html body .topbar .notif-bell-btn svg,html body .topbar .notif-bell-btn:hover svg{color:#059669 !important;stroke:#059669 !important;width:19px;height:19px;}
+  html body .topbar .signature-btn svg,html body .topbar .signature-btn:hover svg{color:#d97706 !important;stroke:#d97706 !important;width:19px;height:19px;}
+  html body .topbar .theme-toggle-btn:hover,html body .topbar .notif-bell-btn:hover,html body .topbar .signature-btn:hover{transform:translateY(-2px) scale(1.04);filter:none !important;}
+  html body .topbar .theme-toggle-btn:active,html body .topbar .notif-bell-btn:active,html body .topbar .signature-btn:active{transform:scale(.94);}
+  html body .topbar .notif-badge{
+    position:absolute !important;top:-3px !important;right:-3px !important;background:#ef4444 !important;color:#fff !important;
+    border:2px solid var(--ag-surface) !important;min-width:18px;height:18px;line-height:14px;font-size:10px !important;
+    font-weight:800 !important;border-radius:999px !important;box-shadow:0 2px 6px rgba(239,68,68,.5);
+  }
+  /* dark mode: tint gelap transparan */
+  html[data-theme="dark"] body .topbar .theme-toggle-btn{background:rgba(129,140,248,.16) !important;box-shadow:inset 0 0 0 1px rgba(129,140,248,.32) !important;}
+  html[data-theme="dark"] body .topbar .notif-bell-btn{background:rgba(52,211,153,.14) !important;box-shadow:inset 0 0 0 1px rgba(52,211,153,.3) !important;}
+  html[data-theme="dark"] body .topbar .signature-btn{background:rgba(251,191,36,.14) !important;box-shadow:inset 0 0 0 1px rgba(251,191,36,.3) !important;}
+  html[data-theme="dark"] body .topbar .theme-toggle-btn svg{color:#a5b4fc !important;stroke:#a5b4fc !important;}
+  html[data-theme="dark"] body .topbar .notif-bell-btn svg{color:#6ee7b7 !important;stroke:#6ee7b7 !important;}
+  html[data-theme="dark"] body .topbar .signature-btn svg{color:#fcd34d !important;stroke:#fcd34d !important;}
