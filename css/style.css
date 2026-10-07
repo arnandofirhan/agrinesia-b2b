@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap');
   /* =========================================================
@@ -6214,6 +6215,8 @@
     .content > .card:has(> .data-card-list) > .data-card-list{ margin-top:0 !important; gap:10px !important; }
   }
 
+
+
   /* ===== FIX: kolom tidak menyempit saat hasil pencarian kosong =====
      Aturan transparan sebelumnya hanya aktif bila ada .data-card-list; saat kosong (empty-state)
      pembungkus .card balik berpadding+border = kolom menyempit. Sekarang aktif juga untuk filter-bar. */
@@ -6266,6 +6269,7 @@
     box-shadow:0 0 0 2px var(--ag-surface),0 0 0 3px var(--ag-green) !important;
   }
 
+
   /* ===== FIX DARK MODE TOPBAR (semua ukuran layar): ikut surface gelap, bukan gradasi hijau ===== */
   html[data-theme="dark"] .topbar{
     background:var(--ag-surface) !important;border:0 !important;border-bottom:1px solid var(--ag-gray-200) !important;
@@ -6286,6 +6290,7 @@
   html[data-theme="dark"] .topbar .icon-btn svg,
   html[data-theme="dark"] .topbar .notif-bell-btn svg{color:var(--ag-gray-700) !important;stroke:var(--ag-gray-700) !important;}
   html[data-theme="dark"] .topbar .user-menu-trigger:hover{background:var(--ag-gray-100) !important;}
+
 
   /* ===== TOPBAR: ikon Tema / Notifikasi / Tanda Tangan lebih modern (tombol bulat lembut, tint warna, hover halus) ===== */
   html body .topbar .icon-btn.theme-toggle-btn,
@@ -6319,6 +6324,7 @@
   html[data-theme="dark"] body .topbar .signature-btn svg{color:#fcd34d !important;stroke:#fcd34d !important;}
 
 
+
   /* ===== REGISTRASI INTERNAL: verifikasi NIK + auto-isi ===== */
   .int-nik-wrap{position:relative;}
   #intRegisterModal .int-nik-wrap input{padding-right:46px;font-weight:700;font-size:16px;letter-spacing:.14em;}
@@ -6337,6 +6343,7 @@
     border-radius:999px;background:var(--ag-green-soft);color:var(--ag-green);}
   #intRegisterModal .int-profile input[readonly]{background:var(--ag-gray-100);color:var(--ag-gray-700);cursor:default;font-weight:600;}
   #intRegisterModal .int-profile.int-verified input[readonly]{background:var(--ag-green-soft);border-color:rgba(22,163,74,.35);color:var(--ag-gray-900);}
+
 
   /* =========================================================
      REGISTRASI INTERNAL AGRINESIA — tampilan v2
@@ -6421,6 +6428,7 @@
     .int-nik-wrap.int-shake,#intRegisterModal .int-profile.is-loading .int-field input{animation:none;}
   }
 
+
   /* =========================================================
      REGISTRASI INTERNAL — v3 (rapi, bersih, tanpa stepper & garis meter)
      ========================================================= */
@@ -6449,6 +6457,7 @@
     #intRegisterModal .int-nik-wrap input{height:58px;font-size:20px;letter-spacing:.16em;padding-left:54px;}
   }
 
+
   /* =========================================================
      PROFIL SAYA — v3 (kartu data diri modern, tile rapi)
      ========================================================= */
@@ -6465,3 +6474,47 @@
     .profile-hero ~ .card .agent-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .profile-hero ~ .card .agent-detail-field:last-child:nth-child(odd){grid-column:1 / -1;}
   }
+
+
+  /* ===== PROFIL AGENT (pakai gaya ebp, v4) ===== */
+  .ebp.ebp-agent{max-width:980px;margin:0 auto;}
+  .ebp-agent .ebp-card{padding:18px 18px 10px;}
+  .ebp-agent .ebp-grid{display:grid;grid-template-columns:1fr;}
+  .ebp-agent .ebp-card .badge{margin-top:3px;}
+  .ebp-agent .ebp-card-title .card-title{font-size:inherit;}
+  .ebp-agent .ebp-reject{font-size:13px;line-height:1.5;color:var(--ag-red,#b91c1c);background:#FDECEC;padding:12px 14px;border-radius:14px;margin-bottom:8px;}
+  .ebp-agent .ebp-card .btn{margin-bottom:8px;}
+  @media (min-width:760px){
+    .ebp-agent .ebp-hero{padding:30px 24px 24px;}
+    .ebp-agent .ebp-avatar{width:84px;height:84px;font-size:28px;}
+    .ebp-agent .ebp-name{font-size:24px;}
+    .ebp-agent .ebp-grid{grid-template-columns:1fr 1fr;column-gap:36px;}
+    .ebp-agent .ebp-grid .ebp-row:nth-last-child(2):nth-child(odd){border-bottom:none;}
+  }
+
+
+  /* ===== v5: Informasi Akun 2 kolom (profil) + Detail Agent popup ringkas ===== */
+  .ebp-agent .ebp-grid.ebp-grid-compact{grid-template-columns:1fr 1fr;column-gap:16px;}
+  .ebp-agent .ebp-grid-compact .ebp-ic{display:none;}
+  .ebp-agent .ebp-grid-compact .ebp-row{padding:10px 0;}
+  .ebp-agent .ebp-grid-compact .ebp-txt small{font-size:10px;letter-spacing:.04em;}
+  .ebp-agent .ebp-grid-compact .ebp-txt strong{font-size:13.5px;}
+  @media (min-width:760px){.ebp-agent .ebp-grid.ebp-grid-compact{grid-template-columns:repeat(3,1fr);column-gap:28px;}}
+
+  .agent-detail-head{display:flex;align-items:center;gap:12px;padding-bottom:12px;margin-bottom:12px;}
+  .agent-detail-avatar{width:48px;height:48px;border-radius:14px;font-size:17px;flex:none;}
+  .agent-detail-head-meta{min-width:0;}
+  .agent-detail-name{font-size:16px;line-height:1.25;overflow-wrap:anywhere;}
+  .agent-detail-id{font-size:12px;margin-top:1px;}
+  .agent-detail-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .agent-detail-section-title{margin:14px 0 8px;font-size:11px;}
+  .agent-detail-grid.ad-list{display:block;background:var(--ag-gray-100);border-radius:16px;padding:2px 14px;}
+  .ad-list .agent-detail-field{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;
+    background:none;border:0;border-bottom:1px solid rgba(16,24,32,.07);border-radius:0;transform:none;}
+  .ad-list .agent-detail-field:last-child{border-bottom:0;}
+  .ad-list .agent-detail-field-label{flex:none;margin:0;font-size:10.5px;letter-spacing:.05em;white-space:nowrap;}
+  .ad-list .agent-detail-field-value{min-width:0;text-align:right;font-size:13px;overflow-wrap:anywhere;word-break:normal;}
+  .ad-list .ad-nowrap{display:block;white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(11px,3.3vw,13px);}
+  .ad-list .badge{white-space:nowrap;}
+
+</style>
