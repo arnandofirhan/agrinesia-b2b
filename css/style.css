@@ -6196,3 +6196,19 @@
     }
     html[data-theme="dark"] .topbar::before{background:linear-gradient(135deg,#12a070,#095c42);box-shadow:0 12px 28px rgba(0,0,0,.45);}
   }
+  /* ===== HALAMAN DAFTAR (Transaksi/PO, Order, dll) DI HP: LEBIH LEBAR & LEBIH KE ATAS =====
+     Sebelumnya: .content (padding) > .card (padding 22 + border + shadow) > filter-bar (kartu) >
+     kartu data = "kartu di dalam kartu", sisa ruang kiri/kanan/atas banyak terbuang.
+     Sekarang: padding halaman dipangkas, dan .card pembungkus yang isinya langsung daftar kartu
+     (.data-card-list) dibuat transparan tanpa border/padding, jadi filter + kartu data memakai
+     hampir selebar layar. Berlaku untuk SEMUA menu bertipe daftar. */
+  @media (max-width:760px){
+    .content{ padding-top:4px !important; padding-left:8px !important; padding-right:8px !important; }
+    .content > .card:has(> .data-card-list){
+      background:transparent !important; border:0 !important; box-shadow:none !important;
+      border-radius:0 !important; padding:0 !important; margin-bottom:12px !important;
+    }
+    .content > .card:has(> .data-card-list) > .filter-bar{ margin:0 0 10px !important; }
+    .content > .card:has(> .data-card-list) > .list-header{ margin-bottom:8px !important; }
+    .content > .card:has(> .data-card-list) > .data-card-list{ margin-top:0 !important; gap:10px !important; }
+  }
