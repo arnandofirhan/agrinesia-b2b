@@ -21,7 +21,7 @@
        Isi dengan URL Deployment "Web app" Apps Script (berakhiran /exec). -->
   <script>window.GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxRkiI9B1tSodXDnVRtnJkcqc5p-ztbiRlnMrvUMZPodGlNDrGGuFwlxMnskm2GI7vh/exec';</script>
   <!-- ===== PWA ===== -->
-  <link rel="manifest" href="manifest.json?v=1791349000">
+  <link rel="manifest" href="manifest.json?v=1791358000">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="mobile-web-app-capable" content="yes">
@@ -188,7 +188,7 @@
   <!-- Stylesheet.html disuntik langsung oleh Apps Script templating di sini (bukan
        fetch manual lagi seperti versi GitHub Pages) — jadi CSS sudah terpasang
        sebelum body dirender, tidak perlu loader/FOUC-guard/cache-buster apa pun lagi. -->
-  <link rel="stylesheet" href="css/style.css?v=1791349000">
+  <link rel="stylesheet" href="css/style.css?v=1791358000">
 
 </head>
 <body>
@@ -202,8 +202,9 @@
 
     <div class="login-visual">
       <div class="login-visual-copy">
+        <span class="login-visual-kicker">Agrinesia &middot; Caring &amp; Sharing</span>
         <h2 class="login-visual-title">Satu sistem untuk seluruh <em>operasional agent</em>.</h2>
-        <p class="login-visual-desc">Pantau pesanan, persetujuan, dan komisi agent secara real-time — dirancang untuk kebutuhan operasional tim Agrinesia.</p>
+        <p class="login-visual-desc">Pantau pesanan, persetujuan, dan komisi agent secara real-time &mdash; dirancang untuk kebutuhan operasional tim Agrinesia.</p>
         <div class="login-visual-stats">
           <div>
             <div class="login-visual-stat-num">120+</div>
@@ -227,10 +228,13 @@
           <span class="logo-mark">
             <img class="brand-mark-img" id="loginLogoImg" alt="Agrinesia">
           </span>
-          <span class="login-logo-appname">B2B Agent Management</span>
         </div>
-        <h1 class="login-heading">Selamat datang kembali</h1>
-        <p class="login-subheading">Masuk ke akun Agent atau Admin Anda untuk melanjutkan.</p>
+
+        <div class="login-head">
+          <span class="login-eyebrow">B2B Agent Management</span>
+          <h1 class="login-heading">Selamat datang kembali</h1>
+          <p class="login-subheading">Masuk ke akun Agent atau Admin Anda untuk melanjutkan.</p>
+        </div>
 
         <form id="loginForm" onsubmit="handleLogin();return false;">
           <div class="form-group">
@@ -264,12 +268,23 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </form>
-        <p style="text-align:center;font-size:12.5px;margin-top:20px;color:var(--ag-gray-500);">
-          Belum jadi Agent? <a href="#" onclick="openRegChoiceModal();return false;" style="color:var(--ag-green);font-weight:600;">Daftar di sini</a>
-        </p>
-        <p style="text-align:center;font-size:12.5px;margin-top:6px;color:var(--ag-gray-500);">
-          Sudah daftar? <a href="#" onclick="openCsChoiceModal();return false;" style="color:var(--ag-green);font-weight:600;">Cek status pendaftaran</a>
-        </p>
+
+        <div class="login-sep"><span>Belum punya akses?</span></div>
+
+        <div class="login-links">
+          <button type="button" class="login-link-card" onclick="openRegChoiceModal();return false;">
+            <span class="llc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
+            <span class="llc-tx"><b>Daftar sebagai Agent</b><small>Belum jadi Agent? Daftar di sini</small></span>
+            <svg class="llc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+          <button type="button" class="login-link-card" onclick="openCsChoiceModal();return false;">
+            <span class="llc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></span>
+            <span class="llc-tx"><b>Cek status pendaftaran</b><small>Sudah daftar? Lacak prosesnya</small></span>
+            <svg class="llc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <p class="login-foot">&copy; Agrinesia &middot; Caring &amp; Sharing</p>
       </div>
     </div>
   </div>
@@ -875,13 +890,13 @@
 
   <!-- JavaScript.html (SPA logic, ratusan fungsi) disuntik langsung di sini oleh
        Apps Script templating, apa adanya, tanpa fetch/loader manual. -->
-  <script src="api-bridge.js?v=1791349000"></script>
-  <script src="js/app.js?v=1791349000"></script>
+  <script src="api-bridge.js?v=1791358000"></script>
+  <script src="js/app.js?v=1791358000"></script>
   <script>
     // Service Worker (PWA offline-shell + syarat install Android). Hanya di HTTPS/localhost.
     if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
       window.addEventListener('load',function(){
-        navigator.serviceWorker.register('sw.js?v=1791349000').then(function(r){ try{r.update();}catch(e){} }).catch(function(){});
+        navigator.serviceWorker.register('sw.js?v=1791358000').then(function(r){ try{r.update();}catch(e){} }).catch(function(){});
       });
     }
   </script>
