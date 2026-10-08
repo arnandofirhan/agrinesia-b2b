@@ -115,7 +115,6 @@
     { key: 'dashboard',   icon: ICONS.dashboard, label: 'Dashboard',        roles: ['ADMIN','AGENT','SUPERVISOR','MANAGER','EMPLOYEE','STORE'] },
     { key: 'agents',      icon: ICONS.agent,     label: 'Data Agent',       roles: ['ADMIN','AGENT','SUPERVISOR','MANAGER'] },
     { key: 'agent-areas', icon: ICONS.location,  label: 'Area & Site Pendaftaran', roles: ['ADMIN','SUPERVISOR','MANAGER'] },
-    { key: 'departments', icon: ICONS.users,     label: 'Departemen / Divisi', roles: ['ADMIN','SUPERVISOR','MANAGER'] },
     { key: 'products',    icon: ICONS.products,  label: 'Master Item Product', roles: ['ADMIN','MANAGER'] },
     { key: 'catalog',     icon: ICONS.products,  label: 'Katalog',          roles: ['AGENT','SUPERVISOR'] },
     { key: 'promo',       icon: ICONS.promo,     label: 'Promo',            roles: ['ADMIN','AGENT','SUPERVISOR','MANAGER'] },
@@ -159,7 +158,7 @@
   // mis. /katalog, /promo, dst — lihat pushAppHistory_/initAppHistory_/bootApp)
   // =============================================================
   var PAGE_SLUG_MAP_ = {
-    'dashboard': 'dashboard', 'agents': 'agent', 'agent-areas': 'areapendaftaran', 'departments': 'departemen',
+    'dashboard': 'dashboard', 'agents': 'agent', 'agent-areas': 'areapendaftaran',
     'products': 'masteritem', 'catalog': 'katalog', 'promo': 'promo',
     'livechat': 'livechat', 'transactions': 'transaksi', 'orders': 'order',
     'commission': 'komisi', 'commission-scheme': 'skemakomisi', 'stores': 'store',
@@ -192,7 +191,7 @@
     { key: '__top__',   label: null, items: ['dashboard'] }, // ungrouped, always visible, no header
     { key: 'transaksi', label: 'Transaksi', sectionLabel: 'Operasional', items: ['transactions','orders','promo','catalog','livechat'] },
     { key: 'komisi',    label: 'Komisi',            items: ['commission','commission-scheme'] },
-    { key: 'master',    label: 'Master Data',       sectionLabel: 'Data & Laporan', items: ['agents','products','stores','agent-areas','departments'] },
+    { key: 'master',    label: 'Master Data',       sectionLabel: 'Data & Laporan', items: ['agents','products','stores','agent-areas'] },
     { key: 'laporan',   label: 'Laporan & Jadwal',  items: ['reports','calendar'] },
     { key: 'sistem',    label: 'Sistem',            sectionLabel: 'Administrasi', items: ['users','settings','dashboard-settings','audit-log'] },
     // divider: true -> render garis pemisah tipis SEBELUM grup ini (tanpa teks "modul lain",
@@ -205,7 +204,7 @@
   var SIDEBAR_GROUP_STATE_ = { transaksi: true, komisi: false, master: false, laporan: false, sistem: false, 'eb-menu': false };
 
   var PAGE_TITLES = {
-    dashboard: 'Dashboard', agents: 'Agent', 'agent-areas': 'Area Pendaftaran', departments: 'Departemen / Divisi', products: 'Master Item Product',
+    dashboard: 'Dashboard', agents: 'Agent', 'agent-areas': 'Area Pendaftaran', products: 'Master Item Product',
     catalog: 'Katalog Produk',
     promo: 'Promo', livechat: 'Live Chat', transactions: 'Transaksi / PO', orders: 'Order',
     commission: 'Commission', 'commission-scheme': 'Skema Komisi',
@@ -1883,7 +1882,6 @@
         case 'dashboard': return renderDashboard();
         case 'agents': return renderAgents();
         case 'agent-areas': return renderAgentAreas();
-        case 'departments': return renderDepartments();
         case 'products': return renderProducts();
         case 'catalog': return renderCatalog();
         case 'promo': return renderPromos();
@@ -2544,6 +2542,12 @@
     return '<div class="price-stack">'+(on?'<span class="price-strike">'+formatRupiah(s)+'</span>':'')+'<span class="agent-product-price">'+formatRupiah(price)+'</span>'+(on?'<span class="price-off">-'+Math.round((s-p)/s*100)+'%</span>':'')+'</div>';
   }
   function renderTableOrCards_(columns, rows, rowActionsFn, emptyTitle, emptySub, emptyIcon, opts){
+    var inner = renderTableOrCardsRaw_(columns, rows, rowActionsFn, emptyTitle, emptySub, emptyIcon, opts);
+    if(!rows.length || (opts && opts.noPager)) return inner;
+    return '<div class="pgn-wrap">' + inner + '<div class="pgn-bar" style="display:none"></div></div>';
+  }
+
+  function renderTableOrCardsRaw_(columns, rows, rowActionsFn, emptyTitle, emptySub, emptyIcon, opts){
     if(!rows.length) return emptyState_(emptyTitle, emptySub, emptyIcon);
     opts = opts || {};
     var tableHtml = renderTable(columns, rows, rowActionsFn, emptyTitle, emptySub, emptyIcon)
@@ -2596,7 +2600,7 @@
     // Registrasi Agent
     SUBMITTED:'Submitted', UNDER_REVIEW:'Under Review', APPROVED:'Approved', REJECTED:'Rejected',
     // MOU
-    NOT_GENERATED:'Not Generated', WAITING_SIGNATURE:'Waiting Signature', SIGNED:'Signed',
+    NOT_GENERATED:'Not Generated', NOT_REQUIRED:'Tanpa MOU', WAITING_SIGNATURE:'Waiting Signature', SIGNED:'Signed',
     // Status Agent
     ACTIVE:'Active', INACTIVE:'Inactive',
     // Promo (status EFEKTIF, dihitung server dari toggle Admin + tanggal — lihat computePromoEffectiveStatus_)
@@ -2616,7 +2620,7 @@
       REJECTED:'badge-red', INACTIVE:'badge-neutral', CANCELLED:'badge-neutral',
       SUBMITTED:'badge-blue', UNDER_REVIEW:'badge-blue', PENDING_SUPERVISOR:'badge-orange', PENDING_DELIVERY:'badge-orange',
       WAITING_SIGNATURE:'badge-orange', CLAIMED:'badge-orange', ELIGIBLE:'badge-blue', UNPAID:'badge-orange', PENDING:'badge-orange',
-      NOT_GENERATED:'badge-neutral', DELIVERED_PENDING_DOCS:'badge-orange', STORE_ORDER_CREATED:'badge-blue',
+      NOT_GENERATED:'badge-neutral', NOT_REQUIRED:'badge-neutral', DELIVERED_PENDING_DOCS:'badge-orange', STORE_ORDER_CREATED:'badge-blue',
       MENUNGGU_PEMBAYARAN:'badge-orange', EXPIRED:'badge-neutral', SCHEDULED:'badge-blue'
     };
     var cls = map[status] || 'badge-neutral';
@@ -2732,7 +2736,7 @@
         return v === '__NONE__' ? !a : a === v;
       }}
     ];
-    var filtered = applyListFilters_(rows, FILTER_STATE_AGENTS_, ['FullName','Email','Phone','AgentID','KTPNumber','RegistrationArea','Department'], fieldConfigs);
+    var filtered = applyListFilters_(rows, FILTER_STATE_AGENTS_, ['FullName','Email','Phone','AgentID','KTPNumber','RegistrationArea','Department','JobPosition'], fieldConfigs);
     var filterHtml = filterBarHtml_('onFilterChangeAgents_', 'Cari nama, email, telepon, atau Agent ID...', fieldConfigs, FILTER_STATE_AGENTS_, filtered.length, rows.length);
     var canManage = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
     var canDelete = STATE.user.role === 'ADMIN';
@@ -2748,8 +2752,8 @@
           '<span class="ag-person-sub"><span class="id-chip">'+escapeHtml(r.AgentID||'-')+'</span> '+agentTypeBadge_(r)+'</span></div></div>';
       }},
       {label:'Email', field:'Email', render:function(r){ return one_(r.Email); }},
-      {label:'Telepon', field:'Phone', render:function(r){ return one_(r.Phone); }},
-      {label:'NIK / Divisi', tableHide:true, render:function(r){ return two_(escapeHtml(r.KTPNumber||'-'), 'Dept: '+escapeHtml(r.Department||'-')); }},
+      {label:'Telepon', field:'Phone', render:function(r){ return agentTypeOf_(r)==='INTERNAL' ? '<span class="cell-muted">-</span>' : one_(r.Phone); }},
+      {label:'NIK / Divisi', tableHide:true, render:function(r){ return agentTypeOf_(r)==='INTERNAL' ? two_(escapeHtml(r.KTPNumber||'-'), escapeHtml(r.JobPosition||'-')+' &middot; '+escapeHtml(r.Department||'-')) : two_(escapeHtml(r.KTPNumber||'-'), 'Dept: '+escapeHtml(r.Department||'-')); }},
       {label:'Alamat', tableHide:true, render:function(r){ return escapeHtml(r.AddressKTP||'-'); }},
       {label:'Area', field:'RegistrationArea', render:function(r){
         return r.RegistrationArea ? '<span class="badge badge-neutral cell-area" title="'+escapeHtml(r.RegistrationArea)+'">'+escapeHtml(r.RegistrationArea)+'</span>' : '<span class="cell-muted">-</span>';
@@ -2797,6 +2801,9 @@
           html += '<button class="action-btn delete" title="Nonaktifkan" onclick="deleteAgentConfirm(\''+r.AgentID+'\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\')">'+ICONS.power+'</button>';
         }
       }
+      if(canDelete){
+          html += '<button class="action-btn delete" title="Hapus Permanen" onclick="purgeAgentConfirm(\''+r.AgentID+'\',\''+escapeHtml(r.FullName||'').replace(/'/g,"\\'")+'\')">'+ICONS.trash+'</button>';
+      }
       html += '</div>';
       return '<div class="ag-act">'+top+html+'</div>';
     };
@@ -2838,17 +2845,18 @@
     var html = '<div class="ebp-hero">' +
       '<div class="ebp-avatar">'+escapeHtml(initials)+'</div>' +
       '<div class="ebp-name">'+escapeHtml(agent.FullName||'-')+'</div>' +
-      '<div class="ebp-company">'+escapeHtml(isInt_ ? (agent.Department||'Internal Agrinesia') : (agent.Email||'-'))+'</div>' +
+      '<div class="ebp-company">'+escapeHtml(isInt_ ? ((agent.JobPosition ? agent.JobPosition+' · ' : '')+(agent.Department||'Internal Agrinesia')) : (agent.Email||'-'))+'</div>' +
       '<div class="ebp-idchip">ID Agent: '+escapeHtml(agent.AgentID||'-')+'</div>' +
     '</div>';
 
     html += '<div class="ebp-card">' +
       '<div class="ebp-card-title"><span class="ebp-dot"></span>Data Diri</div>' +
       '<div class="ebp-grid">' +
-        row_('users', isInt_ ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(agent.KTPNumber)) +
+        row_('users', isInt_ ? 'Employee ID' : 'Nomor KTP', escapeHtml(agent.KTPNumber)) +
         row_('mail', 'Email', escapeHtml(agent.Email)) +
-        row_('phone', 'No. Telepon / WhatsApp', escapeHtml(agent.Phone)) +
-        (isInt_ ? row_('dashboard', 'Departemen / Divisi', escapeHtml(agent.Department||'-')) : row_('dashboard', 'Alamat KTP', escapeHtml(agent.AddressKTP))) +
+        (isInt_ ? row_('agent', 'Job Position', escapeHtml(agent.JobPosition||'-')) : row_('phone', 'No. Telepon / WhatsApp', escapeHtml(agent.Phone))) +
+        (isInt_ ? row_('dashboard', 'Division', escapeHtml(agent.Department||'-')) : row_('dashboard', 'Alamat KTP', escapeHtml(agent.AddressKTP))) +
+        (isInt_ ? row_('location', 'Site Location', escapeHtml(agent.RegistrationArea||'-')) : '') +
       '</div>' +
     '</div>';
 
@@ -2858,7 +2866,7 @@
         row_('user', 'Tipe Agent', agentTypeBadge_(agent)) +
         row_('check', 'Status Akun', statusBadge(agent.AgentStatus)) +
         row_('check', 'Status Registrasi', statusBadge(agent.RegistrationStatus)) +
-        row_('check', 'Status MOU', statusBadge(agent.MOUStatus)) +
+        (isInt_ ? '' : row_('check', 'Status MOU', statusBadge(agent.MOUStatus))) +
         row_('calendar', 'Tanggal Daftar', escapeHtml(formatDateDMY_(agent.CreatedAt))) +
         row_('calendar', 'Disetujui Pada', agent.ApprovedAt ? escapeHtml(formatDateDMY_(agent.ApprovedAt)) : '-') +
         row_('calendar', 'Terakhir Diperbarui', escapeHtml(formatDateDMY_(agent.UpdatedAt))) +
@@ -3075,31 +3083,38 @@
           '<div class="agent-detail-name">'+escapeHtml(a.FullName||'-')+'</div>' +
           '<div class="agent-detail-id">'+escapeHtml(a.AgentID||'-')+'</div>' +
           '<div class="agent-detail-badges">' +
-            statusBadge(a.RegistrationStatus) + statusBadge(a.MOUStatus) + statusBadge(a.AgentStatus) +
+            statusBadge(a.RegistrationStatus) + (agentTypeOf_(a)==='INTERNAL' ? '' : statusBadge(a.MOUStatus)) + statusBadge(a.AgentStatus) +
           '</div>' +
         '</div>' +
       '</div>';
 
-    var infoGrid =
-      '<div class="agent-detail-section-title">Data Diri</div>' +
-      '<div class="agent-detail-grid ad-list">' +
+    var isIntA_ = agentTypeOf_(a)==='INTERNAL';
+    var approvalVal_ = a.ApprovedByName ?
+      escapeHtml(a.ApprovedByName) + formatApprovalDateSuffix_(a.ApprovedAt) :
+      '<span style="color:var(--ag-gray-400);">Belum di-approve</span>';
+    var areaVal_ = a.RegistrationArea ? escapeHtml(a.RegistrationArea) : '<span style="color:var(--ag-gray-400);">Belum diketahui</span>';
+    // Internal Agrinesia: tampilkan persis 6 data karyawan (Employee ID, Nama di header, Email, Job Position,
+    // Division, Site Location) — tanpa No. HP, tanpa MOU/dokumen. B2B tetap seperti semula.
+    var infoRows_ = isIntA_
+      ? detailField_('Employee ID', escapeHtml(a.KTPNumber)) +
         detailField_('Email', '<span class="ad-nowrap">'+escapeHtml(a.Email)+'</span>') +
+        detailField_('Job Position', escapeHtml(a.JobPosition||'-')) +
+        detailField_('Division', escapeHtml(a.Department||'-')) +
+        detailField_('Site Location', areaVal_) +
+        detailField_('Tipe', agentTypeBadge_(a)) +
+        detailField_('Approval By', approvalVal_)
+      : detailField_('Email', '<span class="ad-nowrap">'+escapeHtml(a.Email)+'</span>') +
         detailField_('Telepon / WhatsApp', escapeHtml(a.Phone)) +
         detailField_('Tipe', agentTypeBadge_(a)) +
-        detailField_(agentTypeOf_(a)==='INTERNAL' ? 'NIK Karyawan' : 'Nomor KTP', escapeHtml(a.KTPNumber)) +
-        (agentTypeOf_(a)==='INTERNAL' ? '' : detailField_('Alamat KTP', escapeHtml(a.AddressKTP))) +
-        (agentTypeOf_(a)==='INTERNAL' ? detailField_('Departemen / Divisi', escapeHtml(a.Department||'-')) : '') +
+        detailField_('Nomor KTP', escapeHtml(a.KTPNumber)) +
+        detailField_('Alamat KTP', escapeHtml(a.AddressKTP)) +
         // Area Pendaftaran: HANYA muncul di sini (view Admin/Supervisor/Manager) — TIDAK
-        // pernah dirender di renderAgentSelfCard (Profil Saya milik Agent sendiri), dan
-        // backend getAgentDetail() juga sudah menyaring field ini keluar untuk sesi AGENT.
-        detailField_(agentTypeOf_(a)==='INTERNAL' ? 'Site' : 'Area Pendaftaran', a.RegistrationArea ? escapeHtml(a.RegistrationArea) : '<span style="color:var(--ag-gray-400);">Belum diketahui</span>') +
-        // Approval By: nama + waktu approval, sama seperti kolom "Approval By" di tabel
-        // Daftar Agent (lihat approvalByCell_). Kosong ("Belum di-approve") kalau agent
-        // ini belum pernah di-approve (mis. masih SUBMITTED/REJECTED).
-        detailField_('Approval By', a.ApprovedByName ?
-          escapeHtml(a.ApprovedByName) + formatApprovalDateSuffix_(a.ApprovedAt) :
-          '<span style="color:var(--ag-gray-400);">Belum di-approve</span>') +
-      '</div>' +
+        // pernah dirender di renderAgentSelfCard (Profil Saya milik Agent B2B sendiri).
+        detailField_('Area Pendaftaran', areaVal_) +
+        detailField_('Approval By', approvalVal_);
+    var infoGrid =
+      '<div class="agent-detail-section-title">Data Diri</div>' +
+      '<div class="agent-detail-grid ad-list">' + infoRows_ + '</div>' +
       (a.RejectionNote ?
         '<div class="agent-detail-section-title">Catatan Penolakan</div>' +
         '<div style="font-size:13px;color:var(--ag-red);background:#FDECEC;padding:10px 12px;border-radius:var(--radius-sm);">'+escapeHtml(a.RejectionNote)+'</div>'
@@ -3136,7 +3151,7 @@
         '</div>';
     }
 
-    var html = head + infoGrid + docsHtml + reembedHtml;
+    var html = isIntA_ ? (head + infoGrid) : (head + infoGrid + docsHtml + reembedHtml); // Internal: tanpa dokumen & MOU
     openViewModal('Detail Agent', html);
   }
 
@@ -3368,7 +3383,7 @@
       body.innerHTML =
         '<div class="form-group"><label>Email<span class="required-mark">*</span></label><input id="csEmail" type="email" placeholder="nama@email.com"></div>' +
         (CHECK_STATUS_MODE_ === 'INTERNAL'
-          ? '<div class="form-group"><label id="csKTPLabel">NIK Karyawan<span class="required-mark">*</span></label><input id="csKTP" type="text" inputmode="numeric" maxlength="10" placeholder="10 digit NIK Karyawan" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10)"></div>'
+          ? '<div class="form-group"><label id="csKTPLabel">Employee ID<span class="required-mark">*</span></label><input id="csKTP" type="text" inputmode="numeric" maxlength="10" placeholder="10 digit Employee ID" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10)"></div>'
           : '<div class="form-group"><label id="csKTPLabel">Nomor KTP<span class="required-mark">*</span></label><input id="csKTP" type="text" placeholder="16 digit Nomor KTP"></div>') +
         '<div id="csError" class="form-error" style="display:none;"></div>';
     }
@@ -3383,7 +3398,7 @@
     CHECK_STATUS_MODE_ = mode;
     var t = document.getElementById('csHeroTitle'), s = document.getElementById('csHeroSub');
     if(t) t.textContent = mode === 'INTERNAL' ? 'Status Pendaftaran Internal Agrinesia' : 'Status Pendaftaran Agent';
-    if(s) s.innerHTML = mode === 'INTERNAL' ? 'Masukkan Email &amp; NIK Karyawan (10 digit) yang Anda pakai saat mendaftar.' : 'Masukkan Email &amp; Nomor KTP yang Anda pakai saat mendaftar.';
+    if(s) s.innerHTML = mode === 'INTERNAL' ? 'Masukkan Email &amp; Employee ID (10 digit) yang Anda pakai saat mendaftar.' : 'Masukkan Email &amp; Nomor KTP yang Anda pakai saat mendaftar.';
   }
   function openIntCheckStatusModal(){
     setCheckStatusMode_('INTERNAL');
@@ -3756,11 +3771,11 @@
     var errEl = document.getElementById('csError');
     var isInt_ = CHECK_STATUS_MODE_ === 'INTERNAL';
     if(!email || !ktp){
-      if(errEl){ errEl.textContent = isInt_ ? 'Email dan NIK Karyawan wajib diisi.' : 'Email dan Nomor KTP wajib diisi.'; errEl.style.display = 'block'; }
+      if(errEl){ errEl.textContent = isInt_ ? 'Email dan Employee ID wajib diisi.' : 'Email dan Nomor KTP wajib diisi.'; errEl.style.display = 'block'; }
       return;
     }
     if(isInt_ && !/^[0-9]{10}$/.test(ktp)){
-      if(errEl){ errEl.textContent = 'NIK Karyawan harus tepat 10 digit angka.'; errEl.style.display = 'block'; }
+      if(errEl){ errEl.textContent = 'Employee ID harus tepat 10 digit angka.'; errEl.style.display = 'block'; }
       return;
     }
     var btn = document.getElementById('csSubmitBtn');
@@ -3785,6 +3800,15 @@
     var footer = document.querySelector('#checkStatusModal .reg-footer');
     if(!body) return;
     var isRejected = res.registrationStatus === 'REJECTED';
+    var isIntRes_ = res.agentType === 'INTERNAL';
+    var intInfoHtml_ = !isIntRes_ ? '' :
+      '<div class="agent-detail-grid ad-list" style="margin-bottom:14px;">' +
+        detailField_('Employee ID', escapeHtml(res.employeeId||'-')) +
+        detailField_('Email', '<span class="ad-nowrap">'+escapeHtml(res.email||'-')+'</span>') +
+        detailField_('Job Position', escapeHtml(res.jobPosition||'-')) +
+        detailField_('Division', escapeHtml(res.division||'-')) +
+        detailField_('Site Location', escapeHtml(res.site||'-')) +
+      '</div>';
 
     var html = '<div class="profile-hero" style="padding:18px 20px;margin-bottom:16px;">' +
       '<div class="profile-hero-info">' +
@@ -3795,9 +3819,14 @@
     '</div>';
 
     if(res.registrationStatus === 'SUBMITTED' || res.registrationStatus === 'UNDER_REVIEW'){
-      html += '<p style="font-size:13px;color:var(--ag-gray-600);margin:0;">Registrasi Anda sedang direview oleh tim kami. Anda akan menerima email berisi akun login begitu disetujui.</p>';
+      html += intInfoHtml_ + '<p style="font-size:13px;color:var(--ag-gray-600);margin:0;">' + (isIntRes_ ? 'Registrasi Anda sedang direview Admin. Begitu disetujui, akun langsung aktif dan kredensial login dikirim ke email Anda.' : 'Registrasi Anda sedang direview oleh tim kami. Anda akan menerima email berisi akun login begitu disetujui.') + '</p>';
     } else if(res.registrationStatus === 'APPROVED'){
-      html += '<p style="font-size:13px;color:var(--ag-gray-600);margin:0;">Registrasi Anda sudah disetujui. Silakan cek email untuk info akun login, lalu masuk lewat form Login.</p>';
+      html += intInfoHtml_ + '<p style="font-size:13px;color:var(--ag-gray-600);margin:0;">' + (isIntRes_ ? 'Registrasi Anda sudah disetujui dan akun sudah aktif. Cek email untuk info akun login, lalu masuk lewat form Login dan mulai order.' : 'Registrasi Anda sudah disetujui. Silakan cek email untuk info akun login, lalu masuk lewat form Login.') + '</p>';
+    } else if(isRejected && isIntRes_){
+      if(res.rejectionNote){
+        html += '<div style="font-size:13px;color:var(--ag-red);background:#FDECEC;padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px;">'+escapeHtml(res.rejectionNote)+'</div>';
+      }
+      html += intInfoHtml_ + '<div class="form-hint">Data di atas diambil dari data karyawan. Jika ada yang salah, hubungi Admin untuk memperbaikinya, lalu klik "Ajukan Ulang Registrasi".</div>';
     } else if(isRejected){
       if(res.rejectionNote){
         html += '<div style="font-size:13px;color:var(--ag-red);background:#FDECEC;padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px;">'+escapeHtml(res.rejectionNote)+'</div>';
@@ -3966,6 +3995,22 @@
       '<div class="form-group"><label>Area Pendaftaran</label><div class="text-field-wrap">'+ICONS.location+
         '<select id="agRegArea"><option value="">Memuat area...</option></select>' +
       '</div><p style="font-size:11.5px;color:var(--ag-gray-600);margin:6px 0 0;">Hanya terlihat oleh tim internal — dipakai untuk memantau asal pendaftaran Agent, tidak mempengaruhi Store tempat Agent order.</p></div>';
+    if(agentTypeOf_(a)==='INTERNAL'){
+      // Internal Agrinesia: 6 data karyawan saja (tanpa No. HP, tanpa Alamat KTP, Site Location = teks bebas).
+      var empIdField =
+        '<div class="form-group"><label>Employee ID</label><div class="text-field-wrap">'+ICONS.fileDoc+
+          '<input type="text" id="agKTPNumber" inputmode="numeric" maxlength="10" value="'+escapeHtml(a.KTPNumber||'')+'" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10);">' +
+        '</div></div>';
+      var intBody =
+        empIdField +
+        formField_('agFullName','Nama Lengkap',a.FullName,'text','',false,ICONS.agent) +
+        emailField +
+        formField_('agJob','Job Position',a.JobPosition,'text','',false,ICONS.agent) +
+        formField_('agDept','Division',a.Department,'text','',false,ICONS.dashboard) +
+        formField_('agSite','Site Location',a.RegistrationArea,'text','',false,ICONS.location);
+      openFormModal('Edit Agent Internal', intBody, function(){ saveAgentForm(agentId); });
+      return;
+    }
     var body =
       formField_('agFullName','Nama Lengkap',a.FullName,'text','',false,ICONS.agent) +
       emailField +
@@ -4010,6 +4055,20 @@
   }
 
   function saveAgentForm(agentId){
+    if(document.getElementById('agJob')){ // form Internal Agrinesia (6 data karyawan)
+      var f = {
+        FullName: val_('agFullName'), KTPNumber: val_('agKTPNumber'),
+        JobPosition: val_('agJob'), Department: val_('agDept'), RegistrationArea: val_('agSite')
+      };
+      if(document.getElementById('agEmail')) f.Email = val_('agEmail');
+      if(!f.FullName){ showToast('Nama lengkap wajib diisi.','error'); return; }
+      if(!/^[0-9]{10}$/.test(f.KTPNumber)){ showToast('Employee ID harus tepat 10 digit angka.','error'); return; }
+      google.script.run.withSuccessHandler(function(res){
+        if(res.success){ closeModal(); showToast('Data agent diperbarui.','success'); renderAgents(); }
+        else showToast(res.message||'Gagal menyimpan.','error');
+      }).withFailureHandler(function(e){ handleBackendError(e); }).updateAgent(STATE.token, agentId, f);
+      return;
+    }
     var fields = {
       FullName: val_('agFullName'), Phone: val_('agPhone'),
       KTPNumber: val_('agKTPNumber'), AddressKTP: val_('agAddress'),
@@ -4216,105 +4275,22 @@
     });
   }
 
-  // =============================================================
-  // MODULE: DEPARTEMEN / DIVISI (master)
-  // Sumber dropdown "Departemen / Divisi" di form Registrasi Internal Agrinesia.
-  // Tambah/Edit/Hapus: ADMIN, SUPERVISOR & MANAGER (sama seperti Area Pendaftaran).
-  // =============================================================
-  var DEPARTMENTS_CACHE_ = [];
-  var FILTER_STATE_DEPARTMENTS_ = { q:'', status:'__ALL__' };
-
-  function renderDepartments(){
-    google.script.run
-      .withSuccessHandler(function(rows){
-        DEPARTMENTS_CACHE_ = rows || [];
-        paintPage_('departments', departmentsPageHtml_());
-      })
-      .withFailureHandler(function(e){ handleBackendError(e, pageErrorEl_('departments')); })
-      .listDepartments(STATE.token);
-  }
-
-  function onFilterChangeDepartments_(key, val){
-    if(key === '__RESET__'){ FILTER_STATE_DEPARTMENTS_ = { q:'', status:'__ALL__' }; }
-    else { FILTER_STATE_DEPARTMENTS_[key] = val; }
-    paintPage_('departments', departmentsPageHtml_());
-  }
-
-  function departmentsPageHtml_(){
-    var rows = DEPARTMENTS_CACHE_ || [];
-    var fieldConfigs = [
-      {key:'status', label:'Status', options:uniqueOptions_(rows,'Status'), match:function(r,v){return r.Status===v;}}
-    ];
-    var filtered = applyListFilters_(rows, FILTER_STATE_DEPARTMENTS_, ['DepartmentID','DepartmentName'], fieldConfigs);
-    var filterHtml = filterBarHtml_('onFilterChangeDepartments_', 'Cari nama departemen...', fieldConfigs, FILTER_STATE_DEPARTMENTS_, filtered.length, rows.length);
-    var cols = [
-      {label:'No.', render:function(r,i){ return String(i+1); }},
-      {label:'Dept ID', render:function(r){ return '<span class="id-chip">'+escapeHtml(r.DepartmentID||'-')+'</span>'; }},
-      {label:'Nama Departemen / Divisi', titleCol:true, field:'DepartmentName'},
-      {label:'Dipakai Agent', render:function(r){ return r.AgentCount ? '<span class="badge badge-orange">'+r.AgentCount+' agent</span>' : '<span style="color:var(--ag-gray-400);">-</span>'; }},
-      {label:'Status', fullWidth:true, render:function(r){ return statusBadge(r.Status); }}
-    ];
-    var actions = function(r){
-      var edit = 'editDepartment_(\''+r.DepartmentID+'\')';
-      var del = 'deleteDepartmentConfirm_(\''+r.DepartmentID+'\',\''+escapeHtml(r.DepartmentName||'').replace(/'/g,"\\'")+'\')';
-      return rowActionButtons(null, edit, del);
-    };
-    return '<div class="card"><div class="table-toolbar"><span class="card-title">Departemen / Divisi</span>' +
-      '<button class="btn btn-primary btn-add btn-sm" onclick="editDepartment_(null)">'+ICONS.plus+' Tambah Departemen</button>' +
-      '</div>' + filterHtml +
-      '<div class="notif-panel-hint" style="margin:0 16px 12px;">'+ICONS.info+' Dipakai sebagai pilihan dropdown "Departemen / Divisi" di form Registrasi Internal Agrinesia. Mengubah nama departemen otomatis memperbarui data Agent Internal yang memakainya.</div>' +
-      renderTableOrCards_(cols, filtered, actions,
-        rows.length ? 'Tidak ada departemen yang cocok' : 'Belum ada departemen',
-        rows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Tambahkan departemen pertama — akan muncul di dropdown pada form Registrasi Internal Agrinesia.',
-        ICONS.users) + '</div>';
-  }
-
-  function findDepartment_(id){
-    var target = String(id == null ? '' : id).trim();
-    var rows = DEPARTMENTS_CACHE_ || [];
-    for(var i=0;i<rows.length;i++){ if(String(rows[i].DepartmentID == null ? '' : rows[i].DepartmentID).trim() === target) return rows[i]; }
-    return null;
-  }
-
-  function editDepartment_(id){
-    var d = id ? (findDepartment_(id) || {}) : {};
-    var statusVal = d.Status || 'ACTIVE';
-    var body =
-      formField_('deptName','Nama Departemen / Divisi', d.DepartmentName, 'text', 'Contoh: Sales, Finance, HRD', true, ICONS.users) +
-      '<div class="form-group"><label>Status</label><select id="deptStatus">' +
-        '<option value="ACTIVE"'+(statusVal==='ACTIVE'?' selected':'')+'>ACTIVE</option>' +
-        '<option value="INACTIVE"'+(statusVal==='INACTIVE'?' selected':'')+'>INACTIVE</option>' +
-      '</select><div class="notif-panel-hint" style="margin-top:4px;">'+ICONS.info+' Departemen INACTIVE tidak tampil di dropdown registrasi, tapi data Agent lama tetap utuh.</div></div>';
-    openFormModal(id ? 'Edit Departemen' : 'Tambah Departemen', body, function(){ saveDepartmentForm_(id); });
-  }
-
-  function saveDepartmentForm_(id){
-    var payload = { DepartmentID: id || undefined, DepartmentName: val_('deptName'), Status: val_('deptStatus') || 'ACTIVE' };
-    if(!payload.DepartmentName){ showToast('Nama departemen wajib diisi.','error'); return; }
-    google.script.run
-      .withSuccessHandler(function(res){
-        if(res.success){ closeModal(); showToast(res.message || 'Departemen disimpan.','success'); renderDepartments(); }
-        else showToast(res.message || 'Gagal menyimpan.','error');
-      })
-      .withFailureHandler(function(e){ handleBackendError(e); })
-      .saveDepartment(STATE.token, payload);
-  }
-
-  function deleteDepartmentConfirm_(id, name){
+  /** Hapus PERMANEN agent + seluruh transaksi, PO, order, komisi, chat & akun user-nya. */
+  function purgeAgentConfirm(agentId, agentName){
     openConfirmModal({
-      title: 'Hapus Departemen?',
-      message: 'Departemen "'+name+'" akan dihapus permanen. Departemen yang masih dipakai Agent tidak bisa dihapus — nonaktifkan saja (Status = INACTIVE).',
-      confirmLabel: 'Ya, Hapus', danger: true, icon: ICONS.trash,
+      title: 'Hapus Agent Permanen?',
+      message: 'Agent "'+agentName+'" ('+agentId+') akan DIHAPUS PERMANEN beserta seluruh transaksi, PO (termasuk PO ke store), order, komisi, chat, akun user-nya, serta file di Google Drive (MOU, KTP, NPWP, rekening, tanda tangan, bukti transfer, dll). ' +
+        'Tindakan ini TIDAK bisa dibatalkan. Jika hanya ingin agent tidak bisa login, gunakan tombol Nonaktifkan.',
+      confirmLabel: 'Ya, Hapus Permanen',
+      danger: true,
+      icon: ICONS.trash,
       onConfirm: function(){
-        setPageLoading_(true, 'Menghapus departemen');
-        google.script.run
-          .withSuccessHandler(function(res){
-            setPageLoading_(false);
-            if(res.success){ showToast(res.message || 'Departemen dihapus.','success'); renderDepartments(); }
-            else showToast(res.message || 'Gagal menghapus.','error');
-          })
-          .withFailureHandler(function(e){ setPageLoading_(false); handleBackendError(e); })
-          .deleteDepartment(STATE.token, id);
+        setPageLoading_(true, 'Menghapus agent & seluruh datanya');
+        google.script.run.withSuccessHandler(function(res){
+          setPageLoading_(false);
+          if(res.success){ showToast(res.message||'Agent dihapus.','success'); renderAgents(); }
+          else showToast(res.message||'Gagal menghapus.','error');
+        }).withFailureHandler(function(e){ setPageLoading_(false); handleBackendError(e); }).purgeAgent(STATE.token, agentId);
       }
     });
   }
@@ -4326,7 +4302,9 @@
     if(decision === 'APPROVED'){
       openConfirmModal({
         title: 'Approve Agent?',
-        message: 'Agent "'+name+'" akan disetujui. MOU akan otomatis dibuat dan akun login akan dikirimkan ke email agent.',
+        message: (agentRow && agentTypeOf_(agentRow)==='INTERNAL')
+          ? 'Agent Internal "'+name+'" akan disetujui. Akun langsung aktif (tanpa MOU) dan kredensial login dikirim ke email, sehingga bisa langsung order.'
+          : 'Agent "'+name+'" akan disetujui. MOU akan otomatis dibuat dan akun login akan dikirimkan ke email agent.',
         confirmLabel: 'Ya, Approve',
         danger: false,
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
@@ -5582,7 +5560,7 @@
         try{
           var agentMap = {};
           if(agent) agentMap[agent.AgentID] = agent;
-          renderPOList_(agent && agent.MOUStatus === 'SIGNED' && agent.AgentStatus === 'ACTIVE', agentMap);
+          renderPOList_(agent && (agent.MOUStatus === 'SIGNED' || agent.MOUStatus === 'NOT_REQUIRED' || agentTypeOf_(agent)==='INTERNAL') && agent.AgentStatus === 'ACTIVE', agentMap);
         }catch(err){ handleBackendError(err, pageErrorEl_('transactions')); }
       }).withFailureHandler(function(e){ if(mySeq === PO_REQUEST_SEQ_) handleBackendError(e, pageErrorEl_('transactions')); })
         .getAgentDetail(STATE.token, STATE.user.agentId);
@@ -7317,15 +7295,16 @@
     if(has('NIK / Divisi') && has('Agent')){
       return function(r){
         var ini = (r.FullName||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase();}).join('') || '?';
+        var isIntC_ = agentTypeOf_(r)==='INTERNAL';
         var where = (r.RegistrationArea || r.Department)
-          ? box(ICONS.location, escapeHtml(r.RegistrationArea || '-'), r.Department ? 'Dept: '+escapeHtml(r.Department) : '') : '';
+          ? box(ICONS.location, escapeHtml(r.RegistrationArea || '-'), r.Department ? (isIntC_ ? escapeHtml((r.JobPosition ? r.JobPosition+' · ' : '')+r.Department) : 'Dept: '+escapeHtml(r.Department)) : '') : '';
         return '<div class="oc">' + head(r.AgentID, statusBadge(r.AgentStatus)) +
           '<div class="oc-person"><div class="oc-avatar">'+escapeHtml(ini)+'</div><div class="oc-person-txt">' +
             '<div class="oc-agent"><span class="oc-agent-name">'+escapeHtml(r.FullName||'-')+'</span>'+agentTypePill_(r)+'</div>' +
             '<div class="oc-sub">'+escapeHtml(r.Email||'-')+'</div>' +
-            '<div class="oc-sub">'+escapeHtml(r.Phone||'-')+'</div></div></div>' +
+            (isIntC_ ? '' : '<div class="oc-sub">'+escapeHtml(r.Phone||'-')+'</div>') + '</div></div>' +
           where +
-          foot(kv('Registrasi', statusBadge(r.RegistrationStatus)) + kv('MOU', statusBadge(r.MOUStatus)), r) +
+          foot(kv('Registrasi', statusBadge(r.RegistrationStatus)) + (isIntC_ ? '' : kv('MOU', statusBadge(r.MOUStatus))), r) +
         '</div>';
       };
     }
@@ -8652,11 +8631,12 @@
     };
     var activeCnt_ = rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length;
     var roleCnt_ = function(k){ return rows.filter(function(r){ return r.Role===k; }).length; };
-    var summary_ = '<div class="pg-stats">' +
-      '<div><span>Total User</span><b>'+rows.length+'</b></div>' +
-      '<div class="pg-hl"><span>Aktif</span><b>'+activeCnt_+'</b></div>' +
-      '<div><span>Staff</span><b>'+(roleCnt_('ADMIN')+roleCnt_('SUPERVISOR')+roleCnt_('MANAGER'))+'</b></div>' +
-      '<div><span>Agent</span><b>'+roleCnt_('AGENT')+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Total User', rows.length, 'blue', ICONS.users, 'Semua akun terdaftar') +
+      kpiCard('Aktif', activeCnt_, 'green', ICONS.check, (rows.length-activeCnt_)+' nonaktif') +
+      kpiCard('Staff', (roleCnt_('ADMIN')+roleCnt_('SUPERVISOR')+roleCnt_('MANAGER')), 'purple', ICONS.settings || ICONS.users, 'Admin, Supervisor & Manager') +
+      kpiCard('Agent', roleCnt_('AGENT'), 'orange', ICONS.agent, 'Akun Agent B2B') +
+    '</div>';
     return '<div class="card users-page"><div class="list-header"><span class="card-title">Kelola User</span>' +
       '<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editUser(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah User</span></button></div>' +
       summary_ +
@@ -8912,7 +8892,7 @@
       {label:'Detail', field:'Detail', fullWidth:true}
     ];
 
-    var tableHtml = renderTableOrCards_(cols, pageRows, null, allRows.length ? 'Tidak ada aktivitas yang cocok' : 'Belum ada aktivitas', allRows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Log aktivitas sistem akan tercatat di sini.', ICONS.audit);
+    var tableHtml = renderTableOrCards_(cols, pageRows, null, allRows.length ? 'Tidak ada aktivitas yang cocok' : 'Belum ada aktivitas', allRows.length ? 'Coba ubah kata kunci pencarian atau filter yang dipakai.' : 'Log aktivitas sistem akan tercatat di sini.', ICONS.audit, {noPager:true});
 
     var pagerHtml = '';
     if(total){
@@ -8937,10 +8917,11 @@
     var uniqUsers_ = {}; rows.forEach(function(r){ uniqUsers_[r.UserID] = 1; });
     var todayStr_ = new Date().toDateString();
     var todayCnt_ = rows.filter(function(r){ var d = new Date(r.Timestamp); return !isNaN(d.getTime()) && d.toDateString() === todayStr_; }).length;
-    var summary_ = '<div class="pg-stats pg-3">' +
-      '<div><span>Aktivitas</span><b>'+rows.length+'</b></div>' +
-      '<div class="pg-hl"><span>Hari Ini</span><b>'+todayCnt_+'</b></div>' +
-      '<div><span>User Unik</span><b>'+Object.keys(uniqUsers_).length+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Aktivitas', rows.length, 'blue', ICONS.audit, 'Total log tercatat') +
+      kpiCard('Hari Ini', todayCnt_, 'green', ICONS.calendar, 'Aktivitas hari ini') +
+      kpiCard('User Unik', Object.keys(uniqUsers_).length, 'purple', ICONS.users, 'User yang beraktivitas') +
+    '</div>';
     return '<div class="card audit-page"><div class="list-header"><span class="card-title">Audit Log</span></div>' +
       summary_ + filterHtml + tableHtml + pagerHtml + '</div>';
   }
@@ -9760,7 +9741,7 @@
   // Backend: registerInternalAgent() — disimpan sebagai Agent bertipe INTERNAL.
   // =============================================================
   var INT_VERIFIED_ = false, INT_LOOKUP_SEQ_ = 0;
-  var INT_FIELD_IDS_ = ['intFullName','intDept','intSite','intEmail','intPhone'];
+  var INT_FIELD_IDS_ = ['intFullName','intEmail','intJob','intDept','intSite'];
   function setIntNikState_(state, msg){
     var st = document.getElementById('intNikState'), m = document.getElementById('intNikMsg');
     st.className = 'int-nik-state' + (state ? ' ' + state : '');
@@ -9785,7 +9766,7 @@
   function flashIntNikWarn_(){
     var wrap = document.querySelector('#intRegisterModal .int-nik-wrap'), hint = document.getElementById('intNikHint');
     if(wrap){ wrap.classList.remove('int-shake'); void wrap.offsetWidth; wrap.classList.add('int-shake'); setTimeout(function(){ wrap.classList.remove('int-shake'); }, 400); }
-    if(hint){ hint.textContent = 'NIK hanya boleh berisi angka 0-9'; hint.classList.remove('ok'); hint.classList.add('warn'); }
+    if(hint){ hint.textContent = 'Employee ID hanya boleh berisi angka 0-9'; hint.classList.remove('ok'); hint.classList.add('warn'); }
     clearTimeout(flashIntNikWarn_.t);
     flashIntNikWarn_.t = setTimeout(function(){ setIntNikMeter_((document.getElementById('intNik').value || '').length); }, 1600);
   }
@@ -9831,20 +9812,20 @@
       if(seq !== INT_LOOKUP_SEQ_) return; // NIK sudah berubah, abaikan hasil lama
       if(res && res.success){
         document.getElementById('intFullName').value = res.fullName || '';
-        document.getElementById('intDept').value = res.department || '';
-        document.getElementById('intSite').value = res.site || '';
         document.getElementById('intEmail').value = res.email || '';
-        document.getElementById('intPhone').value = res.phone || '';
+        document.getElementById('intJob').value = res.jobPosition || '-';
+        document.getElementById('intDept').value = res.division || '';
+        document.getElementById('intSite').value = res.site || '';
         INT_FIELD_IDS_.forEach(function(id){ var el = document.getElementById(id); el.title = el.value; });
         INT_VERIFIED_ = true;
-        setIntNikState_('ok', 'NIK ditemukan. Periksa data di bawah, lalu kirim registrasi.');
+        setIntNikState_('ok', 'Employee ID ditemukan. Periksa data di bawah, lalu kirim registrasi.');
       } else {
-        setIntNikState_('err', (res && res.message) || 'NIK tidak dapat diverifikasi.');
+        setIntNikState_('err', (res && res.message) || 'Employee ID tidak dapat diverifikasi.');
       }
       updateIntRegFormState_();
     }).withFailureHandler(function(e){
       if(seq !== INT_LOOKUP_SEQ_) return;
-      setIntNikState_('err', 'Gagal memeriksa NIK: ' + ((e && e.message) || e));
+      setIntNikState_('err', 'Gagal memeriksa Employee ID: ' + ((e && e.message) || e));
       updateIntRegFormState_();
     }).lookupEmployeeByNik(nik);
   }
@@ -9856,7 +9837,7 @@
   function submitInternalRegistration(){
     var errEl = document.getElementById('intRegError');
     errEl.style.display = 'none';
-    if(!INT_VERIFIED_ || !/^[0-9]{10}$/.test(val_('intNik'))){ errEl.textContent = 'NIK Karyawan harus tepat 10 digit dan terverifikasi.'; errEl.style.display = 'block'; return; }
+    if(!INT_VERIFIED_ || !/^[0-9]{10}$/.test(val_('intNik'))){ errEl.textContent = 'Employee ID harus tepat 10 digit dan terverifikasi.'; errEl.style.display = 'block'; return; }
     var btn = document.getElementById('intRegSubmitBtn');
     btn.disabled = true; btn.textContent = 'Mengirim...';
     showRegSubmitSplash_(true);
@@ -15105,10 +15086,11 @@
       var del = canEdit ? 'deleteEbCompanyConfirm_(\''+r.CompanyID+'\',\''+escapeHtml(r.CompanyName||'').replace(/'/g,"\\'")+'\')' : null;
       return rowActionButtons(view, edit, del);
     };
-    var summary_ = '<div class="pg-stats pg-3">' +
-      '<div><span>Perusahaan</span><b>'+rows.length+'</b></div>' +
-      '<div class="pg-hl"><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length+'</b></div>' +
-      '<div><span>Hasil Filter</span><b>'+filtered.length+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Perusahaan', rows.length, 'blue', ICONS.stores, 'Total perusahaan') +
+      kpiCard('Aktif', rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length, 'green', ICONS.check, 'Perusahaan aktif') +
+      kpiCard('Hasil Filter', filtered.length, 'orange', ICONS.dashboard, 'Sesuai filter saat ini') +
+    '</div>';
     return '<div class="card eb-page"><div class="list-header"><span class="card-title">Master Company</span>' +
       (canEdit?'<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editEbCompany_(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah Company</span></button>':'') +
       '</div>' + summary_ + filterHtml +
@@ -15285,11 +15267,12 @@
       return html;
     };
     var pendingCnt_ = rows.filter(function(r){ return ['PENDING','SUBMITTED','UNDER_REVIEW'].indexOf(r.RegistrationStatus) !== -1; }).length;
-    var summary_ = '<div class="pg-stats">' +
-      '<div><span>Karyawan</span><b>'+rows.length+'</b></div>' +
-      '<div class="pg-hl"><span>Terverifikasi</span><b>'+rows.filter(function(r){ return r.RegistrationStatus==='APPROVED'; }).length+'</b></div>' +
-      '<div><span>Menunggu</span><b>'+pendingCnt_+'</b></div>' +
-      '<div><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.EmployeeStatus||'').toUpperCase()==='ACTIVE'; }).length+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Karyawan', rows.length, 'blue', ICONS.users, 'Total karyawan terdaftar') +
+      kpiCard('Terverifikasi', rows.filter(function(r){ return r.RegistrationStatus==='APPROVED'; }).length, 'green', ICONS.check, 'Registrasi disetujui') +
+      kpiCard('Menunggu', pendingCnt_, 'orange', ICONS.clock, 'Menunggu persetujuan') +
+      kpiCard('Aktif', rows.filter(function(r){ return String(r.EmployeeStatus||'').toUpperCase()==='ACTIVE'; }).length, 'purple', ICONS.agent, 'Karyawan aktif') +
+    '</div>';
     return '<div class="card eb-page eb-emp-page"><div class="list-header"><span class="card-title">Daftar Karyawan (Employee Benefit)</span></div>' +
       summary_ + filterHtml +
       renderTableOrCards_(cols, filtered, actions,
@@ -15375,10 +15358,11 @@
     };
     var sumAmt_ = filtered.reduce(function(a, r){ return a + (Number(r.amount) || 0); }, 0);
     var uniqEmp_ = {}; filtered.forEach(function(r){ uniqEmp_[r.employeeName || r.idCardNumber || r.trxId] = 1; });
-    var summary_ = '<div class="pg-stats pg-3">' +
-      '<div><span>Transaksi</span><b>'+filtered.length+'</b></div>' +
-      '<div class="pg-hl pg-money"><span>Total Nominal</span><b>'+formatRupiah(sumAmt_)+'</b></div>' +
-      '<div><span>Karyawan</span><b>'+Object.keys(uniqEmp_).length+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Transaksi', filtered.length, 'blue', ICONS.transactions, 'Sesuai filter saat ini') +
+      kpiCard('Total Nominal', formatRupiah(sumAmt_), 'green', ICONS.commission, 'Total belanja') +
+      kpiCard('Karyawan', Object.keys(uniqEmp_).length, 'purple', ICONS.users, 'Karyawan bertransaksi') +
+    '</div>';
     return '<div class="card eb-page"><div class="list-header"><span class="card-title">Transaksi Employee Benefit</span>' +
         ebTrxExportMenuHtml_(filtered.length, rows.length) + '</div>' +
       summary_ + filterHtml +
@@ -15872,10 +15856,11 @@
       var del = canEdit ? 'deleteEbStoreUserConfirm_(\''+r.UserID+'\',\''+escapeHtml(r.StoreName||'').replace(/'/g,"\\'")+'\')' : null;
       return rowActionButtons(view, edit, del);
     };
-    var summary_ = '<div class="pg-stats pg-3">' +
-      '<div><span>Store User</span><b>'+rows.length+'</b></div>' +
-      '<div class="pg-hl"><span>Aktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length+'</b></div>' +
-      '<div><span>Nonaktif</span><b>'+rows.filter(function(r){ return String(r.Status||'').toUpperCase()!=='ACTIVE'; }).length+'</b></div></div>';
+    var summary_ = '<div class="kpi-grid kpi-grid-comm kpi-grid-page">' +
+      kpiCard('Store User', rows.length, 'blue', ICONS.stores, 'Total akun store') +
+      kpiCard('Aktif', rows.filter(function(r){ return String(r.Status||'').toUpperCase()==='ACTIVE'; }).length, 'green', ICONS.check, 'Akun aktif') +
+      kpiCard('Nonaktif', rows.filter(function(r){ return String(r.Status||'').toUpperCase()!=='ACTIVE'; }).length, 'orange', ICONS.cancel, 'Akun nonaktif') +
+    '</div>';
     return '<div class="card eb-page"><div class="list-header"><span class="card-title">Kelola Store User</span>' +
       (canEdit?'<button type="button" class="btn btn-primary btn-add btn-sm list-header-btn" onclick="editEbStoreUser_(null)"><span class="btn-icon">'+ICONS.plus+'</span><span>Tambah Store User</span></button>':'') +
       '</div>' + summary_ + filterHtml +
@@ -16044,6 +16029,82 @@
     });
   }
 
+
+
+  // ===== PAGINATION UNIVERSAL (client-side) — semua tabel/kartu dari renderTableOrCards_ =====
+  // Baris & kartu dirender penuh, lalu ditampilkan per halaman (25/50/100/150). Pager otomatis
+  // kembali ke halaman 1 setiap tabel dirender ulang (mis. saat filter/pencarian berubah).
+  (function(){
+    var SIZES = [25,50,100,150], size = 25;
+    try{ var sv = parseInt(localStorage.getItem('pgnSize'),10); if(SIZES.indexOf(sv) > -1) size = sv; }catch(e){}
+    function items(w){
+      return [ [].slice.call(w.querySelectorAll('table.data-table > tbody > tr')),
+               [].slice.call(w.querySelectorAll('.data-card-list > *, .eb-trx-list > *')) ];
+    }
+    function paint(w){
+      var it = items(w), total = Math.max(it[0].length, it[1].length);
+      var st = w.__pgn || (w.__pgn = {page:1});
+      var pages = Math.max(1, Math.ceil(total/size));
+      if(st.page > pages) st.page = pages;
+      var s = (st.page-1)*size, e = Math.min(s+size, total);
+      it.forEach(function(arr){ arr.forEach(function(el,i){ el.style.display = (i>=s && i<e) ? '' : 'none'; }); });
+      var bar = w.querySelector(':scope > .pgn-bar'); if(!bar) return;
+      if(total === 0 || (total <= SIZES[0] && !w.classList.contains('pgn-always'))){ bar.innerHTML = ''; bar.style.display = 'none'; return; }
+      bar.style.display = '';
+      bar.innerHTML =
+        '<span class="pgn-info"><b>'+(s+1)+'\u2013'+e+'</b> dari <b>'+total+'</b></span>' +
+        '<div class="pgn-ctrl">' +
+          '<select class="pgn-size" aria-label="Baris per halaman">' + SIZES.map(function(n){ return '<option value="'+n+'"'+(n===size?' selected':'')+'>'+n+' / hal</option>'; }).join('') + '</select>' +
+          '<button type="button" class="pgn-btn" data-pgn="prev" aria-label="Sebelumnya"'+(st.page<=1?' disabled':'')+'>\u2039 <span>Prev</span></button>' +
+          '<span class="pgn-pg">'+st.page+' / '+pages+'</span>' +
+          '<button type="button" class="pgn-btn" data-pgn="next" aria-label="Berikutnya"'+(st.page>=pages?' disabled':'')+'><span>Next</span> \u203A</button>' +
+        '</div>';
+    }
+    function wrapEl(first){
+      var w = document.createElement('div'); w.className = 'pgn-wrap';
+      first.parentNode.insertBefore(w, first); w.appendChild(first);
+      var bar = document.createElement('div'); bar.className = 'pgn-bar'; bar.style.display = 'none';
+      return {w:w, bar:bar};
+    }
+    function autoWrap(){
+      // Laporan: tabel Performa Agent/Store & Rincian PO (tabel + kartu mobile)
+      [].slice.call(document.querySelectorAll('#reportsBody .table-scroll-has-cards')).forEach(function(ts){
+        if(ts.closest('.pgn-wrap')) return;
+        var o = wrapEl(ts), nx = o.w.nextElementSibling;
+        if(nx && nx.classList.contains('data-card-list')) o.w.appendChild(nx);
+        o.w.appendChild(o.bar);
+      });
+      // Employee Benefit: riwayat transaksi (role EMPLOYEE & STORE)
+      [].slice.call(document.querySelectorAll('.eb-trx-list')).forEach(function(l){
+        if(l.closest('.pgn-wrap')) return;
+        var o = wrapEl(l); o.w.appendChild(o.bar);
+      });
+    }
+    function scan(){
+      autoWrap();
+      [].slice.call(document.querySelectorAll('.pgn-wrap:not([data-pgn-ready])')).forEach(function(w){
+        w.setAttribute('data-pgn-ready','1'); paint(w);
+      });
+    }
+    var raf = 0;
+    function schedule(){ if(raf) return; raf = requestAnimationFrame(function(){ raf = 0; scan(); }); }
+    document.addEventListener('click', function(ev){
+      var b = ev.target.closest && ev.target.closest('.pgn-btn'); if(!b || b.disabled) return;
+      var w = b.closest('.pgn-wrap'); if(!w) return;
+      w.__pgn.page += (b.getAttribute('data-pgn') === 'next' ? 1 : -1);
+      paint(w);
+      var top = w.getBoundingClientRect().top;
+      if(top < 0){ try{ w.scrollIntoView({block:'start', behavior:'smooth'}); }catch(e){ w.scrollIntoView(); } }
+    });
+    document.addEventListener('change', function(ev){
+      var sel = ev.target; if(!sel.classList || !sel.classList.contains('pgn-size')) return;
+      size = parseInt(sel.value,10) || 25;
+      try{ localStorage.setItem('pgnSize', String(size)); }catch(e){}
+      [].slice.call(document.querySelectorAll('.pgn-wrap')).forEach(function(w){ w.__pgn = {page:1}; paint(w); });
+    });
+    if(window.MutationObserver){ new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true}); }
+    schedule();
+  })();
 
   // ===== WITHLOVE v8 — semua tabel data: 1 baris, tanpa scroll horizontal =====
   // Ukur lebar alami tiap kolom, lalu kalau melebihi container, kolom pendek (badge/aksi)
