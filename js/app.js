@@ -141,10 +141,10 @@
     { key: 'eb-scan',         icon: ICONS.cart,        label: 'Scan Barcode',       roles: ['STORE'] },
     { key: 'eb-store-transactions', icon: ICONS.transactions, label: 'Riwayat Transaksi', roles: ['STORE'] },
     { key: 'eb-profile',      icon: ICONS.users,       label: 'Profile',            roles: ['EMPLOYEE','STORE'] },
-    { key: 'eb-companies',    icon: ICONS.stores,      label: 'Master Company',     roles: ['ADMIN','SUPERVISOR','MANAGER'] },
-    { key: 'eb-employees',    icon: ICONS.users,       label: 'Kelola Employee',    roles: ['ADMIN','SUPERVISOR','MANAGER'] },
-    { key: 'eb-transactions-admin', icon: ICONS.cart,  label: 'Transaksi Employee Benefit', roles: ['ADMIN','SUPERVISOR','MANAGER'] },
-    { key: 'eb-store-users',  icon: ICONS.agent,       label: 'Kelola Store User',  roles: ['ADMIN','SUPERVISOR','MANAGER'] }
+    { key: 'eb-companies',    icon: ICONS.stores,      label: 'Master Company',     roles: ['ADMIN','SUPERVISOR'] },
+    { key: 'eb-employees',    icon: ICONS.users,       label: 'Kelola Employee',    roles: ['ADMIN','SUPERVISOR'] },
+    { key: 'eb-transactions-admin', icon: ICONS.cart,  label: 'Transaksi Employee Benefit', roles: ['ADMIN','SUPERVISOR'] },
+    { key: 'eb-store-users',  icon: ICONS.agent,       label: 'Kelola Store User',  roles: ['ADMIN','SUPERVISOR'] }
   ].filter(function(item){
     // Live Chat dimatikan total lewat LIVECHAT_FEATURE_ENABLED_ (lihat deklarasinya di
     // paling atas file) — di-filter keluar DI SINI (sumber tunggal MENU_ITEMS) supaya
@@ -939,6 +939,16 @@
     document.getElementById('userNameLabel').textContent = STATE.user.name;
     document.getElementById('userRoleLabel').textContent = (STATE.user.role === 'AGENT' && String(STATE.user.agentType||'').toUpperCase() === 'INTERNAL') ? 'INTERNAL' : STATE.user.role;
     document.getElementById('userAvatar').textContent = (STATE.user.name || '?').charAt(0).toUpperCase();
+    (function(){
+      var u = STATE.user, g = function(id){ return document.getElementById(id); };
+      if(!g('userMenuProfileName')) return;
+      g('userMenuProfileAvatar').textContent = (u.name || '?').charAt(0).toUpperCase();
+      g('userMenuProfileName').textContent = u.name || '-';
+      g('userMenuProfileEmail').textContent = u.email || '';
+      g('userMenuProfileRole').textContent = (u.role === 'AGENT' && String(u.agentType||'').toUpperCase() === 'INTERNAL') ? 'INTERNAL' : u.role;
+      var st = g('userMenuProfileSite');
+      if(u.role === 'MANAGER' && u.site){ st.textContent = 'Site: ' + u.site; st.style.display = ''; } else { st.style.display = 'none'; }
+    })();
     // Baris ID Agent di topbar (dipakai khusus layout mobile role AGENT — lihat
     // applyAgentTopbarLayout_ & .topbar.agent-topbar .user-agentid di Stylesheet.html).
     // Baris ID di topbar (dipakai khusus layout mobile role AGENT & EMPLOYEE — lihat
@@ -953,7 +963,7 @@
     var pageDateEl = document.getElementById('pageDate');
     if(pageDateEl) pageDateEl.textContent = formatTanggalHariIni_();
     var sigBtn = document.getElementById('mySignatureBtn');
-    if(sigBtn) sigBtn.style.display = (['ADMIN','SUPERVISOR','MANAGER'].indexOf(STATE.user.role) !== -1) ? 'block' : 'none';
+    if(sigBtn) sigBtn.style.display = (STATE.user.role === 'SUPERVISOR') ? 'block' : 'none';
     // FIX BUG NYATA (AKAR MASALAH SEBENARNYA dari "sekilas menu lain muncul saat reload"):
     // renderSidebar()/renderBottomNav() SEBELUMNYA dipanggil DI SINI, sebelum pageToOpen yang
     // benar diketahui/dipakai. Di titik ini STATE.currentPage MASIH nilai default awal
@@ -2738,7 +2748,7 @@
     ];
     var filtered = applyListFilters_(rows, FILTER_STATE_AGENTS_, ['FullName','Email','Phone','AgentID','KTPNumber','RegistrationArea','Department','JobPosition'], fieldConfigs);
     var filterHtml = filterBarHtml_('onFilterChangeAgents_', 'Cari nama, email, telepon, atau Agent ID...', fieldConfigs, FILTER_STATE_AGENTS_, filtered.length, rows.length);
-    var canManage = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
+    var canManage = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'MANAGER';
     var canDelete = STATE.user.role === 'ADMIN';
     function one_(v){ v = (v==null||v==='') ? '-' : String(v); return '<span class="cell-1l" title="'+escapeHtml(v)+'">'+escapeHtml(v)+'</span>'; }
     function two_(l1, l2){ return '<div class="cell-agent"><div class="cell-agent-name">'+l1+'</div><div class="cell-agent-sub">'+l2+'</div></div>'; }
@@ -3128,7 +3138,7 @@
       { label:'Tanda Tangan', type:'SIGNATURE', fileId:a.SignatureFileID, url:a.SignatureFileURL }
     ].filter(function(d){ return !!d.url; });
 
-    var canEditDocs = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR';
+    var canEditDocs = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER');
 
     var docsHtml = '<div class="agent-detail-section-title">Dokumen</div>';
     if(!docs.length){
@@ -5570,7 +5580,7 @@
   }
 
   function renderPOList_(canCreatePO, agentMapPreset){
-    var isStaff = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
+    var isStaff = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'MANAGER';
     var mySeq = ++PO_REQUEST_SEQ_;
     if(!isStaff){
       google.script.run.withSuccessHandler(function(rows){
@@ -5686,25 +5696,25 @@
         }}
       ]);
       var actions = function(r){
-        var isStaffRow = STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN' || STATE.user.role === 'MANAGER';
+        var isStaffRow = (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'ADMIN' || STATE.user.role === 'MANAGER';
         var btns = '<div class="row-actions">';
         btns += '<button class="action-btn view" title="Lihat Detail" onclick="viewPODetail(\''+r.POID+'\')">'+ICONS.view+'</button>';
 
         // Aksi UTAMA (alur status PO) tetap tampil langsung sbg ikon — ini yang paling sering
         // dipakai staff untuk memproses PO dari satu status ke status berikutnya.
         if(isStaffRow){
-          if(r.Status === 'PENDING_SUPERVISOR' && (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN')){
+          if(r.Status === 'PENDING_SUPERVISOR' && ((STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'ADMIN')){
             btns += '<button class="action-btn review" title="Review" onclick="approvePOPrompt(\''+r.POID+'\')">'+ICONS.review+'</button>';
           }
           if(r.Status === 'APPROVED'){
             if(!r.PaymentConfirmedAt){
-              if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
+              if((STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'ADMIN'){
                 // Kalau Agent sudah upload bukti transfer: tombol jadi hijau SOLID + badge lampiran
                 // (has-proof) supaya beda jelas dari PO yang belum ada bukti (pastel biasa).
                 var hasAgentProof = !!r.AgentProofFileURL;
                 btns += '<button class="action-btn confirm'+(hasAgentProof ? ' has-proof' : '')+'" title="'+(hasAgentProof ? 'Konfirmasi Pembayaran \u2014 Agent sudah upload bukti transfer' : 'Konfirmasi Pembayaran \u2014 belum ada bukti dari Agent')+'" onclick="confirmPaymentPrompt(\''+r.POID+'\',\''+escapeHtml(r.AgentProofFileID||'')+'\',\''+escapeHtml(r.AgentProofFileURL||'')+'\')">'+ICONS.check+(hasAgentProof ? '<span class="action-btn-proof-badge" aria-hidden="true">'+ICONS.upload+'</span>' : '')+'</button>';
               }
-            } else if(STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN'){
+            } else if((STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'ADMIN'){
               btns += '<button class="btn btn-primary btn-sm" onclick="createOrderPrompt(\''+r.POID+'\')">Buat Order</button>';
             }
           }
@@ -5731,7 +5741,7 @@
         // Detail PO ke sini supaya tidak dobel), dan Batalkan/Hapus (destruktif, sengaja tidak
         // langsung terlihat supaya tidak ke-klik tanpa sengaja).
         var moreItems = [];
-        if(isStaffRow && r.Status === 'APPROVED' && !r.PaymentConfirmedAt && (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'ADMIN')){
+        if(isStaffRow && r.Status === 'APPROVED' && !r.PaymentConfirmedAt && ((STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'ADMIN')){
           moreItems.push({ icon:ICONS.edit, label:'Edit PO', onclick:'editApprovedPOPrompt(\''+r.POID+'\')' });
         }
         if(r.SuratPenawaranFileURL){
@@ -5860,7 +5870,7 @@
   function viewPODetail(poId){
     var po = findPO_(poId);
     if(!po){ showToast('Data tidak ditemukan.','error'); return; }
-    var isStaff = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR';
+    var isStaff = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER');
     openCachedDetailModal_('po:'+poId, 'Detail PO', 'modal-lg', function(done){
     google.script.run.withSuccessHandler(function(data){
       var items = data.items, products = data.products;
@@ -7012,7 +7022,7 @@
   }
 
   function renderOrders(){
-    var isStaff = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
+    var isStaff = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'MANAGER';
     if(!isStaff){
       // Total & Tgl Pengambilan diambil dari data PO: pastikan PO_CACHE terisi (dulu kosong kalau Agent belum buka Transaksi).
       google.script.run.withSuccessHandler(function(rows){
@@ -7112,7 +7122,7 @@
       // badge "Penyelesaian" di bawah sudah mewakili keduanya.
       cols.push({label:'Penyelesaian', render:function(r){return settlementBadge_(r.CustomerPaymentStatus);}});
       (function(){ var iS=-1,iP=-1; cols.forEach(function(c,i){ if(c.label==='Store') iS=i; if(c.label==='Promo') iP=i; }); if(iS>-1 && iP>iS){ var pr=cols.splice(iP,1)[0]; cols.splice(iS,0,pr); } })();
-      var isStaffAction = (STATE.user.role==='SUPERVISOR'||STATE.user.role==='ADMIN');
+      var isStaffAction = ((STATE.user.role==='SUPERVISOR' || STATE.user.role==='MANAGER')||STATE.user.role==='ADMIN');
       var actions = function(r){
         var btns = '<div class="row-actions">';
         btns += '<button class="action-btn view" title="Lihat Detail" onclick="viewOrderDetail(\''+r.OrderID+'\')">'+ICONS.view+'</button>';
@@ -7676,7 +7686,7 @@
     SJ_FILE_OBJS_ = [];
     ORDER_DOC_REFRESH_ = function(){ uploadSJPrompt(orderId); };
     ORDER_DOC_ACTIVE_ORDERID_ = orderId;
-    var isStaffEdit = (STATE.user.role==='ADMIN' || STATE.user.role==='SUPERVISOR');
+    var isStaffEdit = (STATE.user.role==='ADMIN' || (STATE.user.role==='SUPERVISOR' || STATE.user.role==='MANAGER'));
     var cacheKey = 'orderDocs:'+orderId;
     var cachedDocs = ORDER_DOCLIST_CACHE_[cacheKey];
 
@@ -7875,7 +7885,7 @@
     DOC_FILE_OBJS_ = [];
     ORDER_DOC_REFRESH_ = function(){ uploadDocPrompt(orderId); };
     ORDER_DOC_ACTIVE_ORDERID_ = orderId;
-    var isStaffEdit = (STATE.user.role==='ADMIN' || STATE.user.role==='SUPERVISOR');
+    var isStaffEdit = (STATE.user.role==='ADMIN' || (STATE.user.role==='SUPERVISOR' || STATE.user.role==='MANAGER'));
     var cacheKey = 'orderDocs:'+orderId;
     var cachedDocs = ORDER_DOCLIST_CACHE_[cacheKey];
 
@@ -8167,7 +8177,7 @@
         // bukti/invoice diperbaiki) — dipakai fungsi claimCommission yg sama, backend sudah
         // menerima status REJECTED sbg sumber klaim ulang selain ELIGIBLE.
         btns += '<button class="action-btn confirm" title="Ajukan Klaim Ulang" onclick="claimCommission(\''+r.CommissionID+'\')">'+ICONS.check+'</button>';
-      } else if((STATE.user.role==='SUPERVISOR'||STATE.user.role==='ADMIN') && r.Status==='CLAIMED'){
+      } else if(((STATE.user.role==='SUPERVISOR' || STATE.user.role==='MANAGER')||STATE.user.role==='ADMIN') && r.Status==='CLAIMED'){
         btns += '<button class="action-btn review" title="Verifikasi" onclick="verifyCommissionAction(\''+r.CommissionID+'\',\'APPROVED\')">'+ICONS.review+'</button>';
         btns += '<button class="action-btn delete" title="Tolak" onclick="verifyCommissionAction(\''+r.CommissionID+'\',\'REJECTED\')">'+ICONS.cancel+'</button>';
       } else if(STATE.user.role==='ADMIN' && r.Status==='VERIFIED'){
@@ -8664,6 +8674,7 @@
       detailRow('Email', escapeHtml(u.Email)) +
       detailRow('Role', escapeHtml(u.Role) + (u.Role==='AGENT' && String(u.AgentType||'').toUpperCase()==='INTERNAL' ? ' <span class="badge badge-orange">Internal</span>' : '')) +
       detailRow('Jabatan', u.Jabatan ? escapeHtml(u.Jabatan) : '-') +
+      (u.Role==='MANAGER' ? detailRow('Site', u.Site ? escapeHtml(u.Site) : '-') : '') +
       detailRow('Status', statusBadge(u.Status)) +
       detailRow('Dibuat', u.CreatedAt ? new Date(u.CreatedAt).toLocaleString('id-ID') : '-');
     openViewModal('Detail User', rows);
@@ -8688,7 +8699,8 @@
       : '';
     var body =
       formField_('uName','Nama',user.Name,'text','',true,ICONS.agent) + formField_('uEmail','Email',user.Email,'text','',true,ICONS.mail) +
-      '<div class="form-group"><label>Role</label><select id="uRole">'+roleOptions+'</select></div>' +
+      '<div class="form-group"><label>Role</label><select id="uRole" onchange="toggleUserSite_()">'+roleOptions+'</select></div>' +
+      '<div class="form-group" id="uSiteWrap" style="display:'+(user.Role==='MANAGER'?'block':'none')+';"><label>Site <span style="color:var(--ag-red,#dc2626)">*</span></label><select id="uSite"><option value="">Memuat site...</option></select></div>' +
       // Jabatan: teks bebas, opsional, TERPISAH dari Role sistem — dipakai murni sebagai
       // label yang tercetak di bawah Nama pada blok tanda tangan Surat Penawaran (lihat
       // generateSuratPenawaran di Code.gs), mis. "Manager Operasional" atau "Admin Finance".
@@ -8698,12 +8710,32 @@
       // password sengaja tidak wajib karena tidak selalu diganti (kosongkan = tetap password lama).
       formField_('uPassword', user.UserID ? 'Password Baru (kosongkan jika tidak diganti)' : 'Password', '', 'text', '', !userId, ICONS.lock);
     openFormModal(userId ? 'Edit User' : 'Tambah User', body, function(){ saveUserForm(userId); });
+    loadUserSiteOptions_(user.Site || '');
+  }
+
+  // Site untuk role MANAGER — diambil dari master Area & Site Pendaftaran (menu Area).
+  function toggleUserSite_(){
+    var w = document.getElementById('uSiteWrap'), r = document.getElementById('uRole');
+    if(w && r) w.style.display = (r.value === 'MANAGER') ? 'block' : 'none';
+  }
+  function loadUserSiteOptions_(current){
+    var paint = function(rows){
+      var sel = document.getElementById('uSite'); if(!sel) return;
+      var names = []; (rows || []).forEach(function(a){ if(a.AreaName && (a.Status||'ACTIVE') === 'ACTIVE' && names.indexOf(a.AreaName) === -1) names.push(a.AreaName); });
+      if(current && names.indexOf(current) === -1) names.push(current);
+      sel.innerHTML = '<option value="">Pilih site</option>' + names.map(function(n){ return '<option value="'+escapeHtml(n)+'"'+(n===current?' selected':'')+'>'+escapeHtml(n)+'</option>'; }).join('');
+    };
+    if(AGENT_AREAS_CACHE_){ paint(AGENT_AREAS_CACHE_); return; }
+    google.script.run.withSuccessHandler(function(rows){ AGENT_AREAS_CACHE_ = rows || []; paint(AGENT_AREAS_CACHE_); })
+      .withFailureHandler(function(){ var sel=document.getElementById('uSite'); if(sel) sel.innerHTML='<option value="">Gagal memuat site</option>'; })
+      .listAgentAreas(STATE.token);
   }
 
   function saveUserForm(userId){
     var statusEl = document.getElementById('uStatus');
-    var payload = { UserID: userId || null, Name: val_('uName'), Email: val_('uEmail'), Role: val_('uRole'), Jabatan: val_('uJabatan'), Status: statusEl ? statusEl.value : 'ACTIVE', newPassword: val_('uPassword') };
+    var payload = { UserID: userId || null, Name: val_('uName'), Email: val_('uEmail'), Role: val_('uRole'), Jabatan: val_('uJabatan'), Status: statusEl ? statusEl.value : 'ACTIVE', newPassword: val_('uPassword'), Site: val_('uSite') };
     if(!payload.Name || !payload.Email){ showToast('Nama dan Email wajib diisi.','error'); return; }
+    if(payload.Role === 'MANAGER' && !payload.Site){ showToast('Site wajib dipilih untuk role MANAGER.','error'); return; }
     google.script.run.withSuccessHandler(function(res){
       if(res.success){ closeModal(); showToast('User disimpan.','success'); renderUsers(); }
       else showToast(res.message,'error');
@@ -11481,7 +11513,7 @@
       var active = tab === key ? ' dash-tab-btn-active' : '';
       return '<button class="dash-tab-btn'+active+'" onclick="switchDashboardTab_(\''+key+'\')">'+label+'</button>';
     }
-    return '<div class="dash-tabs">' + btn('B2B','B2B Agent') + btn('INT','Internal Agrinesia') + btn('EB','Employee Benefit') + '</div>';
+    return '<div class="dash-tabs">' + btn('B2B','B2B Agent') + btn('INT','Internal Agrinesia') + (STATE.user && STATE.user.role === 'MANAGER' ? '' : btn('EB','Employee Benefit')) + '</div>';
   }
 
   /** Tipe agent untuk request dashboard admin: tab 'INT' = INTERNAL, selain itu B2B. */
@@ -15351,7 +15383,7 @@
       {label:'Nominal', render:function(r){ return formatRupiah(r.amount); }},
       {label:'Tanggal', render:function(r){ return formatDateTime_(r.createdAt); }}
     ];
-    var canDeleteEbTrx = STATE.user.role === 'ADMIN' || STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER';
+    var canDeleteEbTrx = STATE.user.role === 'ADMIN' || (STATE.user.role === 'SUPERVISOR' || STATE.user.role === 'MANAGER') || STATE.user.role === 'MANAGER';
     var actions = function(r){
       var html = '<div class="row-actions">';
       html += '<button class="action-btn view" title="Lihat Detail" onclick="viewEbTransactionDetail_(\''+escapeHtml(r.trxId)+'\')">'+ICONS.view+'</button>';
