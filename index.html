@@ -21,7 +21,7 @@
        Isi dengan URL Deployment "Web app" Apps Script (berakhiran /exec). -->
   <script>window.GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxRkiI9B1tSodXDnVRtnJkcqc5p-ztbiRlnMrvUMZPodGlNDrGGuFwlxMnskm2GI7vh/exec';</script>
   <!-- ===== PWA ===== -->
-  <link rel="manifest" href="manifest.json?v=1791382000">
+  <link rel="manifest" href="manifest.json?v=1791450100">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="mobile-web-app-capable" content="yes">
@@ -188,7 +188,7 @@
   <!-- Stylesheet.html disuntik langsung oleh Apps Script templating di sini (bukan
        fetch manual lagi seperti versi GitHub Pages) — jadi CSS sudah terpasang
        sebelum body dirender, tidak perlu loader/FOUC-guard/cache-buster apa pun lagi. -->
-  <link rel="stylesheet" href="css/style.css?v=1791382000">
+  <link rel="stylesheet" href="css/style.css?v=1791450100">
 
 </head>
 <body>
@@ -916,8 +916,8 @@
 
   <!-- JavaScript.html (SPA logic, ratusan fungsi) disuntik langsung di sini oleh
        Apps Script templating, apa adanya, tanpa fetch/loader manual. -->
-  <script src="api-bridge.js?v=1791382000"></script>
-  <script src="js/app.js?v=1791382000"></script>
+  <script src="api-bridge.js?v=1791450100"></script>
+  <script src="js/app.js?v=1791450100"></script>
   <style>
     /* Tombol install PWA — muncul HANYA kalau Chrome menyatakan app ini bisa di-install. */
     #agInstallPill{display:none;position:fixed;left:50%;transform:translateX(-50%);
@@ -950,7 +950,7 @@
     // Service Worker (PWA offline-shell + syarat install Android). Hanya di HTTPS/localhost.
     if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
       window.addEventListener('load',function(){
-        navigator.serviceWorker.register('sw.js?v=1791382000').then(function(r){ try{r.update();}catch(e){} }).catch(function(){});
+        navigator.serviceWorker.register('sw.js?v=1791450100').then(function(r){ try{r.update();}catch(e){} }).catch(function(){});
       });
     }
   </script>
