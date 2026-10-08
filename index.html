@@ -377,7 +377,7 @@
             </span>
             <div>
               <h2 class="reg-hero-title" id="intRegTitle">Registrasi Internal Agrinesia</h2>
-              <p class="reg-hero-sub">Khusus karyawan Agrinesia. Cukup masukkan NIK Karyawan, data lainnya terisi otomatis.</p>
+              <p class="reg-hero-sub">Khusus karyawan Agrinesia. Cukup masukkan Employee ID, data lainnya terisi otomatis.</p>
             </div>
           </div>
           <button class="reg-close" type="button" aria-label="Tutup" onclick="closeInternalRegisterModal()">
@@ -390,7 +390,7 @@
 
           <div class="form-group int-nik-group">
             <div class="int-nik-head">
-              <label for="intNik">NIK Karyawan<span class="required-mark">*</span></label>
+              <label for="intNik">Employee ID<span class="required-mark">*</span></label>
               <span class="field-hint" id="intNikHint">Hanya angka, tepat 10 digit</span>
             </div>
             <div class="int-nik-wrap">
@@ -408,24 +408,24 @@
           <div class="int-profile" id="intProfile">
             <div class="form-group int-f int-f-name"><label for="intFullName">Nama lengkap</label>
               <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.4 3.5-5.2 7-5.2s6.2 1.8 7 5.2"/></svg>
-                <input id="intFullName" type="text" readonly tabindex="-1" placeholder="Muncul setelah NIK terverifikasi"></div></div>
-            <div class="form-group int-f int-f-dept"><label for="intDept">Departemen / Divisi</label>
-              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8.5 8h2M13.5 8h2M8.5 12h2M13.5 12h2M10 20.5v-4h4v4"/></svg>
-                <input id="intDept" type="text" readonly tabindex="-1" placeholder="-"></div></div>
-            <div class="form-group int-f int-f-site"><label for="intSite">Site</label>
-              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-                <input id="intSite" type="text" readonly tabindex="-1" placeholder="-"></div></div>
+                <input id="intFullName" type="text" readonly tabindex="-1" placeholder="Muncul setelah Employee ID terverifikasi"></div></div>
             <div class="form-group int-f int-f-email"><label for="intEmail">Email</label>
               <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7.5 8 5.5 8-5.5"/></svg>
                 <input id="intEmail" type="text" readonly tabindex="-1" placeholder="-"></div></div>
-            <div class="form-group int-f int-f-phone"><label for="intPhone">No. telepon / WhatsApp</label>
-              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h3.6l1.6 4-2.1 1.4a11 11 0 0 0 5 5l1.4-2.1 4 1.6V18a2 2 0 0 1-2.2 2C10.9 19.5 4.5 13.1 4 6.7A2 2 0 0 1 5 4.5Z"/></svg>
-                <input id="intPhone" type="text" readonly tabindex="-1" placeholder="-"></div></div>
+            <div class="form-group int-f int-f-job"><label for="intJob">Job Position</label>
+              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18"/></svg>
+                <input id="intJob" type="text" readonly tabindex="-1" placeholder="-"></div></div>
+            <div class="form-group int-f int-f-dept"><label for="intDept">Division</label>
+              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8.5 8h2M13.5 8h2M8.5 12h2M13.5 12h2M10 20.5v-4h4v4"/></svg>
+                <input id="intDept" type="text" readonly tabindex="-1" placeholder="-"></div></div>
+            <div class="form-group int-f int-f-site"><label for="intSite">Site Location</label>
+              <div class="int-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                <input id="intSite" type="text" readonly tabindex="-1" placeholder="-"></div></div>
           </div>
 
           <div class="int-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.1"/></svg>
-            <span><span class="int-note-long">Data diambil dari database karyawan. Jika ada yang tidak sesuai, hubungi Admin sebelum mengirim. Setelah dikirim, pendaftaran direview admin; pantau lewat menu <b>Cek status pendaftaran</b> di halaman login.</span><span class="int-note-short">Data dari database karyawan. Tidak sesuai? Hubungi Admin. Pantau status lewat <b>Cek status pendaftaran</b>.</span></span>
+            <span><span class="int-note-long">Data diambil dari database karyawan. Jika ada yang tidak sesuai, hubungi Admin sebelum mengirim. Setelah dikirim, Admin akan mereview; begitu disetujui akun langsung aktif dan bisa order. Pantau lewat menu <b>Cek status pendaftaran</b> di halaman login.</span><span class="int-note-short">Tidak sesuai? Hubungi Admin. Setelah disetujui, akun langsung aktif. Pantau lewat <b>Cek status pendaftaran</b>.</span></span>
           </div>
           <div id="intRegError" class="form-error" style="display:none;" role="alert"></div>
         </div>
@@ -611,7 +611,7 @@
           <button type="button" class="reg-choice-card reg-choice-card--amber" onclick="closeCsChoiceModal();openIntCheckStatusModal();">
             <span class="reg-choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/></svg></span>
             <span class="reg-choice-title">Internal Agrinesia</span>
-            <span class="reg-choice-desc">Cek status pendaftaran Internal Agrinesia memakai Email &amp; NIK Karyawan (10 digit).</span>
+            <span class="reg-choice-desc">Cek status pendaftaran Internal Agrinesia memakai Email &amp; Employee ID (10 digit).</span>
             <span class="reg-choice-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </button>
         </div>
