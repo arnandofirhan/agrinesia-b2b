@@ -9805,24 +9805,30 @@
     updateIntRegFormState_();
     if(len === 10) lookupIntNik_(el.value);
   }
+  var INT_NIK_MEMO_ = {}; // hasil lookup sukses per NIK (sesi ini) -> ketik ulang NIK yang sama langsung muncul
+  function applyIntLookup_(res){
+    if(res && res.success){
+      document.getElementById('intFullName').value = res.fullName || '';
+      document.getElementById('intEmail').value = res.email || '';
+      document.getElementById('intJob').value = res.jobPosition || '-';
+      document.getElementById('intDept').value = res.division || '';
+      document.getElementById('intSite').value = res.site || '';
+      INT_FIELD_IDS_.forEach(function(id){ var el = document.getElementById(id); el.title = el.value; });
+      INT_VERIFIED_ = true;
+      setIntNikState_('ok', 'Employee ID ditemukan. Periksa data di bawah, lalu kirim registrasi.');
+    } else {
+      setIntNikState_('err', (res && res.message) || 'Employee ID tidak dapat diverifikasi.');
+    }
+    updateIntRegFormState_();
+  }
   function lookupIntNik_(nik){
     var seq = ++INT_LOOKUP_SEQ_;
+    if(INT_NIK_MEMO_[nik]){ applyIntLookup_(INT_NIK_MEMO_[nik]); return; }
     setIntNikState_('loading', '');
     google.script.run.withSuccessHandler(function(res){
       if(seq !== INT_LOOKUP_SEQ_) return; // NIK sudah berubah, abaikan hasil lama
-      if(res && res.success){
-        document.getElementById('intFullName').value = res.fullName || '';
-        document.getElementById('intEmail').value = res.email || '';
-        document.getElementById('intJob').value = res.jobPosition || '-';
-        document.getElementById('intDept').value = res.division || '';
-        document.getElementById('intSite').value = res.site || '';
-        INT_FIELD_IDS_.forEach(function(id){ var el = document.getElementById(id); el.title = el.value; });
-        INT_VERIFIED_ = true;
-        setIntNikState_('ok', 'Employee ID ditemukan. Periksa data di bawah, lalu kirim registrasi.');
-      } else {
-        setIntNikState_('err', (res && res.message) || 'Employee ID tidak dapat diverifikasi.');
-      }
-      updateIntRegFormState_();
+      if(res && res.success) INT_NIK_MEMO_[nik] = res;
+      applyIntLookup_(res);
     }).withFailureHandler(function(e){
       if(seq !== INT_LOOKUP_SEQ_) return;
       setIntNikState_('err', 'Gagal memeriksa Employee ID: ' + ((e && e.message) || e));
