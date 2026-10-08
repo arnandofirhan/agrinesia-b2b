@@ -6540,7 +6540,7 @@
   /* Pesan status: slot tetap (tidak loncat), ada petunjuk default saat kosong */
   #intRegisterModal.int-onescreen .int-msg{display:flex;align-items:center;gap:8px;min-height:40px;margin-top:8px;padding:8px 12px;border-radius:12px;
     font-size:12.5px;line-height:1.35;font-weight:600;background:var(--ag-gray-100);color:var(--ag-gray-600);border:1px dashed var(--ag-gray-200);}
-  #intRegisterModal.int-onescreen .int-msg:not(.show)::before{content:"Masukkan 10 digit NIK, data karyawan terisi otomatis.";font-weight:500;}
+  #intRegisterModal.int-onescreen .int-msg:not(.show)::before{content:"Masukkan 10 digit Employee ID, data karyawan terisi otomatis.";font-weight:500;}
   #intRegisterModal.int-onescreen .int-msg.show.ok{background:var(--ag-green-soft);color:var(--ag-green);border:1px solid rgba(22,163,74,.28);}
   #intRegisterModal.int-onescreen .int-msg.show.err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
   html[data-theme="dark"] #intRegisterModal.int-onescreen .int-msg.show.err{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.35);}
@@ -6553,10 +6553,11 @@
   #intRegisterModal.int-onescreen .int-profile{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px 10px;padding:12px;border-radius:16px;box-shadow:none;}
   #intRegisterModal.int-onescreen .int-profile .int-f{margin:0;min-width:0;}
   #intRegisterModal.int-onescreen .int-f-name{grid-column:1 / -1;}
-  #intRegisterModal.int-onescreen .int-f-dept,
-  #intRegisterModal.int-onescreen .int-f-site{grid-column:span 6;}
-  #intRegisterModal.int-onescreen .int-f-email{grid-column:span 7;}
-  #intRegisterModal.int-onescreen .int-f-phone{grid-column:span 5;}
+  /* 6 data karyawan: Nama, Email, Job Position (penuh) lalu Division (7) | Site Location (5) */
+  #intRegisterModal.int-onescreen .int-f-email,
+  #intRegisterModal.int-onescreen .int-f-job{grid-column:1 / -1;}
+  #intRegisterModal.int-onescreen .int-f-dept{grid-column:span 7;}
+  #intRegisterModal.int-onescreen .int-f-site{grid-column:span 5;}
   #intRegisterModal.int-onescreen .int-profile .int-f>label{margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--ag-gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #intRegisterModal.int-onescreen .int-profile .int-field input[readonly]{height:38px;padding:0 10px 0 34px;border-radius:11px;font-size:13px;font-weight:600;}
   #intRegisterModal.int-onescreen .int-field svg{left:10px;width:16px;height:16px;}
@@ -6581,8 +6582,6 @@
     #intRegisterModal.int-onescreen .reg-hero-title{font-size:17.5px;}
     #intRegisterModal.int-onescreen .int-hero-icon{display:none;}
     #intRegisterModal.int-onescreen .reg-body{padding:12px 16px 2px;}
-    #intRegisterModal.int-onescreen .int-f-email,
-    #intRegisterModal.int-onescreen .int-f-phone{grid-column:1 / -1;}
     #intRegisterModal.int-onescreen .reg-footer{padding:10px 16px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));}
   }
   /* Layar pendek: catatan jadi singkat, elemen dirapatkan */
@@ -6622,3 +6621,77 @@
     line-height:1.4;overflow-wrap:anywhere;word-break:normal;}
   html .modal-body .agent-detail-grid.ad-list .ad-nowrap{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(12px,3.4vw,13.5px);}
   html .modal-body .agent-detail-grid.ad-list .badge{white-space:nowrap;}
+
+  /* =========================================================
+     CEK STATUS INTERNAL — kartu data (gaya sama dengan Detail Agent): satu kartu, baris datar + garis pemisah
+     (menimpa aturan lama yang menjadikan tiap baris kotak sendiri / kotak dalam kotak)
+     Hanya berlaku untuk .agent-detail-grid.ad-list (popup Detail Agent).
+     ========================================================= */
+  html .reg-body .agent-detail-grid.ad-list{display:block !important;padding:0 !important;gap:0 !important;overflow:hidden;
+    background:var(--ag-surface) !important;border:1px solid rgba(127,127,127,.22);border-radius:16px !important;box-shadow:none;}
+  html .reg-body .agent-detail-grid.ad-list .agent-detail-field{display:flex !important;flex-direction:row !important;align-items:center;justify-content:space-between;
+    gap:16px;min-height:46px;padding:12px 16px !important;margin:0;background:transparent !important;border:0 !important;
+    border-bottom:1px solid rgba(127,127,127,.16) !important;border-radius:0 !important;box-shadow:none !important;transform:none;}
+  html .reg-body .agent-detail-grid.ad-list .agent-detail-field:last-child{border-bottom:0 !important;}
+  html .reg-body .agent-detail-grid.ad-list .agent-detail-field-label{flex:none;margin:0;font-size:10.5px !important;font-weight:600 !important;
+    letter-spacing:.06em !important;white-space:nowrap;}
+  html .reg-body .agent-detail-grid.ad-list .agent-detail-field-value{flex:1 1 auto;min-width:0;margin:0;text-align:right;font-size:13.5px;
+    line-height:1.4;overflow-wrap:anywhere;word-break:normal;}
+  html .reg-body .agent-detail-grid.ad-list .ad-nowrap{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(12px,3.4vw,13.5px);}
+  html .reg-body .agent-detail-grid.ad-list .badge{white-space:nowrap;}
+
+  /* =========================================================
+     BADGE STATUS DI KARTU HERO HIJAU (Cek Status / Profil):
+     pil transparan putih yang menyatu dengan latar hijau; warna status hanya di titiknya.
+     Menimpa aturan .badge-blue/.badge-* (!important) yang membuatnya tampak biru berpendar.
+     ========================================================= */
+  html .profile-hero .profile-hero-badges .badge{background:rgba(255,255,255,.16) !important;color:#fff !important;
+    border:1px solid rgba(255,255,255,.38) !important;box-shadow:none !important;text-shadow:none;}
+  html .profile-hero .profile-hero-badges .badge::before{background:#bfdbfe;}
+  html .profile-hero .profile-hero-badges .badge-green::before{background:#86efac;}
+  html .profile-hero .profile-hero-badges .badge-red::before{background:#fca5a5;}
+  html .profile-hero .profile-hero-badges .badge-orange::before{background:#fcd34d;}
+  html .profile-hero .profile-hero-badges .badge-neutral::before{background:#e5e7eb;}
+  html .profile-hero .profile-hero-badges .badge-purple::before{background:#d8b4fe;}
+
+  /* ===== FIX: tombol Tambah (Produk/User/dst) tidak mepet ke atas ===== */
+  .table-toolbar,.list-header{padding-top:14px;}
+  @media (max-width:760px){
+    .table-toolbar,.list-header{padding-top:10px;}
+    .content > .card:has(> .filter-bar) > .list-header,
+    .content > .card:has(> .data-card-list) > .list-header{ padding-top:10px !important; }
+  }
+
+  /* ===== FIX DESKTOP: hilangkan "kolom di dalam kolom" — pembungkus .card luar dibuat transparan
+     (sama seperti mode HP) sehingga filter + tabel hanya 1 lapis. Mode HP tidak diubah. ===== */
+  @media (min-width:761px){
+    .content > .card:has(> .filter-bar){
+      background:transparent !important; border:0 !important; box-shadow:none !important;
+      border-radius:0 !important; padding:0 !important;
+    }
+    .content > .card:has(> .filter-bar) > .filter-bar{ margin:0 0 12px !important; }
+    .content > .card:has(> .filter-bar) > .list-header,
+    .content > .card:has(> .filter-bar) > .table-toolbar{ margin-bottom:10px !important; padding-top:2px !important; }
+    .content > .card:has(> .filter-bar) > .empty-state{
+      background:var(--ag-surface);border:1px solid var(--ag-gray-200);border-radius:18px;padding:40px 16px;
+    }
+  }
+  .users-page > .kpi-grid{ margin-left:0 !important; margin-right:0 !important; }
+
+  /* ===== Pagination universal (ringkas, 1 baris) ===== */
+  .pgn-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:8px 12px;background:var(--ag-surface,#fff);border:1px solid var(--ag-gray-200,#e5ece8);border-radius:14px;font-size:12.5px;color:var(--ag-gray-600,#4b5b53);}
+  .pgn-info b{color:var(--ag-gray-900,#0f1f18);font-weight:700;}
+  .pgn-ctrl{display:flex;align-items:center;gap:8px;}
+  .pgn-size{height:30px;padding:0 24px 0 10px;border:1px solid var(--ag-gray-200,#e5ece8);border-radius:9px;background:var(--ag-surface,#fff);color:inherit;font:inherit;font-size:12px;cursor:pointer;}
+  .pgn-btn{height:30px;padding:0 12px;border:1px solid var(--ag-gray-200,#e5ece8);border-radius:9px;background:var(--ag-surface,#fff);color:var(--ag-green-700,#0c8f63);font:inherit;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:background .15s,border-color .15s;}
+  .pgn-btn:hover:not(:disabled){background:rgba(23,179,124,.1);border-color:rgba(23,179,124,.45);}
+  .pgn-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .pgn-pg{min-width:44px;text-align:center;font-weight:700;color:var(--ag-gray-900,#0f1f18);font-variant-numeric:tabular-nums;}
+  @media (max-width:760px){
+    .pgn-bar{padding:7px 8px;gap:6px;border-radius:12px;font-size:11.5px;}
+    .pgn-ctrl{gap:5px;width:100%;justify-content:space-between;}
+    .pgn-btn{padding:0 10px;}
+    .pgn-pg{min-width:38px;}
+  }
+
+  .kpi-grid.kpi-grid-page{margin:0 0 14px !important;}
